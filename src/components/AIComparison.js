@@ -6,7 +6,6 @@ const AIComparison = () => {
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showEmail, setShowEmail] = useState(false);
 
   const handleSubmit = async () => {
     if (!question.trim()) {
@@ -16,13 +15,11 @@ const AIComparison = () => {
 
     setLoading(true);
     setError('');
-    setResponses([]);
-    setShowEmail(false);
+    setResponses([]); 
 
     try {
       const aiResponses = await fetchAIResponse(question);
       setResponses(aiResponses);
-      setShowEmail(true);
     } catch (err) {
       setError('Failed to fetch responses. Please try again.');
       console.error(err);
@@ -34,7 +31,6 @@ const AIComparison = () => {
   const handleAskAnother = () => {
     setQuestion('');
     setResponses([]);
-    setShowEmail(false);
   };
 
   return (
