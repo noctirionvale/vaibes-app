@@ -13,7 +13,7 @@ console.log('🚀 Server starting...');
 console.log('📝 DeepSeek API Key loaded:', !!DEEPSEEK_API_KEY);
 
 // Endpoint to get AI responses
-app.post('/api/gemini', async (req, res) => {
+app.post('/api/compare', async (req, res) => {
   try {
     const { question } = req.body;
 
