@@ -5,20 +5,20 @@ export const fetchAIResponse = async (question) => {
   
   try {
     console.log('🚀 Calling backend API...');
-    const response = await axios.post('http://localhost:5000/api/gemini', {
+    const response = await axios.post('/api/compare', {
       question
     }, {
       timeout: 30000
     });
 
     if (!response.data.success) {
-      throw new Error('Failed to get response from Gemini');
+      throw new Error('Failed to get AI response');
     }
 
     console.log('✅ Backend API Success!');
     const responseText = response.data.data;
     
-    return parseGeminiResponse(responseText, question);
+    return parseAIResponse(responseText, question);
     
   } catch (error) {
     console.error('❌ Backend API Error:', error.message);
@@ -27,9 +27,9 @@ export const fetchAIResponse = async (question) => {
   }
 };
 
-// Parse Gemini response into three perspectives
-const parseGeminiResponse = (responseText, question) => {
-  console.log('🔍 Parsing Gemini response...');
+// Parse AI response into three perspectives
+const parseAIResponse = (responseText, question) => {
+  console.log('🔍 Parsing AI response...');
   
   // Try to extract sections based on markers
   const sections = {
@@ -130,7 +130,7 @@ const extractSection = (text, keywords) => {
 
 // Enhanced demo responses (fallback)
 const getEnhancedDemoResponses = (question) => {
-  console.log('🎭 Generating enhanced demo responses...');
+  console.log('🎭 Generating fallback responses...');
   
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -140,21 +140,21 @@ const getEnhancedDemoResponses = (question) => {
           description: 'Data-driven, logical reasoning',
           color: '#6a5cff',
           icon: '📊',
-          text: `[DEMO MODE] Backend server may not be running. Make sure you ran: npm install express cors dotenv concurrently\n\nThen restart with: npm start\n\nAnalytical view of: "${question}"`
+          text: `Unable to fetch live response right now. This could be due to API rate limits or connectivity issues. Please try again in a moment.`
         },
         {
           name: 'Simplified Perspective',
           description: 'Plain language, beginner-friendly',
           color: '#00e5ff',
           icon: '💡',
-          text: `[DEMO MODE] Backend should be running on localhost:5000. Check terminal for errors and make sure all dependencies are installed.\n\nSimple explanation of: "${question}"`
+          text: `Demo response unavailable. Our AI service is temporarily offline. We apologize for the inconvenience.`
         },
         {
           name: 'Critical Perspective',
           description: 'Question assumptions, explore nuances',
           color: '#ff4fd8',
           icon: '🔍',
-          text: `[DEMO MODE] If you see this, the backend API call failed. Check:\n1. Is node server.js running?\n2. Do you have REACT_APP_GEMINI_API_KEY in .env.local?\n3. Check browser console for errors.\n\nCritical view: "${question}"`
+          text: `We're experiencing issues delivering real responses. Thank you for your patience while we resolve this.`
         }
       ]);
     }, 800);
