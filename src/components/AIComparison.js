@@ -9,7 +9,6 @@ const AIComparison = () => {
 
   const handleQuestionChange = (e) => {
     const value = e.target.value;
-    // Limit to max characters
     if (value.length <= TEXT_LIMITS.questionMax) {
       setQuestion(value);
     }
@@ -47,7 +46,6 @@ const AIComparison = () => {
     setError('');
   };
 
-  // Calculate character count and percentage
   const charCount = question.length;
   const maxChars = TEXT_LIMITS.questionMax;
   const percentage = (charCount / maxChars) * 100;
@@ -65,58 +63,80 @@ const AIComparison = () => {
       </div>
 
       <div className="ai-input-section">
-        <div style={{ position: 'relative' }}>
+        {/* NEW WRAPPER: Handles the border and background */}
+        <div 
+          style={{ 
+            position: 'relative', 
+            marginBottom: '1rem',
+            borderRadius: '8px',
+            border: '1px solid rgba(0, 229, 255, 0.3)',
+            background: 'rgba(15, 15, 25, 0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}
+        >
+          {/* TEXTAREA: Transparent, no borders */}
           <textarea
             id="question-input"
             value={question}
             onChange={handleQuestionChange}
-            placeholder={`Ask anything... (e.g., 'How does AI actually work?' or 'Should I be worried about AI?')\n\nMax ${maxChars} characters`}
-            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit()}
+            placeholder={`Ask anything... (e.g., 'How does AI actually work?' or 'Should I be worried about AI?')`}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit()}
             style={{
               width: '100%',
               minHeight: '120px',
-              paddingBottom: '40px' // Space for counter
+              padding: '16px',
+              paddingBottom: '0', 
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: '#fff',
+              fontSize: '1rem',
+              fontFamily: 'inherit',
+              resize: 'vertical',
+              boxSizing: 'border-box'
             }}
           />
           
-          {/* Character Counter */}
-          <div 
-            style={{
-              position: 'absolute',
-              bottom: '10px',
-              right: '15px',
-              fontSize: '0.85rem',
-              color: isNearLimit ? '#ff4fd8' : '#00e5ff',
-              fontWeight: '600',
-              transition: 'color 0.3s ease'
-            }}
-          >
-            {charCount} / {maxChars}
-          </div>
-
-          {/* Progress Bar */}
-          <div 
-            style={{
-              position: 'absolute',
-              bottom: '0',
-              left: '0',
-              right: '0',
-              height: '3px',
-              background: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '0 0 8px 8px',
-              overflow: 'hidden'
-            }}
-          >
+          {/* FOOTER: Holds counter and progress bar */}
+          <div style={{ position: 'relative', width: '100%', padding: '8px 12px', boxSizing: 'border-box' }}>
             <div 
               style={{
-                height: '100%',
-                width: `${Math.min(percentage, 100)}%`,
-                background: isNearLimit 
-                  ? 'linear-gradient(90deg, #00e5ff, #ff4fd8)' 
-                  : 'linear-gradient(90deg, #00e5ff, #6a5cff)',
-                transition: 'width 0.3s ease'
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontSize: '0.8rem',
+                color: isNearLimit ? '#ff4fd8' : 'rgba(255, 255, 255, 0.5)',
+                fontWeight: '600',
+                marginBottom: '6px'
               }}
-            />
+            >
+              {charCount} / {maxChars}
+            </div>
+
+            {/* Progress Bar attached to bottom of wrapper */}
+            <div 
+              style={{
+                position: 'absolute',
+                bottom: '0',
+                left: '0',
+                right: '0',
+                height: '4px',
+                background: 'rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <div 
+                style={{
+                  height: '100%',
+                  width: `${Math.min(percentage, 100)}%`,
+                  background: isNearLimit 
+                    ? 'linear-gradient(90deg, #ff4fd8, #00e5ff)' 
+                    : 'linear-gradient(90deg, #6a5cff, #00e5ff)',
+                  transition: 'width 0.3s ease',
+                  boxShadow: '0 0 10px rgba(0, 229, 255, 0.5)'
+                }}
+              />
+            </div>
           </div>
         </div>
 
@@ -125,23 +145,34 @@ const AIComparison = () => {
           onClick={handleSubmit} 
           disabled={loading || charCount === 0}
           style={{
-            marginTop: '1rem',
-            opacity: loading || charCount === 0 ? 0.6 : 1,
-            cursor: loading || charCount === 0 ? 'not-allowed' : 'pointer'
+            width: '100%',
+            padding: '12px 24px',
+            marginTop: '0.5rem',
+            borderRadius: '8px',
+            border: 'none',
+            background: loading || charCount === 0 
+              ? 'rgba(0, 229, 255, 0.3)' 
+              : 'linear-gradient(135deg, #6a5cff, #00e5ff)',
+            color: '#fff',
+            fontSize: '1rem',
+            fontWeight: '600',
+            cursor: loading || charCount === 0 ? 'not-allowed' : 'pointer',
+            transition: 'all 0.3s ease',
+            opacity: loading || charCount === 0 ? 0.6 : 1
           }}
         >
-          {loading ? 'Analyzing...' : 'Compare'}
+          {loading ? '🔄 Analyzing...' : '✨ Compare'}
         </button>
       </div>
 
       {error && (
-        <div id="error-box" className="ai-error-box" style={{display: 'block'}}>
+        <div id="error-box" className="ai-error-box" style={{display: 'block', color: '#ff4fd8', marginTop: '10px'}}>
           {error}
         </div>
       )}
 
       {loading && (
-        <div id="loading" className="ai-loading" style={{display: 'block'}}>
+        <div id="loading" className="ai-loading" style={{display: 'block', marginTop: '20px', textAlign: 'center'}}>
           <p>🔄 Analyzing from different perspectives...</p>
         </div>
       )}
@@ -166,7 +197,7 @@ const AIComparison = () => {
       )}
 
       {responses.length > 0 && (
-        <div id="cta-footer" className="ai-cta-footer" style={{display: 'block', marginTop: '1rem'}}>
+        <div id="cta-footer" className="ai-cta-footer" style={{display: 'block', marginTop: '2rem'}}>
           <h3>Still confused? That's okay.</h3>
           <p>Understanding AI takes time. Join our community of late bloomers exploring technology together.</p>
           <button id="ask-another" onClick={handleAskAnother}>
