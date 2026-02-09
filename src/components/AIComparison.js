@@ -41,7 +41,7 @@ const AIComparison = () => {
       </div>
 
       <div className="api-notice">
-  💡 Using Gemini API (Google AI) - Powered by your Gemini Plus subscription
+  💡 Using Deepseek API - Advanced AI perspective comparison
 </div>
 
       <div className="ai-input-section">
