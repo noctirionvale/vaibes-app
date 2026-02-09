@@ -5,7 +5,8 @@ export const fetchAIResponse = async (question) => {
   
   try {
     console.log('🚀 Calling backend API...');
-    const response = await axios.post('http://localhost:5000/api/deepseek', {
+    // Call the Vercel serverless function (relative path works on Vercel)
+    const response = await axios.post('/api/compare', {
       question
     }, {
       timeout: 30000
@@ -26,6 +27,8 @@ export const fetchAIResponse = async (question) => {
     return getEnhancedDemoResponses(question);
   }
 };
+
+// ... rest of your code stays the same
 
 // Parse Deepseek response into three perspectives
 const parseDeepseekResponse = (responseText, question) => {
