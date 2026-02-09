@@ -17,14 +17,9 @@ export const fetchAIResponse = async (question) => {
   
   const maxRetries = 3;
 
-for (let attempt = 1; attempt <= maxRetries; attempt++) {
-  try {
-    // ...
-  } catch (error) {
-    console.error(`❌ Attempt ${attempt} failed:`, error.message);
-    // ...
-  }
-}
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🚀 Calling backend API... (Attempt ${attempt}/${maxRetries})`);
       
       const response = await axios.post('/api/compare', {
         question
@@ -42,7 +37,6 @@ for (let attempt = 1; attempt <= maxRetries; attempt++) {
       return parseDeepseekResponse(responseText, question);
       
     } catch (error) {
-      lastError = error;
       console.error(`❌ Attempt ${attempt} failed:`, error.message);
       
       if (attempt < maxRetries) {
