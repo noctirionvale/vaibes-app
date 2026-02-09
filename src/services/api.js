@@ -16,11 +16,15 @@ export const fetchAIResponse = async (question) => {
   }
   
   const maxRetries = 3;
-  let lastError;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`🚀 Calling backend API... (Attempt ${attempt}/${maxRetries})`);
+
+for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  try {
+    // ...
+  } catch (error) {
+    console.error(`❌ Attempt ${attempt} failed:`, error.message);
+    // ...
+  }
+}
       
       const response = await axios.post('/api/compare', {
         question
