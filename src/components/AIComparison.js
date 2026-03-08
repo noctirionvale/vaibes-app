@@ -36,7 +36,7 @@ const AIComparison = () => {
     summarize: "You are an expert editor. Summarize the following text concisely, highlighting only the most important main points.",
     describe: "You are a highly observant writer. Provide a detailed, vivid, and structured description based on the prompt.",
     analyze: "You are an analytical thinker. Break down the user's input, exploring its components, logic, strengths, and weaknesses.",
-    generateText: "You are a creative assistant. Generate the requested text format based exactly on the user's prompt.",
+    generateDescription: "You are a creative assistant. Generate the requested description format based exactly on the user's prompt.",
     generateAudio: "You are a scriptwriter. Write a conversational, natural-sounding response meant to be spoken out loud. Do not include stage directions, markdown formatting, or speaker labels, just the spoken words."
   };
 
@@ -45,7 +45,7 @@ const AIComparison = () => {
     summarize: "Summarize Text",
     describe: "Describe Details",
     analyze: "Analyze Input",
-    generateText: "Generate Text",
+    generateDescription: "Generate Description",
     generateAudio: "Generate Audio (TTS)"
   };
 
