@@ -713,7 +713,9 @@ body::after {
 .ai-input-section {
   max-width: 800px;
   margin: 0 auto 3rem auto;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 #question-input {
@@ -737,17 +739,28 @@ body::after {
 }
 
 #submit-btn {
-  position: absolute;
-  bottom: 1.5rem;
-  right: 1.5rem;
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
   background: linear-gradient(135deg, #6a5cff 0%, #00e5ff 100%);
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 1rem;
   border-radius: 50px;
   color: #ffffff;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+#submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(106, 92, 255, 0.4);
+}
+
+#submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 #submit-btn:hover {
@@ -1034,4 +1047,83 @@ body::after {
   .tool-grid { grid-template-columns: 1fr; }
   .section-padding { padding: 80px 2rem; }
   .ai-responses-grid { grid-template-columns: 1fr; }
+}
+
+#submit-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #6a5cff 0%, #00e5ff 100%);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(106, 92, 255, 0.4);
+}
+
+#submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Task Selector */
+.ai-task-selector {
+  max-width: 800px;
+  margin: 0 auto 2rem auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ai-task-selector label {
+  color: var(--accent2);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+#task-select {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: rgba(106, 92, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#task-select:hover {
+  border-color: var(--accent2);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+}
+
+#task-select:focus {
+  outline: none;
+  border-color: var(--accent2);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+}
+
+#task-select option {
+  background: #050505;
+  color: #ffffff;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .ai-task-selector {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #task-select {
+    width: 100%;
+  }
 }

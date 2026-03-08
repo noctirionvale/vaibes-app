@@ -31,6 +31,9 @@ function App() {
 
         <Hero />
         
+        {/* AI Comparison moved here - right after hero */}
+        <AIComparison />
+        
         <section id="content" className="section-padding">
           <ContentSection />
           
@@ -43,7 +46,6 @@ function App() {
           </div>
 
           <ToolsSection />
-          <AIComparison />
         </section>
 
         <Footer />
