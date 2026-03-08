@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 
 const Sidebar = ({ isRight = false, items }) => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -22,43 +24,48 @@ const Sidebar = ({ isRight = false, items }) => {
     display: 'flex',
     flexDirection: isMobile ? 'row' : 'column',
     alignItems: 'center',
-    justifyContent: isMobile ? 'space-around' : 'center',
-    gap: isMobile ? '0.5rem' : '3rem',
-    padding: isMobile ? '1rem 0.5rem' : '2rem 1rem',
-    fontWeight: 800,
-    fontSize: isMobile ? '0.55rem' : '0.75rem',
-    letterSpacing: '0.15em',
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    writingMode: 'horizontal-tb',
+    
+    // CHANGED BACK TO CENTER: This puts the cards in the middle vertically
+    justifyContent: isMobile ? 'space-around' : 'center', 
+    
+    gap: '1.5rem',
+    padding: isMobile ? '1rem 0.5rem' : '2rem 1.5rem',
     overflowX: isMobile ? 'auto' : 'visible',
-    overflowY: isMobile ? 'hidden' : 'auto'
-  };
-
-  const spanStyles = {
-    transform: 'none',
-    writingMode: 'horizontal-tb',
-    padding: isMobile ? '0.25rem 0.5rem' : '0.5rem 0',
-    width: isMobile ? 'auto' : '100%',
-    whiteSpace: isMobile ? 'nowrap' : 'normal',
-    flexShrink: isMobile ? 0 : 1,
-    position: 'relative',
-    zIndex: 1,
-    transition: 'all 0.4s ease',
-    color: isRight ? '#00e5ff' : '#00e5ff',
-    textShadow: isRight 
-      ? '0 0 8px rgba(106, 92, 255, 0.4), 0 0 15px rgba(255, 255, 255, 0.2)' 
-      : '0 0 8px rgba(0, 229, 255, 0.5), 0 0 15px rgba(255, 255, 255, 0.2)',
-    borderBottom: isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.05)',
-    borderRight: isMobile ? '1px solid rgba(255, 255, 255, 0.05)' : 'none'
+    overflowY: 'auto',
+    
+    // ADJUSTED WIDTH: Gives the cards a bit more room so they aren't squished
+    width: isMobile ? '100%' : '280px', 
+    
+    // PREVENTS SQUISHING: Forces the sidebar to stay 280px wide even if the center is huge
+    flexShrink: 0, 
+    
+    boxSizing: 'border-box',
+    zIndex: 10
   };
 
   return (
     <aside className="sidebar-label" style={sidebarStyles}>
-      {items.map((item, index) => (
-        <span key={index} style={spanStyles}>
-          {item}
-        </span>
+      {items.map((tool, index) => (
+        <a 
+          key={index} 
+          href={tool.url} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className={`tool-card tool-${tool.color}`}
+          style={{ 
+            width: '100%', 
+            textDecoration: 'none', 
+            textAlign: 'left' // Overriding your old center text alignment for readability
+          }}
+        >
+          {/* We ensure the text formatting looks good inside the new cards */}
+          <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: '#fff', textTransform: 'none', letterSpacing: 'normal' }}>
+            {tool.name}
+          </h4>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', textTransform: 'none', letterSpacing: 'normal', fontWeight: 'normal' }}>
+            {tool.desc}
+          </p>
+        </a>
       ))}
     </aside>
   );
