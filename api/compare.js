@@ -8,6 +8,11 @@ export default async function handler(req, res) {
   }
 
   const { question } = req.body;
+  const DEEPSEEK_API_KEY = process.env.REACT_APP_DEEPSEEK_API_KEY; // ← Change this line
+
+  if (!DEEPSEEK_API_KEY) {
+    return res.status(400).json({ error: 'API key not configured' });
+  }
 
   try {
     const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
@@ -15,12 +20,12 @@ export default async function handler(req, res) {
       messages: [
         {
           role: 'user',
-          content: `Please provide three perspectives on this question: "${question}"\n\n1. ANALYTICAL: Data-driven, logical reasoning\n2. SIMPLIFIED: Plain language explanation\n3. CRITICAL: Question assumptions and nuances`
+          content: question
         }
       ]
     }, {
       headers: {
-        'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`, // ← Use the variable
         'Content-Type': 'application/json'
       },
       timeout: 30000
