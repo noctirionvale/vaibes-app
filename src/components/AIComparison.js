@@ -67,24 +67,33 @@ const AIComparison = () => {
     setIsSpeaking(false);
 
     try {
-      const apiResponse = await fetch('https://api.deepseek.com/chat/completions', {
+      // Look for the secret in the browser's local memory
+      const secretToken = localStorage.getItem('admin_bypass_key') || '';
+
+      const apiResponse = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer YOUR_DEEPSEEK_API_KEY_HERE` // <-- Don't forget your key!
+          // Send the secret token to the backend
+          'x-admin-bypass': secretToken 
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
           messages: [
             { role: 'system', content: systemPrompts[currentMode] },
             { role: 'user', content: inputText }
-          ],
-          temperature: 0.7
+          ]
         })
       });
 
       const data = await apiResponse.json();
       
+      // Handle our custom rate-limit error message from the backend
+      if (apiResponse.status === 429) {
+        setResponse(`⚠️ ${data.error}`);
+        setIsLoading(false);
+        return;
+      }
+
       if (data.choices && data.choices.length > 0) {
         const replyText = data.choices[0].message.content;
         setResponse(replyText);
@@ -93,7 +102,7 @@ const AIComparison = () => {
           handleAudioPlayback(replyText);
         }
       } else {
-        setResponse("Error: Received an unexpected response from DeepSeek.");
+        setResponse("Error: Received an unexpected response.");
       }
     } catch (error) {
       console.error("API Error:", error);
@@ -101,7 +110,7 @@ const AIComparison = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }; // <--- THIS is what was missing! The closing brackets for catch, finally, and the function.
 
   // Dynamic Placeholder Logic
   let inputPlaceholder = `Enter text or data to ${currentMode}...`;
