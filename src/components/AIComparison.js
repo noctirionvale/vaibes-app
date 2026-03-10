@@ -5,6 +5,7 @@ const AIComparison = () => {
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false); // Our Mic state
   
   const [currentMode, setCurrentMode] = useState('explain');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -30,7 +31,7 @@ const AIComparison = () => {
 
   const videoId = extractYouTubeID(inputText);
 
-  // THE BRAINS: Updated to match your exact tool requests
+  // THE BRAINS
   const systemPrompts = {
     explain: "You are a clear, logical teacher. Explain the user's prompt simply and accurately without hype or jargon.",
     summarize: "You are an expert editor. Summarize the provided text or video transcript concisely, highlighting only the most important main points and key takeaways.",
@@ -51,14 +52,17 @@ const AIComparison = () => {
 
   const handleAudioPlayback = (textToSpeak) => {
     setIsSpeaking(true);
-    // Using Browser Native TTS for testing
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.onend = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleSend = async () => {
-    if (!inputText.trim()) return;
+  // THE SEND LOGIC
+  const handleSend = async (overrideText = null) => {
+    // If the mic passes text directly, use that. Otherwise, use what's in the text box.
+    const textToSend = typeof overrideText === 'string' ? overrideText : inputText; 
+    
+    if (!textToSend.trim()) return;
     
     setIsLoading(true);
     setResponse('');
@@ -67,27 +71,24 @@ const AIComparison = () => {
     setIsSpeaking(false);
 
     try {
-      // Look for the secret in the browser's local memory
       const secretToken = localStorage.getItem('admin_bypass_key') || '';
 
       const apiResponse = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Send the secret token to the backend
           'x-admin-bypass': secretToken 
         },
         body: JSON.stringify({
           messages: [
             { role: 'system', content: systemPrompts[currentMode] },
-            { role: 'user', content: inputText }
+            { role: 'user', content: textToSend } 
           ]
         })
       });
 
       const data = await apiResponse.json();
       
-      // Handle our custom rate-limit error message from the backend
       if (apiResponse.status === 429) {
         setResponse(`⚠️ ${data.error}`);
         setIsLoading(false);
@@ -110,7 +111,60 @@ const AIComparison = () => {
     } finally {
       setIsLoading(false);
     }
-  }; // <--- THIS is what was missing! The closing brackets for catch, finally, and the function.
+  };
+
+  // THE SMART MIC LOGIC
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert("Ah! Your browser doesn't support voice input yet. Try using Chrome or Edge!");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      let finalTranscript = transcript;
+      let shouldAutoSend = false;
+
+      // Check if they said "send it"
+      const triggerMatch = transcript.match(/\b(send it|send)\.?$/i);
+
+      if (triggerMatch) {
+        shouldAutoSend = true;
+        finalTranscript = transcript.replace(/\b(send it|send)\.?$/i, '').trim();
+      }
+
+      setInputText((prevText) => {
+        const combinedText = prevText ? prevText + ' ' + finalTranscript : finalTranscript;
+        
+        if (shouldAutoSend) {
+          setTimeout(() => handleSend(combinedText), 100); 
+        }
+        
+        return combinedText;
+      });
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Microphone error:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
 
   // Dynamic Placeholder Logic
   let inputPlaceholder = `Enter text or data to ${currentMode}...`;
@@ -122,9 +176,11 @@ const AIComparison = () => {
 
   return (
     <div className="ai-utility-section">
-      <div className="chat-input-container" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+      
+      {/* 1. CHAT INPUT AT THE TOP & MADE STICKY */}
+      <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
         
-        {/* ✨ NEW: The Video Preview Player */}
+        {/* The Video Preview Player */}
         {videoId && currentMode === 'summarize' && (
           <div className="video-preview-wrapper" style={{ width: '100%', marginBottom: '1rem', padding: '0.5rem' }}>
             <iframe
@@ -141,7 +197,8 @@ const AIComparison = () => {
         )}
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', width: '100%' }}>
-          {/* Dropdown Menu */}
+          
+          {/* THE DROPDOWN MENU */}
           <div className="mode-selector-wrapper" ref={dropdownRef}>
             <button 
               className="plus-icon-btn" 
@@ -172,10 +229,10 @@ const AIComparison = () => {
             )}
           </div>
 
-          {/* Text Area */}
+          {/* THE TEXTAREA (Fully Restored Logic) */}
           <textarea 
             id="question-input" 
-            placeholder={inputPlaceholder}
+            placeholder={isListening ? "Listening... Speak now!" : inputPlaceholder}
             value={inputText}
             onChange={(e) => {
               setInputText(e.target.value);
@@ -191,7 +248,22 @@ const AIComparison = () => {
             }}
           />
 
-          {/* Send Button */}
+          {/* THE MIC BUTTON */}
+          <button 
+            className={`mic-btn ${isListening ? 'listening-pulse' : ''}`}
+            onClick={startListening}
+            disabled={isLoading}
+            title="Use Voice Input"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </button>
+
+          {/* THE SUBMIT BUTTON */}
           <button 
             id="submit-btn" 
             onClick={handleSend} 
@@ -207,12 +279,13 @@ const AIComparison = () => {
               </svg>
             )}
           </button>
+
         </div>
       </div>
 
-      {/* Output Display */}
+      {/* 2. OUTPUT DISPLAY SPILLS OUT BELOW IT */}
       {response && (
-        <div className="ai-response-card">
+        <div className="ai-response-card" style={{ marginTop: '2rem' }}>
           <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="current-mode-badge">{modeLabels[currentMode]}</span>
             
@@ -225,6 +298,7 @@ const AIComparison = () => {
           <div className="ai-response-text">{response}</div>
         </div>
       )}
+
     </div>
   );
 };

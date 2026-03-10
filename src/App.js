@@ -1,50 +1,40 @@
 import React from 'react';
+import LeftSidebar from './components/LeftSidebar';
 import Sidebar from './components/Sidebar';
-import Hero from './components/Hero';
 import AIComparison from './components/AIComparison';
 import './styles/App.css';
-// Notice we deleted: import Footer from './components/Footer';
 
 function App() {
-  const leftSidebarItems = [
-    { name: 'Grok', url: 'https://grok.com', desc: 'Alternative viewpoints and challenging assumptions', color: 'grok' },
-    { name: 'ChatGPT', url: 'https://chat.openai.com', desc: 'General explanations and structured answers', color: 'chatgpt' },
-    { name: 'Gemini', url: 'https://gemini.google.com', desc: 'Broad knowledge and access to recent information', color: 'gemini' },
-    { name: 'Perplexity', url: 'https://www.perplexity.ai', desc: 'Source-backed answers and live information', color: 'perplexity' },
-    { name: 'Google', url: 'https://www.google.com', desc: 'Discovering additional sources and viewpoints', color: 'google' }
-  ];
-
-  const rightSidebarItems = [
-    { name: 'DeepSeek', url: 'https://chat.deepseek.com', desc: 'Technical and analytical responses', color: 'deepseek' },
-    { name: 'Claude', url: 'https://claude.ai', desc: 'Clear, thoughtful writing and summaries', color: 'claude' },
-    { name: 'Qwen', url: 'https://chat.qwen.ai', desc: 'Multilingual reasoning and diverse perspectives', color: 'qwen' },
-    { name: 'Kimi', url: 'https://kimi.moonshot.cn', desc: 'Long-context processing and detailed document analysis', color: 'kimi' },
-    { name: 'Wikipedia', url: 'https://www.wikipedia.org', desc: 'Background knowledge and established facts', color: 'wiki' }
+  // All 10 tools beautifully combined into one master array
+  const allTools = [
+    { name: 'Grok', url: 'https://grok.com', desc: 'Alternative viewpoints', color: 'grok' },
+    { name: 'ChatGPT', url: 'https://chat.openai.com', desc: 'General explanations', color: 'chatgpt' },
+    { name: 'Gemini', url: 'https://gemini.google.com', desc: 'Broad knowledge', color: 'gemini' },
+    { name: 'DeepSeek', url: 'https://chat.deepseek.com', desc: 'Technical responses', color: 'deepseek' },
+    { name: 'Claude', url: 'https://claude.ai', desc: 'Thoughtful writing', color: 'claude' },
+    { name: 'Qwen', url: 'https://chat.qwen.ai', desc: 'Multilingual reasoning', color: 'qwen' },
+    { name: 'Kimi', url: 'https://kimi.moonshot.cn', desc: 'Document analysis', color: 'kimi' },
+    { name: 'Perplexity', url: 'https://www.perplexity.ai', desc: 'Source-backed answers', color: 'perplexity' },
+    { name: 'Google', url: 'https://www.google.com', desc: 'Discovering sources', color: 'google' },
+    { name: 'Wikipedia', url: 'https://www.wikipedia.org', desc: 'Established facts', color: 'wiki' }
   ];
 
   return (
     <div className="main-wrapper">
-      <Sidebar items={leftSidebarItems} isRight={false} />
       
+      {/* 1. Left Column: Brand & Info */}
+      <LeftSidebar />
+      
+      {/* 2. Center Column: Pure Chatbox */}
       <main className="content-center">
-        <div className="auth-container">
-          <button className="login-btn">
-            {/* An elegant user profile SVG icon */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <span>Sign In</span>
-          </button>
+        <div className="chatbox-wrapper">
+          <AIComparison />
         </div>
-        <Hero />
-        
-        <AIComparison />
-        
-        {/* The <Footer /> component has been removed from here! */}
       </main>
 
-      <Sidebar items={rightSidebarItems} isRight={true} />
+      {/* 3. Right Column: The Tool Drawer */}
+      <Sidebar items={allTools} title="AI Models & Sources" />
+      
     </div>
   );
 }
