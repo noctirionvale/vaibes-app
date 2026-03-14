@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
+import AuthModal from './AuthModal';
 
 const AIComparison = () => {
   const [inputText, setInputText] = useState('');
@@ -6,10 +8,13 @@ const AIComparison = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false); // Our Mic state
-  
   const [currentMode, setCurrentMode] = useState('explain');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // 🔐 Auth state
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -59,6 +64,12 @@ const AIComparison = () => {
 
   // THE SEND LOGIC
   const handleSend = async (overrideText = null) => {
+    // 🔒 GATE: Block guests
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
     // If the mic passes text directly, use that. Otherwise, use what's in the text box.
     const textToSend = typeof overrideText === 'string' ? overrideText : inputText; 
     
@@ -183,10 +194,11 @@ const AIComparison = () => {
         {/* The Video Preview Player */}
         {videoId && currentMode === 'summarize' && (
           <div className="video-preview-wrapper" style={{ width: '100%', marginBottom: '1rem', padding: '0.5rem' }}>
+            {/* ✨ THE FIX: Using YouTube's no-cookie domain safely outside the tag! */}
             <iframe
               width="100%"
               height="250"
-              src={`https://www.youtube.com/embed/${videoId}`}
+              src={`https://www.youtube-nocookie.com/embed/${videoId}`}
               title="YouTube video player"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -299,6 +311,10 @@ const AIComparison = () => {
         </div>
       )}
 
+      {/* 🔐 Auth Modal for guests */}
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
     </div>
   );
 };
