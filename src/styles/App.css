@@ -2494,3 +2494,25 @@ body.light-mode .youtube-thumb-row {
 body.light-mode .youtube-thumb-label {
   color: #1a1a1a;
 }
+
+/* Sign In button visible in light mode */
+body.light-mode .login-btn {
+  background: rgba(106, 92, 255, 0.08);
+  border-color: rgba(106, 92, 255, 0.3);
+  color: #333333;
+}
+
+body.light-mode .login-btn:hover {
+  background: rgba(106, 92, 255, 0.15);
+  border-color: var(--accent1);
+  color: var(--accent1);
+  box-shadow: 0 4px 15px rgba(106, 92, 255, 0.15);
+}
+
+body.light-mode .login-btn svg {
+  stroke: #444444;
+}
+
+body.light-mode .login-btn:hover svg {
+  stroke: var(--accent1);
+}
