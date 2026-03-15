@@ -17,6 +17,9 @@ const AIComparison = () => {
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
+  const [isFetchingTranscript, setIsFetchingTranscript] = useState(false);
+  const [transcriptReady, setTranscriptReady] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -156,6 +159,57 @@ Your current task: GENERATE AUDIO SCRIPT
       remaining: DAILY_LIMIT - (usage.request_count + 1)
     };
   };
+
+  const fetchAndSummarize = async () => {
+  if (!videoId) return;
+
+  setIsFetchingTranscript(true);
+  setResponse('');
+
+  try {
+    // Step 1: Fetch transcript
+    const transcriptRes = await fetch(`/api/transcript?videoId=${videoId}`);
+    const transcriptData = await transcriptRes.json();
+
+    if (!transcriptRes.ok || !transcriptData.transcript) {
+      setResponse(`⚠️ ${transcriptData.error || 'Could not retrieve transcript.'}`);
+      setIsFetchingTranscript(false);
+      return;
+    }
+
+    setTranscriptReady(true);
+    setIsFetchingTranscript(false);
+    setIsLoading(true);
+
+    // Step 2: Auto-send to AI
+    const secretToken = localStorage.getItem('admin_bypass_key') || '';
+    const apiResponse = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-bypass': secretToken
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompts.summarize },
+          { role: 'user', content: `Summarize this YouTube video transcript:\n\n${transcriptData.transcript}` }
+        ]
+      })
+    });
+
+    const data = await apiResponse.json();
+    if (data.choices?.[0]) {
+      setResponse(data.choices[0].message.content);
+    }
+
+  } catch (error) {
+    setResponse("Failed to fetch transcript. Please try again.");
+    setIsFetchingTranscript(false);
+  } finally {
+    setIsLoading(false);
+    setIsFetchingTranscript(false);
+  }
+};
 
   const handleSend = async (overrideText = null) => {
     // 🔒 GATE 1: Block guests
@@ -323,21 +377,71 @@ Your current task: GENERATE AUDIO SCRIPT
   </div>
 )}
 
-        {/* YouTube Preview */}
-        {videoId && currentMode === 'summarize' && (
-          <div className="video-preview-wrapper" style={{ width: '100%', marginBottom: '1rem', padding: '0.5rem' }}>
-            <iframe
-              width="100%"
-              height="250"
-              src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-              title="YouTube video player"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}
-            ></iframe>
-          </div>
+        {/* YouTube Smart Preview */}
+{videoId && currentMode === 'summarize' && (
+  <div className="youtube-preview-section">
+    
+    {/* Thumbnail row — clickable to toggle player */}
+    <div 
+      className="youtube-thumb-row"
+      onClick={() => setShowVideoPreview(!showVideoPreview)}
+    >
+      <img
+        src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
+        alt="Video thumbnail"
+        className="youtube-thumb"
+      />
+      <div className="youtube-thumb-info">
+        <span className="youtube-thumb-label">YouTube Video Detected</span>
+        <span className="youtube-thumb-hint">
+          {showVideoPreview ? '▲ Hide player' : '▼ Click to preview'}
+        </span>
+      </div>
+
+      {/* Fetch Transcript Button */}
+      <button
+        className="fetch-transcript-btn"
+        onClick={(e) => {
+          e.stopPropagation(); // don't toggle preview
+          fetchAndSummarize();
+        }}
+        disabled={isFetchingTranscript || isLoading}
+      >
+        {isFetchingTranscript ? (
+          '📄 Fetching...'
+        ) : transcriptReady ? (
+          '✅ Done'
+        ) : (
+          '📄 Fetch Transcript'
         )}
+      </button>
+    </div>
+
+    {/* Collapsible Player */}
+    {showVideoPreview && (
+      <div className="youtube-player-wrapper">
+        <iframe
+          width="100%"
+          height="220"
+          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+          title="YouTube video player"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}
+        />
+      </div>
+    )}
+
+    {/* Status */}
+    {isFetchingTranscript && (
+      <div className="transcript-status">
+        📄 Fetching transcript from YouTube...
+      </div>
+    )}
+
+  </div>
+)}
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', width: '100%' }}>
 
