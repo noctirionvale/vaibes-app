@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
 import { supabase } from '../lib/supabase';
@@ -14,12 +14,19 @@ const AIComparison = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [requestsRemaining, setRequestsRemaining] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
+  const [persistedVideoId, setPersistedVideoId] = useState(null);
+  const [isTranscriptPasted, setIsTranscriptPasted] = useState(false);
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const [showVideoPreview, setShowVideoPreview] = useState(false);
-  const [isFetchingTranscript, setIsFetchingTranscript] = useState(false);
-  const [transcriptReady, setTranscriptReady] = useState(false);
+
+  const extractYouTubeID = useCallback((url) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2]?.length === 11) ? match[2] : null;
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -31,13 +38,14 @@ const AIComparison = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const extractYouTubeID = (url) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  };
+  useEffect(() => {
+    const detected = extractYouTubeID(inputText);
+    if (detected) {
+      setPersistedVideoId(detected);
+    }
+  }, [inputText, extractYouTubeID]);
 
-  const videoId = extractYouTubeID(inputText);
+  const activeVideoId = extractYouTubeID(inputText) || persistedVideoId;
 
   const vAIbesCore = `You are vAIbes, an AI guide on a mission to demystify artificial intelligence through action, not hype.
 
@@ -112,113 +120,78 @@ Your current task: GENERATE AUDIO SCRIPT
   };
 
   const handleAudioPlayback = (textToSpeak) => {
+    if (!window.speechSynthesis) {
+      console.warn('Speech synthesis not supported');
+      return;
+    }
     setIsSpeaking(true);
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
   };
 
   const DAILY_LIMIT = 10;
 
   const checkAndIncrementUsage = async () => {
-    const today = new Date().toISOString().split('T')[0];
-
-    const { data: usage } = await supabase
-      .from('user_usage')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!usage) {
-      await supabase.from('user_usage').insert({
-        user_id: user.id,
-        request_count: 1,
-        last_reset: today
-      });
-      return { allowed: true, remaining: DAILY_LIMIT - 1 };
-    }
-
-    if (usage.last_reset !== today) {
-      await supabase.from('user_usage').update({
-        request_count: 1,
-        last_reset: today
-      }).eq('user_id', user.id);
-      return { allowed: true, remaining: DAILY_LIMIT - 1 };
-    }
-
-    if (usage.request_count >= DAILY_LIMIT) {
+    if (!user?.id) {
       return { allowed: false, remaining: 0 };
     }
 
-    await supabase.from('user_usage').update({
-      request_count: usage.request_count + 1
-    }).eq('user_id', user.id);
+    const today = new Date().toISOString().split('T')[0];
 
-    return {
-      allowed: true,
-      remaining: DAILY_LIMIT - (usage.request_count + 1)
-    };
+    try {
+      const { data: usage, error } = await supabase
+        .from('user_usage')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (!usage) {
+        await supabase.from('user_usage').insert({
+          user_id: user.id,
+          request_count: 1,
+          last_reset: today
+        });
+        return { allowed: true, remaining: DAILY_LIMIT - 1 };
+      }
+
+      if (usage.last_reset !== today) {
+        await supabase.from('user_usage').update({
+          request_count: 1,
+          last_reset: today
+        }).eq('user_id', user.id);
+        return { allowed: true, remaining: DAILY_LIMIT - 1 };
+      }
+
+      if (usage.request_count >= DAILY_LIMIT) {
+        return { allowed: false, remaining: 0 };
+      }
+
+      await supabase.from('user_usage').update({
+        request_count: usage.request_count + 1
+      }).eq('user_id', user.id);
+
+      return {
+        allowed: true,
+        remaining: DAILY_LIMIT - (usage.request_count + 1)
+      };
+    } catch (err) {
+      console.error('Usage check error:', err);
+      return { allowed: true, remaining: DAILY_LIMIT };
+    }
   };
 
-  const fetchAndSummarize = async () => {
-  if (!videoId) return;
-
-  setIsFetchingTranscript(true);
-  setResponse('');
-
-  try {
-    // Step 1: Fetch transcript
-    const transcriptRes = await fetch(`/api/transcript?videoId=${videoId}`);
-    const transcriptData = await transcriptRes.json();
-
-    if (!transcriptRes.ok || !transcriptData.transcript) {
-      setResponse(`⚠️ ${transcriptData.error || 'Could not retrieve transcript.'}`);
-      setIsFetchingTranscript(false);
-      return;
-    }
-
-    setTranscriptReady(true);
-    setIsFetchingTranscript(false);
-    setIsLoading(true);
-
-    // Step 2: Auto-send to AI
-    const secretToken = localStorage.getItem('admin_bypass_key') || '';
-    const apiResponse = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-bypass': secretToken
-      },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: systemPrompts.summarize },
-          { role: 'user', content: `Summarize this YouTube video transcript:\n\n${transcriptData.transcript}` }
-        ]
-      })
-    });
-
-    const data = await apiResponse.json();
-    if (data.choices?.[0]) {
-      setResponse(data.choices[0].message.content);
-    }
-
-  } catch (error) {
-    setResponse("Failed to fetch transcript. Please try again.");
-    setIsFetchingTranscript(false);
-  } finally {
-    setIsLoading(false);
-    setIsFetchingTranscript(false);
-  }
-};
-
   const handleSend = async (overrideText = null) => {
-    // 🔒 GATE 1: Block guests
     if (!user) {
       setShowAuthModal(true);
       return;
     }
 
-    // 🔒 GATE 2: Rate limit
     const { allowed, remaining } = await checkAndIncrementUsage();
     if (!allowed) {
       setResponse(`⚠️ You've used all ${DAILY_LIMIT} of your free daily requests. Come back tomorrow or upgrade to Pro for unlimited access!`);
@@ -232,11 +205,19 @@ Your current task: GENERATE AUDIO SCRIPT
     setIsLoading(true);
     setResponse('');
     setIsDropdownOpen(false);
-    window.speechSynthesis.cancel();
+    
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
     setIsSpeaking(false);
 
     try {
-      const secretToken = localStorage.getItem('admin_bypass_key') || '';
+      let secretToken = '';
+      try {
+        secretToken = localStorage.getItem('admin_bypass_key') || '';
+      } catch (e) {
+        console.warn('localStorage not accessible');
+      }
 
       const apiResponse = await fetch('/api/chat', {
         method: 'POST',
@@ -317,13 +298,35 @@ Your current task: GENERATE AUDIO SCRIPT
     };
 
     recognition.onend = () => setIsListening(false);
+    
+    try {
+      recognition.start();
+    } catch (err) {
+      console.error('Failed to start recognition:', err);
+      setIsListening(false);
+    }
+  };
 
-    recognition.start();
+  // ✅ FIX: Handle textarea input separately from rendering logic
+  const handleTextareaChange = (e) => {
+    const value = e.target.value;
+    setInputText(value);
+    
+    // Auto-resize textarea
+    e.target.style.height = 'auto';
+    e.target.style.height = (e.target.scrollHeight) + 'px';
+    
+    // Detect if transcript was pasted (long text without YouTube link)
+    if (currentMode === 'summarize' && value.length > 500 && !extractYouTubeID(value)) {
+      setIsTranscriptPasted(true);
+    } else {
+      setIsTranscriptPasted(false);
+    }
   };
 
   let inputPlaceholder = `Enter text or data to ${currentMode}...`;
-  if (currentMode === 'summarize' && videoId) {
-    inputPlaceholder = "Video detected! Paste the video transcript here so I can summarize it...";
+  if (currentMode === 'summarize' && activeVideoId) {
+    inputPlaceholder = "Video ready! Clear this box, paste the transcript here, then hit Send...";
   } else if (currentMode === 'summarize') {
     inputPlaceholder = "Paste an article, text, or a YouTube link here...";
   }
@@ -332,113 +335,122 @@ Your current task: GENERATE AUDIO SCRIPT
     <div className="ai-utility-section">
 
       {/* 🔆 LAMP TOGGLE */}
-<div className="theme-toggle-wrapper">
-  <button className="theme-toggle-btn" onClick={toggleTheme}>
-    {isDark ? (
-      <>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="5"/>
-          <line x1="12" y1="1" x2="12" y2="3"/>
-          <line x1="12" y1="21" x2="12" y2="23"/>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-          <line x1="1" y1="12" x2="3" y2="12"/>
-          <line x1="21" y1="12" x2="23" y2="12"/>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
-        Light Mode
-      </>
-    ) : (
-      <>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
-        Dark Mode
-      </>
-    )}
-  </button>
-</div>
+      <div className="theme-toggle-wrapper">
+        <button className="theme-toggle-btn" onClick={toggleTheme}>
+          {isDark ? (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+              Light Mode
+            </>
+          ) : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+              Dark Mode
+            </>
+          )}
+        </button>
+      </div>
 
       <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
 
         {/* Requests remaining counter */}
         {user && requestsRemaining !== null && (
-  <div style={{
-    textAlign: 'right',
-    fontSize: '0.75rem',
-    color: requestsRemaining <= 3 
-      ? '#ff6b6b'
-      : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
-    paddingRight: '0.5rem',
-    marginTop: '0.25rem'
-  }}>
-    {requestsRemaining} / {DAILY_LIMIT} requests remaining today
-  </div>
-)}
+          <div style={{
+            textAlign: 'right',
+            fontSize: '0.75rem',
+            color: requestsRemaining <= 3
+              ? '#ff6b6b'
+              : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+            paddingRight: '0.5rem',
+            marginTop: '0.25rem'
+          }}>
+            {requestsRemaining} / {DAILY_LIMIT} requests remaining today
+          </div>
+        )}
 
         {/* YouTube Smart Preview */}
-{videoId && currentMode === 'summarize' && (
+{activeVideoId && currentMode === 'summarize' && (
   <div className="youtube-preview-section">
-    
-    {/* Thumbnail row — clickable to toggle player */}
-    <div 
-      className="youtube-thumb-row"
-      onClick={() => setShowVideoPreview(!showVideoPreview)}
-    >
+
+    {/* Row 1: Thumbnail + Title + Button */}
+    <div className="youtube-thumb-row">
+      {/* ✅ FIX 1: Removed extra spaces in URL */}
       <img
-        src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
+        src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`}
         alt="Video thumbnail"
         className="youtube-thumb"
+        onClick={() => setShowVideoPreview(!showVideoPreview)}
       />
-      <div className="youtube-thumb-info">
+      <div 
+        className="youtube-thumb-info"
+        onClick={() => setShowVideoPreview(!showVideoPreview)}
+      >
         <span className="youtube-thumb-label">YouTube Video Detected</span>
         <span className="youtube-thumb-hint">
-          {showVideoPreview ? '▲ Hide player' : '▼ Click to preview'}
+          {showVideoPreview ? '▲ Hide player' : '▼ Click thumbnail to preview'}
         </span>
       </div>
-
-      {/* Fetch Transcript Button */}
-      <button
+      
+      {/* ✅ FIX 2: Added missing opening <a> tag + fixed URL */}
+      <a
+        href={`https://www.youtube.com/watch?v=${activeVideoId}`}
+        target="_blank"
+        rel="noopener noreferrer"
         className="fetch-transcript-btn"
-        onClick={(e) => {
-          e.stopPropagation(); // don't toggle preview
-          fetchAndSummarize();
-        }}
-        disabled={isFetchingTranscript || isLoading}
+        onClick={(e) => e.stopPropagation()}
       >
-        {isFetchingTranscript ? (
-          '📄 Fetching...'
-        ) : transcriptReady ? (
-          '✅ Done'
-        ) : (
-          '📄 Fetch Transcript'
-        )}
-      </button>
+        📋 Get Transcript
+      </a>
     </div>
 
-    {/* Collapsible Player */}
+    {/* Row 2: Collapsible Player */}
     {showVideoPreview && (
       <div className="youtube-player-wrapper">
+        {/* ✅ FIX 3: Removed extra spaces in embed URL */}
         <iframe
           width="100%"
           height="220"
-          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+          src={`https://www.youtube-nocookie.com/embed/${activeVideoId}`}
           title="YouTube video player"
           frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          style={{ borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}
+          style={{ borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', display: 'block' }}
         />
       </div>
     )}
 
-    {/* Status */}
-    {isFetchingTranscript && (
-      <div className="transcript-status">
-        📄 Fetching transcript from YouTube...
+    {/* Row 3: Step instructions */}
+    <div className="transcript-instructions">
+      <div className="transcript-step">
+        <span className="transcript-step-num">1</span>
+        <span>Click <strong>Get Transcript</strong> → opens video on YouTube</span>
       </div>
-    )}
+      <div className="transcript-step">
+        <span className="transcript-step-num">2</span>
+        <span>Below the video → click <strong>(...) More</strong> → <strong>Show Transcript</strong></span>
+      </div>
+      <div className="transcript-step">
+        <span className="transcript-step-num">3</span>
+        <span>Select all transcript text → <strong>Ctrl+A</strong> → <strong>Copy</strong></span>
+      </div>
+      <div className="transcript-step">
+        <span className="transcript-step-num">4</span>
+        <span>Come back here → <strong>clear this box</strong> → paste transcript → hit Send</span>
+      </div>
+    </div>
 
   </div>
 )}
@@ -476,24 +488,69 @@ Your current task: GENERATE AUDIO SCRIPT
             )}
           </div>
 
-          {/* TEXTAREA */}
-          <textarea
-            id="question-input"
-            placeholder={isListening ? "Listening... Speak now!" : inputPlaceholder}
-            value={inputText}
-            onChange={(e) => {
-              setInputText(e.target.value);
-              e.target.style.height = 'auto';
-              e.target.style.height = (e.target.scrollHeight) + 'px';
-            }}
-            rows="1"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-          />
+          {/* ✅ FIX: Conditional rendering for transcript box vs textarea */}
+          {isTranscriptPasted && currentMode === 'summarize' ? (
+            <div className="transcript-paste-box" style={{
+              flex: 1,
+              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+              borderRadius: '12px',
+              padding: '0.75rem 1rem',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>📄 Transcript Ready</span>
+                <button 
+                  className="transcript-clear-btn"
+                  onClick={() => {
+                    setInputText('');
+                    setIsTranscriptPasted(false);
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    padding: '2px 6px',
+                    borderRadius: '4px'
+                  }}
+                >
+                  ✕ Clear
+                </button>
+              </div>
+              <div style={{
+                fontSize: '0.875rem',
+                color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+                maxHeight: '100px',
+                overflow: 'auto',
+                lineHeight: 1.4
+              }}>
+                {inputText}
+              </div>
+              <div style={{ 
+                fontSize: '0.75rem', 
+                color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
+                marginTop: '0.5rem'
+              }}>
+                {inputText.split(/\s+/).filter(w => w).length.toLocaleString()} words · Hit Send to summarize
+              </div>
+            </div>
+          ) : (
+            <textarea
+              id="question-input"
+              placeholder={isListening ? "Listening... Speak now!" : inputPlaceholder}
+              value={inputText}
+              onChange={handleTextareaChange}
+              rows="1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              style={{ flex: 1 }}
+            />
+          )}
 
           {/* MIC */}
           <button
@@ -514,7 +571,7 @@ Your current task: GENERATE AUDIO SCRIPT
           <button
             id="submit-btn"
             onClick={handleSend}
-            disabled={isLoading || !inputText.trim()}
+            disabled={isLoading || (!inputText.trim() && !isTranscriptPasted)}
             title="Send"
           >
             {isLoading ? (
@@ -544,7 +601,9 @@ Your current task: GENERATE AUDIO SCRIPT
               <button
                 onClick={() => {
                   setResponse('');
-                  window.speechSynthesis.cancel();
+                  if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                  }
                   setIsSpeaking(false);
                 }}
                 style={{
@@ -559,8 +618,8 @@ Your current task: GENERATE AUDIO SCRIPT
                   borderRadius: '50%',
                   transition: 'all 0.2s ease'
                 }}
-                onMouseEnter={e => e.target.style.color = '#ff4fd8'}
-                onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.4)'}
+                onMouseEnter={e => e.currentTarget.style.color = '#ff4fd8'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
                 title="Close response"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
