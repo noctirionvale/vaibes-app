@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { supabase } from './lib/supabase';
 import LeftSidebar from './components/LeftSidebar';
 import Sidebar from './components/Sidebar';
 import AIComparison from './components/AIComparison';
@@ -19,6 +20,15 @@ const allTools = [
 ];
 
 function App() {
+  useEffect(() => {
+    supabase.auth.getSession();
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((reg) => reg.unregister());
+      });
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <div className="main-wrapper">
