@@ -351,19 +351,49 @@ Your current task: GENERATE AUDIO SCRIPT
 
       {/* 2. OUTPUT DISPLAY SPILLS OUT BELOW IT */}
       {response && (
-        <div className="ai-response-card" style={{ marginTop: '2rem' }}>
-          <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="current-mode-badge">{modeLabels[currentMode]}</span>
-            
-            {currentMode === 'generateAudio' && isSpeaking && (
-              <span className="audio-playing-indicator">
-                <span className="playing-dot"></span> Playing Audio...
-              </span>
-            )}
-          </div>
-          <div className="ai-response-text">{response}</div>
-        </div>
-      )}
+  <div className="ai-response-card" style={{ marginTop: '2rem' }}>
+    <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span className="current-mode-badge">{modeLabels[currentMode]}</span>
+      
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {currentMode === 'generateAudio' && isSpeaking && (
+          <span className="audio-playing-indicator">
+            <span className="playing-dot"></span> Playing Audio...
+          </span>
+        )}
+        {/* ✕ Close button */}
+        <button
+          onClick={() => {
+            setResponse('');
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+          }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'rgba(255,255,255,0.4)',
+            cursor: 'pointer',
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => e.target.style.color = '#ff4fd8'}
+          onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.4)'}
+          title="Close response"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div className="ai-response-text">{response}</div>
+  </div>
+)}
 
       {/* 🔐 Auth Modal for guests */}
       {showAuthModal && (
