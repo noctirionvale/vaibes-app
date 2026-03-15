@@ -17,6 +17,7 @@ const AIComparison = () => {
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [persistedVideoId, setPersistedVideoId] = useState(null);
   const [isTranscriptPasted, setIsTranscriptPasted] = useState(false);
+  const [summarizeDone, setSummarizeDone] = useState(false); // ✅ Added state
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -141,7 +142,7 @@ Your current task: GENERATE AUDIO SCRIPT
     const today = new Date().toISOString().split('T')[0];
 
     try {
-      const { data: usage, error } = await supabase
+      const {  usage, error } = await supabase
         .from('user_usage')
         .select('*')
         .eq('user_id', user.id)
@@ -241,9 +242,18 @@ Your current task: GENERATE AUDIO SCRIPT
         return;
       }
 
+      // ✅ CHANGE 1: Added summarizeDone logic + audio playback
       if (data.choices && data.choices.length > 0) {
         const replyText = data.choices[0].message.content;
         setResponse(replyText);
+        
+        // Collapse everything after summarize
+        if (currentMode === 'summarize') {
+          setSummarizeDone(true);
+          setIsTranscriptPasted(false);
+          setShowVideoPreview(false);
+        }
+        
         if (currentMode === 'generateAudio') {
           handleAudioPlayback(replyText);
         }
@@ -307,10 +317,12 @@ Your current task: GENERATE AUDIO SCRIPT
     }
   };
 
-  // ✅ FIX: Handle textarea input separately from rendering logic
   const handleTextareaChange = (e) => {
     const value = e.target.value;
     setInputText(value);
+    
+    // ✅ CHANGE 2: Reset summarizeDone when user types
+    setSummarizeDone(false);
     
     // Auto-resize textarea
     e.target.style.height = 'auto';
@@ -380,80 +392,78 @@ Your current task: GENERATE AUDIO SCRIPT
           </div>
         )}
 
-        {/* YouTube Smart Preview */}
-{activeVideoId && currentMode === 'summarize' && (
-  <div className="youtube-preview-section">
+        {/* ✅ CHANGE 3: Hide YouTube preview when summarizeDone is true */}
+        {activeVideoId && currentMode === 'summarize' && !summarizeDone && (
+          <div className="youtube-preview-section">
 
-    {/* Row 1: Thumbnail + Title + Button */}
-    <div className="youtube-thumb-row">
-      {/* ✅ FIX 1: Removed extra spaces in URL */}
-      <img
-        src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`}
-        alt="Video thumbnail"
-        className="youtube-thumb"
-        onClick={() => setShowVideoPreview(!showVideoPreview)}
-      />
-      <div 
-        className="youtube-thumb-info"
-        onClick={() => setShowVideoPreview(!showVideoPreview)}
-      >
-        <span className="youtube-thumb-label">YouTube Video Detected</span>
-        <span className="youtube-thumb-hint">
-          {showVideoPreview ? '▲ Hide player' : '▼ Click thumbnail to preview'}
-        </span>
-      </div>
-      
-      {/* ✅ FIX 2: Added missing opening <a> tag + fixed URL */}
-      <a
-        href={`https://www.youtube.com/watch?v=${activeVideoId}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fetch-transcript-btn"
-        onClick={(e) => e.stopPropagation()}
-      >
-        📋 Get Transcript
-      </a>
-    </div>
+            {/* Row 1: Thumbnail + Title + Button */}
+            <div className="youtube-thumb-row">
+              {/* ✅ Also fixed: removed extra spaces in URLs */}
+              <img
+                src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`}
+                alt="Video thumbnail"
+                className="youtube-thumb"
+                onClick={() => setShowVideoPreview(!showVideoPreview)}
+              />
+              <div 
+                className="youtube-thumb-info"
+                onClick={() => setShowVideoPreview(!showVideoPreview)}
+              >
+                <span className="youtube-thumb-label">YouTube Video Detected</span>
+                <span className="youtube-thumb-hint">
+                  {showVideoPreview ? '▲ Hide player' : '▼ Click thumbnail to preview'}
+                </span>
+              </div>
+              
+              <a
+                href={`https://www.youtube.com/watch?v=${activeVideoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fetch-transcript-btn"
+                onClick={(e) => e.stopPropagation()}
+              >
+                📋 Get Transcript
+              </a>
+            </div>
 
-    {/* Row 2: Collapsible Player */}
-    {showVideoPreview && (
-      <div className="youtube-player-wrapper">
-        {/* ✅ FIX 3: Removed extra spaces in embed URL */}
-        <iframe
-          width="100%"
-          height="220"
-          src={`https://www.youtube-nocookie.com/embed/${activeVideoId}`}
-          title="YouTube video player"
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          style={{ borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', display: 'block' }}
-        />
-      </div>
-    )}
+            {/* Row 2: Collapsible Player */}
+            {showVideoPreview && (
+              <div className="youtube-player-wrapper">
+                <iframe
+                  width="100%"
+                  height="220"
+                  src={`https://www.youtube-nocookie.com/embed/${activeVideoId}`}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', display: 'block' }}
+                />
+              </div>
+            )}
 
-    {/* Row 3: Step instructions */}
-    <div className="transcript-instructions">
-      <div className="transcript-step">
-        <span className="transcript-step-num">1</span>
-        <span>Click <strong>Get Transcript</strong> → opens video on YouTube</span>
-      </div>
-      <div className="transcript-step">
-        <span className="transcript-step-num">2</span>
-        <span>Below the video → click <strong>(...) More</strong> → <strong>Show Transcript</strong></span>
-      </div>
-      <div className="transcript-step">
-        <span className="transcript-step-num">3</span>
-        <span>Select all transcript text → <strong>Ctrl+A</strong> → <strong>Copy</strong></span>
-      </div>
-      <div className="transcript-step">
-        <span className="transcript-step-num">4</span>
-        <span>Come back here → <strong>clear this box</strong> → paste transcript → hit Send</span>
-      </div>
-    </div>
+            {/* Row 3: Step instructions */}
+            <div className="transcript-instructions">
+              <div className="transcript-step">
+                <span className="transcript-step-num">1</span>
+                <span>Click <strong>Get Transcript</strong> → opens video on YouTube</span>
+              </div>
+              <div className="transcript-step">
+                <span className="transcript-step-num">2</span>
+                <span>Below the video → click <strong>(...) More</strong> → <strong>Show Transcript</strong></span>
+              </div>
+              <div className="transcript-step">
+                <span className="transcript-step-num">3</span>
+                <span>Select all transcript text → <strong>Ctrl+A</strong> → <strong>Copy</strong></span>
+              </div>
+              <div className="transcript-step">
+                <span className="transcript-step-num">4</span>
+                <span>Come back here → <strong>clear this box</strong> → paste transcript → hit Send</span>
+              </div>
+            </div>
 
-  </div>
-)}
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', width: '100%' }}>
 
@@ -488,7 +498,7 @@ Your current task: GENERATE AUDIO SCRIPT
             )}
           </div>
 
-          {/* ✅ FIX: Conditional rendering for transcript box vs textarea */}
+          {/* Conditional rendering for transcript box vs textarea */}
           {isTranscriptPasted && currentMode === 'summarize' ? (
             <div className="transcript-paste-box" style={{
               flex: 1,
@@ -587,9 +597,12 @@ Your current task: GENERATE AUDIO SCRIPT
         </div>
       </div>
 
-      {/* RESPONSE CARD */}
+      {/* ✅ CHANGE 4: Added position: relative + zIndex to fix scrolling/layering issue */}
       {response && (
-        <div className="ai-response-card" style={{ marginTop: '2rem' }}>
+        <div 
+          className="ai-response-card" 
+          style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}
+        >
           <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="current-mode-badge">{modeLabels[currentMode]}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -598,9 +611,12 @@ Your current task: GENERATE AUDIO SCRIPT
                   <span className="playing-dot"></span> Playing Audio...
                 </span>
               )}
+              {/* ✅ CHANGE 5: Added setSummarizeDone(false) + setPersistedVideoId(null) to close button */}
               <button
                 onClick={() => {
                   setResponse('');
+                  setSummarizeDone(false);
+                  setPersistedVideoId(null);
                   if (window.speechSynthesis) {
                     window.speechSynthesis.cancel();
                   }

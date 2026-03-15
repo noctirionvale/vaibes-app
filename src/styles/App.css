@@ -2639,3 +2639,13 @@ body.light-mode .transcript-paste-footer {
 body.light-mode .transcript-paste-content {
   color: #444444;
 }
+
+.ai-utility-section {
+  max-width: 800px;
+  margin: 0 auto 4rem auto;
+  padding-bottom: 3rem; /* ✅ Ensures space for response card */
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
