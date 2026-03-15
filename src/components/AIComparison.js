@@ -1,22 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
+import { supabase } from '../lib/supabase';
 
 const AIComparison = () => {
   const [inputText, setInputText] = useState('');
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isListening, setIsListening] = useState(false); // Our Mic state
+  const [isListening, setIsListening] = useState(false);
   const [currentMode, setCurrentMode] = useState('explain');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  // 🔐 Auth state
-  const { user } = useAuth();
+  const [requestsRemaining, setRequestsRemaining] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const dropdownRef = useRef(null);
+  const { user } = useAuth();
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -27,7 +26,6 @@ const AIComparison = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Helper to extract YouTube ID
   const extractYouTubeID = (url) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -36,7 +34,6 @@ const AIComparison = () => {
 
   const videoId = extractYouTubeID(inputText);
 
-  // THE BRAINS
   const vAIbesCore = `You are vAIbes, an AI guide on a mission to demystify artificial intelligence through action, not hype.
 
 Who you are:
@@ -50,8 +47,8 @@ Who you are:
 
 Your mission: Make AI make sense to real people.`;
 
-const systemPrompts = {
-  explain: `${vAIbesCore}
+  const systemPrompts = {
+    explain: `${vAIbesCore}
 
 Your current task: EXPLAIN
 - Break down the concept clearly and simply
@@ -59,7 +56,7 @@ Your current task: EXPLAIN
 - Check your explanation makes sense end-to-end
 - End with one sentence that ties it all together`,
 
-  summarize: `${vAIbesCore}
+    summarize: `${vAIbesCore}
 
 Your current task: SUMMARIZE
 - Extract only the most important points
@@ -67,7 +64,7 @@ Your current task: SUMMARIZE
 - Structure it so someone who hasn't read the original immediately gets it
 - Keep it tight and scannable`,
 
-  describe: `${vAIbesCore}
+    describe: `${vAIbesCore}
 
 Your current task: DESCRIBE
 - Paint a vivid, structured picture with words
@@ -75,7 +72,7 @@ Your current task: DESCRIBE
 - Organize your description logically (big picture first, then details)
 - Make the reader feel like they can see it`,
 
-  analyze: `${vAIbesCore}
+    analyze: `${vAIbesCore}
 
 Your current task: ANALYZE
 - Look for patterns, contradictions, and hidden insights
@@ -83,7 +80,7 @@ Your current task: ANALYZE
 - Point out what's strong, what's weak, what's missing
 - Be direct about your findings, even if uncomfortable`,
 
-  generateDesc: `${vAIbesCore}
+    generateDesc: `${vAIbesCore}
 
 Your current task: GENERATE DESCRIPTION
 - Write compelling, professional copy
@@ -91,14 +88,14 @@ Your current task: GENERATE DESCRIPTION
 - Be specific — vague descriptions don't sell
 - Make it feel human, not like a robot wrote it`,
 
-  generateAudio: `${vAIbesCore}
+    generateAudio: `${vAIbesCore}
 
 Your current task: GENERATE AUDIO SCRIPT
 - Write naturally spoken words only
 - No markdown, no bullet points, no headers
 - Use rhythm and flow — this will be read aloud
 - Sound like a real person having a conversation, not presenting a report`
-};
+  };
 
   const modeLabels = {
     explain: "Explain Concept",
@@ -116,23 +113,70 @@ Your current task: GENERATE AUDIO SCRIPT
     window.speechSynthesis.speak(utterance);
   };
 
-  // THE SEND LOGIC
+  const DAILY_LIMIT = 10;
+
+  const checkAndIncrementUsage = async () => {
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data: usage } = await supabase
+      .from('user_usage')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!usage) {
+      await supabase.from('user_usage').insert({
+        user_id: user.id,
+        request_count: 1,
+        last_reset: today
+      });
+      return { allowed: true, remaining: DAILY_LIMIT - 1 };
+    }
+
+    if (usage.last_reset !== today) {
+      await supabase.from('user_usage').update({
+        request_count: 1,
+        last_reset: today
+      }).eq('user_id', user.id);
+      return { allowed: true, remaining: DAILY_LIMIT - 1 };
+    }
+
+    if (usage.request_count >= DAILY_LIMIT) {
+      return { allowed: false, remaining: 0 };
+    }
+
+    await supabase.from('user_usage').update({
+      request_count: usage.request_count + 1
+    }).eq('user_id', user.id);
+
+    return {
+      allowed: true,
+      remaining: DAILY_LIMIT - (usage.request_count + 1)
+    };
+  };
+
   const handleSend = async (overrideText = null) => {
-    // 🔒 GATE: Block guests
+    // 🔒 GATE 1: Block guests
     if (!user) {
       setShowAuthModal(true);
       return;
     }
 
-    // If the mic passes text directly, use that. Otherwise, use what's in the text box.
-    const textToSend = typeof overrideText === 'string' ? overrideText : inputText; 
-    
+    // 🔒 GATE 2: Rate limit
+    const { allowed, remaining } = await checkAndIncrementUsage();
+    if (!allowed) {
+      setResponse(`⚠️ You've used all ${DAILY_LIMIT} of your free daily requests. Come back tomorrow or upgrade to Pro for unlimited access!`);
+      return;
+    }
+    setRequestsRemaining(remaining);
+
+    const textToSend = typeof overrideText === 'string' ? overrideText : inputText;
     if (!textToSend.trim()) return;
-    
+
     setIsLoading(true);
     setResponse('');
     setIsDropdownOpen(false);
-    window.speechSynthesis.cancel(); 
+    window.speechSynthesis.cancel();
     setIsSpeaking(false);
 
     try {
@@ -142,18 +186,18 @@ Your current task: GENERATE AUDIO SCRIPT
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-bypass': secretToken 
+          'x-admin-bypass': secretToken
         },
         body: JSON.stringify({
           messages: [
             { role: 'system', content: systemPrompts[currentMode] },
-            { role: 'user', content: textToSend } 
+            { role: 'user', content: textToSend }
           ]
         })
       });
 
       const data = await apiResponse.json();
-      
+
       if (apiResponse.status === 429) {
         setResponse(`⚠️ ${data.error}`);
         setIsLoading(false);
@@ -163,7 +207,6 @@ Your current task: GENERATE AUDIO SCRIPT
       if (data.choices && data.choices.length > 0) {
         const replyText = data.choices[0].message.content;
         setResponse(replyText);
-        
         if (currentMode === 'generateAudio') {
           handleAudioPlayback(replyText);
         }
@@ -178,10 +221,9 @@ Your current task: GENERATE AUDIO SCRIPT
     }
   };
 
-  // THE SMART MIC LOGIC
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
+
     if (!SpeechRecognition) {
       alert("Ah! Your browser doesn't support voice input yet. Try using Chrome or Edge!");
       return;
@@ -191,18 +233,14 @@ Your current task: GENERATE AUDIO SCRIPT
     recognition.continuous = false;
     recognition.interimResults = false;
 
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
+    recognition.onstart = () => setIsListening(true);
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       let finalTranscript = transcript;
       let shouldAutoSend = false;
 
-      // Check if they said "send it"
       const triggerMatch = transcript.match(/\b(send it|send)\.?$/i);
-
       if (triggerMatch) {
         shouldAutoSend = true;
         finalTranscript = transcript.replace(/\b(send it|send)\.?$/i, '').trim();
@@ -210,11 +248,9 @@ Your current task: GENERATE AUDIO SCRIPT
 
       setInputText((prevText) => {
         const combinedText = prevText ? prevText + ' ' + finalTranscript : finalTranscript;
-        
         if (shouldAutoSend) {
-          setTimeout(() => handleSend(combinedText), 100); 
+          setTimeout(() => handleSend(combinedText), 100);
         }
-        
         return combinedText;
       });
     };
@@ -224,14 +260,11 @@ Your current task: GENERATE AUDIO SCRIPT
       setIsListening(false);
     };
 
-    recognition.onend = () => {
-      setIsListening(false);
-    };
+    recognition.onend = () => setIsListening(false);
 
     recognition.start();
   };
 
-  // Dynamic Placeholder Logic
   let inputPlaceholder = `Enter text or data to ${currentMode}...`;
   if (currentMode === 'summarize' && videoId) {
     inputPlaceholder = "Video detected! Paste the video transcript here so I can summarize it...";
@@ -241,14 +274,25 @@ Your current task: GENERATE AUDIO SCRIPT
 
   return (
     <div className="ai-utility-section">
-      
-      {/* 1. CHAT INPUT AT THE TOP & MADE STICKY */}
+
       <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-        
-        {/* The Video Preview Player */}
+
+        {/* Requests remaining counter */}
+        {user && requestsRemaining !== null && (
+          <div style={{
+            textAlign: 'right',
+            fontSize: '0.75rem',
+            color: requestsRemaining <= 3 ? '#ff6b6b' : 'rgba(255,255,255,0.3)',
+            paddingRight: '0.5rem',
+            marginTop: '0.25rem'
+          }}>
+            {requestsRemaining} / {DAILY_LIMIT} requests remaining today
+          </div>
+        )}
+
+        {/* YouTube Preview */}
         {videoId && currentMode === 'summarize' && (
           <div className="video-preview-wrapper" style={{ width: '100%', marginBottom: '1rem', padding: '0.5rem' }}>
-            {/* ✨ THE FIX: Using YouTube's no-cookie domain safely outside the tag! */}
             <iframe
               width="100%"
               height="250"
@@ -263,11 +307,11 @@ Your current task: GENERATE AUDIO SCRIPT
         )}
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', width: '100%' }}>
-          
-          {/* THE DROPDOWN MENU */}
+
+          {/* DROPDOWN */}
           <div className="mode-selector-wrapper" ref={dropdownRef}>
-            <button 
-              className="plus-icon-btn" 
+            <button
+              className="plus-icon-btn"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               title="Switch Mode"
             >
@@ -280,8 +324,8 @@ Your current task: GENERATE AUDIO SCRIPT
             {isDropdownOpen && (
               <div className="mode-dropdown-menu">
                 {Object.keys(modeLabels).map((modeKey) => (
-                  <div 
-                    key={modeKey} 
+                  <div
+                    key={modeKey}
                     className={`dropdown-item ${currentMode === modeKey ? 'active' : ''}`}
                     onClick={() => {
                       setCurrentMode(modeKey);
@@ -295,9 +339,9 @@ Your current task: GENERATE AUDIO SCRIPT
             )}
           </div>
 
-          {/* THE TEXTAREA (Fully Restored Logic) */}
-          <textarea 
-            id="question-input" 
+          {/* TEXTAREA */}
+          <textarea
+            id="question-input"
             placeholder={isListening ? "Listening... Speak now!" : inputPlaceholder}
             value={inputText}
             onChange={(e) => {
@@ -314,8 +358,8 @@ Your current task: GENERATE AUDIO SCRIPT
             }}
           />
 
-          {/* THE MIC BUTTON */}
-          <button 
+          {/* MIC */}
+          <button
             className={`mic-btn ${isListening ? 'listening-pulse' : ''}`}
             onClick={startListening}
             disabled={isLoading}
@@ -329,15 +373,15 @@ Your current task: GENERATE AUDIO SCRIPT
             </svg>
           </button>
 
-          {/* THE SUBMIT BUTTON */}
-          <button 
-            id="submit-btn" 
-            onClick={handleSend} 
+          {/* SEND */}
+          <button
+            id="submit-btn"
+            onClick={handleSend}
             disabled={isLoading || !inputText.trim()}
             title="Send"
           >
             {isLoading ? (
-               <span className="loading-dots">...</span>
+              <span className="loading-dots">...</span>
             ) : (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -349,56 +393,55 @@ Your current task: GENERATE AUDIO SCRIPT
         </div>
       </div>
 
-      {/* 2. OUTPUT DISPLAY SPILLS OUT BELOW IT */}
+      {/* RESPONSE CARD */}
       {response && (
-  <div className="ai-response-card" style={{ marginTop: '2rem' }}>
-    <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span className="current-mode-badge">{modeLabels[currentMode]}</span>
-      
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        {currentMode === 'generateAudio' && isSpeaking && (
-          <span className="audio-playing-indicator">
-            <span className="playing-dot"></span> Playing Audio...
-          </span>
-        )}
-        {/* ✕ Close button */}
-        <button
-          onClick={() => {
-            setResponse('');
-            window.speechSynthesis.cancel();
-            setIsSpeaking(false);
-          }}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'rgba(255,255,255,0.4)',
-            cursor: 'pointer',
-            padding: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={e => e.target.style.color = '#ff4fd8'}
-          onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.4)'}
-          title="Close response"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-    </div>
-    <div className="ai-response-text">{response}</div>
-  </div>
-)}
+        <div className="ai-response-card" style={{ marginTop: '2rem' }}>
+          <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="current-mode-badge">{modeLabels[currentMode]}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {currentMode === 'generateAudio' && isSpeaking && (
+                <span className="audio-playing-indicator">
+                  <span className="playing-dot"></span> Playing Audio...
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setResponse('');
+                  window.speechSynthesis.cancel();
+                  setIsSpeaking(false);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'rgba(255,255,255,0.4)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => e.target.style.color = '#ff4fd8'}
+                onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.4)'}
+                title="Close response"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="ai-response-text">{response}</div>
+        </div>
+      )}
 
-      {/* 🔐 Auth Modal for guests */}
+      {/* AUTH MODAL */}
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
+
     </div>
   );
 };
