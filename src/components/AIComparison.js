@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
 import { supabase } from '../lib/supabase';
+import { useTheme } from '../context/ThemeContext';
 
 const AIComparison = () => {
   const [inputText, setInputText] = useState('');
@@ -15,6 +16,7 @@ const AIComparison = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const dropdownRef = useRef(null);
   const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -275,20 +277,51 @@ Your current task: GENERATE AUDIO SCRIPT
   return (
     <div className="ai-utility-section">
 
+      {/* 🔆 LAMP TOGGLE */}
+<div className="theme-toggle-wrapper">
+  <button className="theme-toggle-btn" onClick={toggleTheme}>
+    {isDark ? (
+      <>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        Light Mode
+      </>
+    ) : (
+      <>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        Dark Mode
+      </>
+    )}
+  </button>
+</div>
+
       <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
 
         {/* Requests remaining counter */}
         {user && requestsRemaining !== null && (
-          <div style={{
-            textAlign: 'right',
-            fontSize: '0.75rem',
-            color: requestsRemaining <= 3 ? '#ff6b6b' : 'rgba(255,255,255,0.3)',
-            paddingRight: '0.5rem',
-            marginTop: '0.25rem'
-          }}>
-            {requestsRemaining} / {DAILY_LIMIT} requests remaining today
-          </div>
-        )}
+  <div style={{
+    textAlign: 'right',
+    fontSize: '0.75rem',
+    color: requestsRemaining <= 3 
+      ? '#ff6b6b'
+      : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+    paddingRight: '0.5rem',
+    marginTop: '0.25rem'
+  }}>
+    {requestsRemaining} / {DAILY_LIMIT} requests remaining today
+  </div>
+)}
 
         {/* YouTube Preview */}
         {videoId && currentMode === 'summarize' && (

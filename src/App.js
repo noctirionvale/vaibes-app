@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { supabase } from './lib/supabase';
 import LeftSidebar from './components/LeftSidebar';
 import Sidebar from './components/Sidebar';
@@ -30,17 +31,19 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <div className="main-wrapper">
-        <LeftSidebar />
-        <main className="content-center">
-          <div className="chatbox-wrapper">
-            <AIComparison />
-          </div>
-        </main>
-        <Sidebar items={allTools} title="AI Models & Sources" />
-      </div>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <div className="main-wrapper">
+          <LeftSidebar />
+          <main className="content-center">
+            <div className="chatbox-wrapper">
+              <AIComparison />
+            </div>
+          </main>
+          <Sidebar items={allTools} title="AI Models & Sources" />
+        </div>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

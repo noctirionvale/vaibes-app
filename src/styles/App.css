@@ -1981,3 +1981,419 @@ body::after {
   border-color: var(--accent2);
   box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
 }
+
+/* ========== DARK / LIGHT MODE ========== */
+
+body.light-mode {
+  --bg: #f5f5fa;
+  --text: #111111;
+  --muted: #555555;
+  --sidebar-bg: rgba(235, 235, 245, 0.97);
+  background: #f5f5fa;
+  color: #111111;
+}
+
+/* Kill the dark background gradients */
+body.light-mode::before {
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(106, 92, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 229, 255, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 79, 216, 0.04) 0%, transparent 60%),
+    linear-gradient(135deg, rgba(245, 245, 250, 0.98) 0%, rgba(240, 240, 248, 0.95) 100%);
+}
+
+/* Kill the dark grid */
+body.light-mode::after {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  opacity: 0.5;
+}
+
+/* ---- SIDEBARS ---- */
+body.light-mode .brand-sidebar,
+body.light-mode .drawer-sidebar {
+  background: linear-gradient(
+    180deg,
+    rgba(225, 225, 240, 0.98) 0%,
+    rgba(220, 220, 238, 0.97) 100%
+  );
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .drawer-header h3 {
+  background: linear-gradient(135deg, var(--accent1) 0%, #333333 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .drawer-item {
+  color: #222222;
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .drawer-item:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(106, 92, 255, 0.3);
+  color: #111111;
+}
+
+/* ---- CHATBOX ---- */
+body.light-mode .chat-input-container {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+body.light-mode .chat-input-container:focus-within {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: var(--accent1);
+  box-shadow: 0 0 20px rgba(106, 92, 255, 0.15);
+}
+
+body.light-mode .sticky-chatbox {
+  background: rgba(240, 240, 250, 0.92);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode #question-input {
+  color: #111111;
+}
+
+body.light-mode #question-input::placeholder {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+/* ---- DROPDOWN ---- */
+body.light-mode .mode-dropdown-menu {
+  background: rgba(248, 248, 255, 0.99);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode .dropdown-item {
+  color: #222222;
+}
+
+body.light-mode .dropdown-item:hover {
+  background: rgba(106, 92, 255, 0.06);
+  color: var(--accent1);
+}
+
+body.light-mode .dropdown-item.active {
+  background: linear-gradient(135deg, rgba(106, 92, 255, 0.1), rgba(0, 229, 255, 0.1));
+  color: var(--accent1);
+  border-left-color: var(--accent1);
+}
+
+/* ---- RESPONSE CARD ---- */
+body.light-mode .ai-response-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+body.light-mode .ai-response-text {
+  color: #222222;
+}
+
+body.light-mode .current-mode-badge {
+  background: rgba(106, 92, 255, 0.1);
+  border-color: rgba(106, 92, 255, 0.3);
+  color: var(--accent1);
+}
+
+/* ---- BUTTONS ---- */
+body.light-mode .plus-icon-btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: #555555;
+}
+
+body.light-mode .plus-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--accent1);
+}
+
+body.light-mode .mic-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #555555;
+}
+
+body.light-mode .mic-btn:hover {
+  background: rgba(255, 79, 216, 0.1);
+  color: var(--accent3);
+  border-color: rgba(255, 79, 216, 0.3);
+}
+
+/* ---- SIDEBAR BRAND TEXT ---- */
+body.light-mode .sidebar-sub .sub-headline-line2 {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+body.light-mode .main-headline {
+  color: #111111;
+}
+
+body.light-mode .user-display-name {
+  color: #444444;
+}
+
+body.light-mode .sign-out-btn {
+  background: rgba(255, 75, 75, 0.08);
+  border-color: rgba(255, 75, 75, 0.2);
+}
+
+/* ---- MODAL ---- */
+body.light-mode .modal-content,
+body.light-mode .auth-modal-content {
+  background: linear-gradient(145deg, rgba(245, 245, 255, 0.99) 0%, rgba(240, 240, 252, 0.99) 100%);
+  border-color: rgba(106, 92, 255, 0.2);
+}
+
+body.light-mode .modal-content h3 {
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body.light-mode .modal-intro,
+body.light-mode .instruction-step p {
+  color: #555555;
+}
+
+body.light-mode .instruction-step h4 {
+  color: #111111;
+}
+
+body.light-mode .step-number {
+  background: rgba(106, 92, 255, 0.1);
+  border-color: rgba(106, 92, 255, 0.3);
+  color: var(--accent1);
+}
+
+body.light-mode .auth-input {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #111111;
+}
+
+body.light-mode .auth-input:focus {
+  border-color: var(--accent1);
+  box-shadow: 0 0 15px rgba(106, 92, 255, 0.15);
+}
+
+body.light-mode .oauth-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #222222;
+}
+
+body.light-mode .oauth-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .auth-divider {
+  color: #999999;
+}
+
+body.light-mode .auth-divider::before,
+body.light-mode .auth-divider::after {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .auth-toggle {
+  color: #666666;
+}
+
+/* ---- PROFILE PANEL ---- */
+body.light-mode .profile-panel-wrapper {
+  background: linear-gradient(145deg, rgba(240, 240, 252, 0.99) 0%, rgba(235, 235, 250, 1) 100%);
+  border-color: rgba(106, 92, 255, 0.15);
+}
+
+body.light-mode .profile-field label {
+  color: var(--accent1);
+}
+
+body.light-mode .field-hint,
+body.light-mode .profile-avatar-hint {
+  color: #888888;
+}
+
+/* ---- THEME TOGGLE BUTTON ---- */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  padding: 0.4rem 0.85rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.03em;
+  font-family: 'Inter', sans-serif;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--accent2);
+  color: var(--accent2);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
+}
+
+body.light-mode .theme-toggle-btn {
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #666666;
+}
+
+body.light-mode .theme-toggle-btn:hover {
+  border-color: var(--accent1);
+  color: var(--accent1);
+  box-shadow: 0 0 12px rgba(106, 92, 255, 0.15);
+}
+
+.theme-toggle-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ---- FOOTER ---- */
+body.light-mode .footer-section {
+  background: rgba(220, 220, 235, 0.9);
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .footer-links a {
+  color: #555555;
+}
+
+body.light-mode .footer-links a:hover {
+  color: var(--accent1);
+}
+
+body.light-mode .footer-text {
+  color: #666666;
+}
+
+/* Stronger text contrast in light mode */
+body.light-mode {
+  --bg: #f0f0f7;
+  --text: #0d0d0d;
+  --muted: #444444;
+  --sidebar-bg: rgba(228, 228, 242, 0.97);
+  background: #f0f0f7;
+  color: #0d0d0d;
+}
+
+/* Darker chatbox border */
+body.light-mode .chat-input-container {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .sticky-chatbox {
+  background: rgba(238, 238, 250, 0.95);
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Darker placeholder */
+body.light-mode #question-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* Theme toggle button — more visible */
+body.light-mode .theme-toggle-btn {
+  border-color: rgba(0, 0, 0, 0.25);
+  color: #333333;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+body.light-mode .theme-toggle-btn:hover {
+  border-color: var(--accent1);
+  color: var(--accent1);
+  background: rgba(106, 92, 255, 0.06);
+  box-shadow: 0 0 12px rgba(106, 92, 255, 0.15);
+}
+
+/* Tagline text — darker */
+body.light-mode .main-headline {
+  color: #0d0d0d;
+  text-shadow: none;
+}
+
+body.light-mode .sub-headline-line2 {
+  color: rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Right sidebar header */
+body.light-mode .drawer-header h3 {
+  background: linear-gradient(135deg, var(--accent1) 0%, #1a1a2e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  border-bottom-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Right sidebar tool buttons */
+body.light-mode .drawer-item {
+  color: #1a1a1a;
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(0, 0, 0, 0.12);
+  font-weight: 500;
+}
+
+body.light-mode .drawer-item:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(106, 92, 255, 0.35);
+  color: #0d0d0d;
+  transform: translateX(-3px);
+}
+
+/* Sidebar brand text */
+body.light-mode .user-display-name {
+  color: #333333;
+  font-weight: 500;
+}
+
+/* Plus and mic buttons */
+body.light-mode .plus-icon-btn {
+  background: rgba(0, 0, 0, 0.07);
+  color: #444444;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .plus-icon-btn:hover {
+  background: rgba(106, 92, 255, 0.1);
+  color: var(--accent1);
+  border-color: rgba(106, 92, 255, 0.3);
+}
+
+body.light-mode .mic-btn {
+  background: rgba(0, 0, 0, 0.07);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #444444;
+}
+
+/* Response card */
+body.light-mode .ai-response-card {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .ai-response-text {
+  color: #1a1a1a;
+}
