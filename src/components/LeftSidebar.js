@@ -1,37 +1,54 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
+import ProfilePanel from './ProfilePanel';
 
 const LeftSidebar = () => {
   const { user, signOut } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const avatarUrl = user?.user_metadata?.avatar_url;
-  const displayName = user?.user_metadata?.full_name 
-    || user?.user_metadata?.name 
+  const displayName = user?.user_metadata?.full_name
+    || user?.user_metadata?.name
     || user?.email?.split('@')[0];
 
   return (
     <>
-      <aside className="brand-sidebar">
+      {/* Profile Panel Overlay */}
+      {isProfileOpen && (
+        <div 
+          className="profile-overlay" 
+          onClick={() => setIsProfileOpen(false)} 
+        />
+      )}
 
-        {/* TOP ZONE: Auth / Profile */}
+      <aside className={`brand-sidebar ${isProfileOpen ? 'sidebar-pushed' : ''}`}>
+
+        {/* TOP ZONE */}
         <div className="sidebar-top-zone">
           {user ? (
             <div className="user-profile-btn">
-              {avatarUrl 
-                ? <img src={avatarUrl} alt="avatar" className="user-avatar" />
-                : <div className="user-avatar-placeholder">
-                    {displayName?.charAt(0).toUpperCase()}
-                  </div>
-              }
+              {/* Clickable avatar opens profile panel */}
+              <div 
+                className="user-avatar-wrapper"
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                title="Edit profile"
+              >
+                {avatarUrl
+                  ? <img src={avatarUrl} alt="avatar" className="user-avatar" />
+                  : <div className="user-avatar-placeholder">
+                      {displayName?.charAt(0).toUpperCase()}
+                    </div>
+                }
+              </div>
               <span className="user-display-name">{displayName}</span>
               <button className="sign-out-btn" onClick={signOut}>Sign Out</button>
             </div>
           ) : (
-            <button 
-              className="login-btn sidebar-login-btn" 
+            <button
+              className="login-btn sidebar-login-btn"
               onClick={() => setIsAuthModalOpen(true)}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -43,27 +60,40 @@ const LeftSidebar = () => {
           )}
         </div>
 
-        {/* MIDDLE ZONE */}
-        <div className="sidebar-middle-zone">
-          <div className="brand-visual">
-            <img src="hero.ai.png" alt="vAIbes Logo" className="sidebar-logo" />
+        {/* Profile Panel — slides in pushing sidebar */}
+        {isProfileOpen && (
+          <div className="profile-panel-wrapper">
+            <ProfilePanel onClose={() => setIsProfileOpen(false)} />
           </div>
-          <div className="brand-text-wrapper">
-            <div className="site-title sidebar-title">vAIbes</div>
-            <div className="main-headline sidebar-headline">Demystify AI</div>
-            <div className="sub-headline sidebar-sub">
-              <span className="sub-headline-line1">Through Action,</span>
-              <span className="sub-headline-line2">Not Hype.</span>
-            </div>
-          </div>
-        </div>
+        )}
 
-        {/* BOTTOM ZONE */}
-        <div className="sidebar-bottom-zone">
-          <button className="read-more-btn sidebar-how-to-btn" onClick={() => setIsModalOpen(true)}>
-            How To Use vAIbes Tools
-          </button>
-        </div>
+        {/* MIDDLE ZONE — hidden when profile open */}
+        {!isProfileOpen && (
+          <>
+            <div className="sidebar-middle-zone">
+              <div className="brand-visual">
+                <img src="hero.ai.png" alt="vAIbes Logo" className="sidebar-logo" />
+              </div>
+              <div className="brand-text-wrapper">
+                <div className="site-title sidebar-title">vAIbes</div>
+                <div className="main-headline sidebar-headline">Demystify AI</div>
+                <div className="sub-headline sidebar-sub">
+                  <span className="sub-headline-line1">Through Action,</span>
+                  <span className="sub-headline-line2">Not Hype.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="sidebar-bottom-zone">
+              <button
+                className="read-more-btn sidebar-how-to-btn"
+                onClick={() => setIsModalOpen(true)}
+              >
+                How To Use vAIbes Tools
+              </button>
+            </div>
+          </>
+        )}
 
       </aside>
 
