@@ -487,9 +487,16 @@ Your current task: GENERATE AUDIO SCRIPT
                     key={modeKey}
                     className={`dropdown-item ${currentMode === modeKey ? 'active' : ''}`}
                     onClick={() => {
-                      setCurrentMode(modeKey);
-                      setIsDropdownOpen(false);
-                    }}
+  setCurrentMode(modeKey);
+  setIsDropdownOpen(false);
+  // Reset all transcript/video state on mode switch
+  setIsTranscriptPasted(false);
+  setSummarizeDone(false);
+  setPersistedVideoId(null);
+  setShowVideoPreview(false);
+  setInputText('');
+  setResponse('');
+}}
                   >
                     {modeLabels[modeKey]}
                   </div>
@@ -511,10 +518,13 @@ Your current task: GENERATE AUDIO SCRIPT
                 <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>📄 Transcript Ready</span>
                 <button 
                   className="transcript-clear-btn"
-                  onClick={() => {
-                    setInputText('');
-                    setIsTranscriptPasted(false);
-                  }}
+                 onClick={() => {
+  setInputText('');
+  setIsTranscriptPasted(false);
+  setSummarizeDone(false);
+  setPersistedVideoId(null);
+  setShowVideoPreview(false);
+}}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -613,15 +623,16 @@ Your current task: GENERATE AUDIO SCRIPT
               )}
               {/* ✅ CHANGE 5: Added setSummarizeDone(false) + setPersistedVideoId(null) to close button */}
               <button
-                onClick={() => {
-                  setResponse('');
-                  setSummarizeDone(false);
-                  setPersistedVideoId(null);
-                  if (window.speechSynthesis) {
-                    window.speechSynthesis.cancel();
-                  }
-                  setIsSpeaking(false);
-                }}
+               onClick={() => {
+  setResponse('');
+  setSummarizeDone(false);
+  setIsTranscriptPasted(false);
+  setPersistedVideoId(null);
+  setShowVideoPreview(false);
+  setInputText('');
+  window.speechSynthesis.cancel();
+  setIsSpeaking(false);
+}}
                 style={{
                   background: 'transparent',
                   border: 'none',
