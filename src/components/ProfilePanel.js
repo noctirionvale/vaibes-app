@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
-const ProfilePanel = ({ onClose }) => {
+const ProfilePanel = ({ onClose, embedded = false }) => {
   const { user } = useAuth();
   const fileInputRef = useRef(null);
 
@@ -21,37 +21,24 @@ const ProfilePanel = ({ onClose }) => {
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Validate file type and size
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file.');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Image must be under 2MB.');
-      return;
-    }
+    if (!file.type.startsWith('image/')) { setError('Please upload an image file.'); return; }
+    if (file.size > 2 * 1024 * 1024) { setError('Image must be under 2MB.'); return; }
 
     setUploading(true);
     setError('');
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = user.id + '-' + Date.now() + '.' + fileExt;
+      const filePath = 'avatars/' + fileName;
 
-      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
       setAvatarUrl(data.publicUrl);
       setMessage('Avatar uploaded! Hit Save to apply.');
     } catch (err) {
@@ -65,15 +52,10 @@ const ProfilePanel = ({ onClose }) => {
     setSaving(true);
     setError('');
     setMessage('');
-
     try {
       const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: displayName,
-          avatar_url: avatarUrl
-        }
+        data: { full_name: displayName, avatar_url: avatarUrl }
       });
-
       if (error) throw error;
       setMessage('Profile saved successfully!');
     } catch (err) {
@@ -84,32 +66,34 @@ const ProfilePanel = ({ onClose }) => {
   };
 
   return (
-    <div className="profile-panel">
-      {/* Header */}
-      <div className="profile-panel-header">
-        <h3>Edit Profile</h3>
-        <button className="close-modal-btn" onClick={onClose}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
+    <div className={embedded ? 'profile-panel-embedded' : 'profile-panel'}>
 
-      {/* Avatar Section */}
+      {/* Header — only when not embedded */}
+      {!embedded && (
+        <div className="profile-panel-header">
+          <h3>Edit Profile</h3>
+          <button className="close-modal-btn" onClick={onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Avatar */}
       <div className="profile-avatar-section">
-        <div 
+        <div
           className="profile-avatar-wrapper"
           onClick={() => fileInputRef.current.click()}
           title="Click to change avatar"
         >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="avatar" className="profile-avatar-img" />
-          ) : (
-            <div className="profile-avatar-placeholder">
-              {displayName?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-          )}
+          {avatarUrl
+            ? <img src={avatarUrl} alt="avatar" className="profile-avatar-img" />
+            : <div className="profile-avatar-placeholder">
+                {displayName?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+          }
           <div className="profile-avatar-overlay">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -128,7 +112,7 @@ const ProfilePanel = ({ onClose }) => {
         <p className="profile-avatar-hint">JPG, PNG under 2MB</p>
       </div>
 
-      {/* Form Fields */}
+      {/* Form */}
       <div className="profile-form">
         <div className="profile-field">
           <label>Display Name</label>
@@ -140,7 +124,6 @@ const ProfilePanel = ({ onClose }) => {
             className="auth-input"
           />
         </div>
-
         <div className="profile-field">
           <label>Email Address</label>
           <input
@@ -148,17 +131,14 @@ const ProfilePanel = ({ onClose }) => {
             value={email}
             disabled
             className="auth-input disabled-input"
-            title="Email cannot be changed here"
           />
           <span className="field-hint">Email cannot be changed</span>
         </div>
       </div>
 
-      {/* Messages */}
       {error && <p className="auth-error">{error}</p>}
       {message && <p className="auth-success">{message}</p>}
 
-      {/* Save Button */}
       <button
         className="modal-action-btn"
         onClick={handleSave}

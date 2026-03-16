@@ -2,15 +2,14 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import AuthModal from './AuthModal';
-import ProfilePanel from './ProfilePanel';
+import SettingsModal from './SettingsModal';
 
 const MobileTopbar = () => {
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showModels, setShowModels] = useState(false);
-  const [showHowTo, setShowHowTo] = useState(false);
 
   const avatarUrl = user?.user_metadata?.avatar_url;
   const displayName = user?.user_metadata?.full_name
@@ -35,7 +34,7 @@ const MobileTopbar = () => {
     <>
       <div className="mobile-topbar">
         {/* Left: Brand */}
-        <div className="mobile-brand" onClick={() => setShowHowTo(true)}>
+        <div className="mobile-brand">
           <img src="hero.ai.png" alt="vAIbes" className="mobile-brand-logo" />
           <span className="mobile-brand-name">vAIbes</span>
         </div>
@@ -75,7 +74,7 @@ const MobileTopbar = () => {
 
           {/* Auth */}
           {user ? (
-            <div onClick={() => setShowProfile(true)} style={{ cursor: 'pointer' }}>
+            <div onClick={() => setShowSettings(true)} style={{ cursor: 'pointer' }}>
               {avatarUrl
                 ? <img src={avatarUrl} alt="avatar" className="mobile-avatar" />
                 : <div className="mobile-avatar-placeholder">
@@ -121,54 +120,13 @@ const MobileTopbar = () => {
         </>
       )}
 
-      {/* ===== HOW TO MODAL ===== */}
-      {showHowTo && (
-        <div className="modal-overlay" onClick={() => setShowHowTo(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="close-modal-btn" onClick={() => setShowHowTo(false)}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-            <h3>Master Your Workspace</h3>
-            <p className="modal-intro">Your central command for interacting with AI.</p>
-            <div className="instructions-grid">
-              <div className="instruction-step">
-                <div className="step-number">1</div>
-                <div>
-                  <h4>Select Your Mode</h4>
-                  <p>Click the <strong>+</strong> icon to change how the AI behaves.</p>
-                </div>
-              </div>
-              <div className="instruction-step">
-                <div className="step-number">2</div>
-                <div>
-                  <h4>Type or Speak</h4>
-                  <p>Type your prompt or click the <strong>Mic</strong> icon. Say <em>"send it"</em> to auto-send!</p>
-                </div>
-              </div>
-              <div className="instruction-step">
-                <div className="step-number">3</div>
-                <div>
-                  <h4>Generate & Listen</h4>
-                  <p>Hit send to process. Select <strong>Generate Audio (TTS)</strong> to hear it!</p>
-                </div>
-              </div>
-            </div>
-            <button className="modal-action-btn" onClick={() => setShowHowTo(false)}>
-              Got it, let's go!
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Profile Panel */}
-      {showProfile && (
+      {showSettings && (
         <>
-          <div className="profile-overlay" onClick={() => setShowProfile(false)} />
+          <div className="profile-overlay" onClick={() => setShowSettings(false)} />
           <div className="profile-panel-wrapper">
-            <ProfilePanel onClose={() => setShowProfile(false)} />
+           <SettingsModal onClose={() => setShowSettings(false)} />
           </div>
         </>
       )}

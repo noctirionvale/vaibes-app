@@ -336,12 +336,16 @@ Your current task: GENERATE AUDIO SCRIPT
     }
   };
 
-  let inputPlaceholder = `Enter text or data to ${currentMode}...`;
-  if (currentMode === 'summarize' && activeVideoId) {
-    inputPlaceholder = "Video ready! Clear this box, paste the transcript here, then hit Send...";
-  } else if (currentMode === 'summarize') {
-    inputPlaceholder = "Paste an article, text, or a YouTube link here...";
-  }
+ const isMobile = window.innerWidth <= 768;
+
+let inputPlaceholder = `Enter text or data to ${currentMode}...`;
+if (currentMode === 'summarize' && activeVideoId) {
+  inputPlaceholder = "Video ready! Clear this box, paste the transcript here, then hit Send...";
+} else if (currentMode === 'summarize' && isMobile) {
+  inputPlaceholder = "📱 Tip: YouTube transcript copy works best on desktop. Or paste any article text here!";
+} else if (currentMode === 'summarize') {
+  inputPlaceholder = "Paste an article, text, or a YouTube link here...";
+}
 
   return (
     <div className="ai-utility-section">
