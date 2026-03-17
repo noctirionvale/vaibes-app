@@ -7,6 +7,7 @@ const SettingsModal = ({ onClose }) => {
   const { signOut, user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [userTier, setUserTier] = useState('free');
+  const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
     const fetchTier = async () => {
@@ -22,7 +23,6 @@ const SettingsModal = ({ onClose }) => {
         if (data?.tier) setUserTier(data.tier);
       } catch (err) {
         console.error('Error fetching user tier:', err);
-        // Fallback to free on error
         setUserTier('free');
       }
     };
@@ -34,9 +34,30 @@ const SettingsModal = ({ onClose }) => {
     onClose();
   };
 
-  const handleUpgrade = () => {
-    const paymentUrl = "https://pm.link/org-UBHZub9YaGxWSeTeF5F7MLfW/t24pzX5";
-    window.open(paymentUrl + "?remarks=userId:" + user.id + "|plan:pro", '_blank');
+  const handleUpgrade = async () => {
+    if (!user) return;
+    setUpgrading(true);
+
+    try {
+      const response = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.open(data.url, '_blank');
+      } else {
+        alert('Could not create payment link. Please try again.');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setUpgrading(false);
+    }
   };
 
   return (
@@ -145,8 +166,12 @@ const SettingsModal = ({ onClose }) => {
                     </ul>
                     
                     {userTier !== 'pro' ? (
-                      <button className="upgrade-btn" onClick={handleUpgrade}>
-                        Upgrade to Pro — ₱199/month
+                      <button 
+                        className="upgrade-btn" 
+                        onClick={handleUpgrade}
+                        disabled={upgrading}
+                      >
+                        {upgrading ? '⏳ Creating payment...' : 'Upgrade to Pro — ₱199/month'}
                       </button>
                     ) : (
                       <div className="tier-current-label" style={{ color: 'var(--accent2)' }}>
