@@ -3309,3 +3309,83 @@ body.light-mode .settings-footer {
     display: none;
   }
 }
+
+/* ========== GCASH QR ========== */
+.upgrade-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.upgrade-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.upgrade-divider::before,
+.upgrade-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+
+body.light-mode .upgrade-divider::before,
+body.light-mode .upgrade-divider::after {
+  background: rgba(0,0,0,0.08);
+}
+
+.gcash-qr-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem;
+  background: rgba(0, 163, 255, 0.05);
+  border: 1px solid rgba(0, 163, 255, 0.2);
+  border-radius: 12px;
+}
+
+.gcash-qr-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.gcash-qr-wrapper {
+  background: white;
+  padding: 0.75rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.gcash-qr-img {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  display: block;
+}
+
+.gcash-qr-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.gcash-qr-hint strong {
+  color: var(--accent2);
+}
+
+body.light-mode .gcash-qr-section {
+  background: rgba(0, 163, 255, 0.04);
+  border-color: rgba(0, 163, 255, 0.15);
+}
+
+body.light-mode .gcash-qr-hint strong {
+  color: var(--accent1);
+}

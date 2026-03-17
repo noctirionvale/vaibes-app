@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ProfilePanel from './ProfilePanel';
-import { supabase } from '../lib/supabase'; // ⚠️ Adjust path to your supabase client
+import { supabase } from '../lib/supabase';
 
 const SettingsModal = ({ onClose }) => {
   const { signOut, user } = useAuth();
@@ -79,7 +79,7 @@ const SettingsModal = ({ onClose }) => {
           {/* Tab Nav */}
           <div className="settings-tabs">
             <button
-              className={"settings-tab " + (activeTab === 'profile' ? 'active' : '')}
+              className={`settings-tab ${activeTab === 'profile' ? 'active' : ''}`}
               onClick={() => setActiveTab('profile')}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -89,7 +89,7 @@ const SettingsModal = ({ onClose }) => {
               Profile
             </button>
             <button
-              className={"settings-tab " + (activeTab === 'billing' ? 'active' : '')}
+              className={`settings-tab ${activeTab === 'billing' ? 'active' : ''}`}
               onClick={() => setActiveTab('billing')}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -99,7 +99,7 @@ const SettingsModal = ({ onClose }) => {
               Billing
             </button>
             <button
-              className={"settings-tab " + (activeTab === 'howto' ? 'active' : '')}
+              className={`settings-tab ${activeTab === 'howto' ? 'active' : ''}`}
               onClick={() => setActiveTab('howto')}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -123,7 +123,7 @@ const SettingsModal = ({ onClose }) => {
             {activeTab === 'billing' && (
               <div className="billing-panel">
                 <p className="billing-current">
-                  Current Plan: <span className={"billing-badge " + userTier}>{userTier.toUpperCase()}</span>
+                  Current Plan: <span className={`billing-badge ${userTier}`}>{userTier.toUpperCase()}</span>
                 </p>
                 <p className="billing-usage">
                   {userTier === 'pro' ? '✅ Unlimited requests' : '10 requests / day · Resets at midnight'}
@@ -131,7 +131,7 @@ const SettingsModal = ({ onClose }) => {
 
                 <div className="billing-tiers">
                   {/* Free Tier */}
-                  <div className={"billing-tier" + (userTier === 'free' ? ' current-tier' : '')}>
+                  <div className={`billing-tier ${userTier === 'free' ? 'current-tier' : ''}`}>
                     <div className="tier-header">
                       <span className="tier-name">Free</span>
                       <span className="tier-price">₱0 <small>/month</small></span>
@@ -139,7 +139,7 @@ const SettingsModal = ({ onClose }) => {
                     <ul className="tier-features">
                       <li>✅ 10 requests per day</li>
                       <li>✅ All 6 AI modes</li>
-                      <li>✅ Google & X sign in</li>
+                      <li>✅ Google &amp; X sign in</li>
                       <li>✅ Dark / light mode</li>
                       <li>❌ Unlimited requests</li>
                       <li>❌ Priority responses</li>
@@ -150,7 +150,7 @@ const SettingsModal = ({ onClose }) => {
                   </div>
 
                   {/* Pro Tier */}
-                  <div className={"billing-tier" + (userTier === 'pro' ? ' current-tier' : '')}>
+                  <div className={`billing-tier ${userTier === 'pro' ? 'current-tier' : ''}`}>
                     <div className="tier-badge-pro">BEST VALUE</div>
                     <div className="tier-header">
                       <span className="tier-name">Pro</span>
@@ -159,23 +159,60 @@ const SettingsModal = ({ onClose }) => {
                     <ul className="tier-features">
                       <li>✅ Unlimited requests</li>
                       <li>✅ All 6 AI modes</li>
-                      <li>✅ Google & X sign in</li>
+                      <li>✅ Google &amp; X sign in</li>
                       <li>✅ Dark / light mode</li>
                       <li>✅ Priority responses</li>
                       <li>✅ Early access to new features</li>
                     </ul>
                     
-                    {userTier !== 'pro' ? (
-                      <button 
-                        className="upgrade-btn" 
-                        onClick={handleUpgrade}
-                        disabled={upgrading}
-                      >
-                        {upgrading ? '⏳ Creating payment...' : 'Upgrade to Pro — ₱199/month'}
-                      </button>
-                    ) : (
+                    {userTier !== 'pro' && (
+                      <div className="upgrade-options">
+                        <button
+                          className="upgrade-btn"
+                          onClick={handleUpgrade}
+                          disabled={upgrading}
+                        >
+                          {upgrading ? '⏳ Creating payment...' : '💳 Pay via Checkout'}
+                        </button>
+
+                        <div className="upgrade-divider">
+                          <span>or</span>
+                        </div>
+
+                        <div className="gcash-qr-section">
+                          <p className="gcash-qr-label">
+                            <span style={{
+                              background: 'linear-gradient(135deg, #007DFF, #00C2FF)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              fontWeight: '800',
+                              fontSize: '1rem',
+                              marginRight: '0.3rem'
+                            }}>
+                              GCash
+                            </span>
+                            Scan to pay ₱199
+                          </p>
+                          <div className="gcash-qr-wrapper">
+                            <img
+                              src="/gcash-qr.png"
+                              alt="GCash QR Code"
+                              className="gcash-qr-img"
+                            />
+                          </div>
+                          <p className="gcash-qr-hint">
+                            After payment, send screenshot to<br/>
+                            <strong>noctirionvale@gmail.com</strong><br/>
+                            with subject: <em>vAIbes Pro - [your email]</em>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {userTier === 'pro' && (
                       <div className="tier-current-label" style={{ color: 'var(--accent2)' }}>
-                        ✅ You are on Pro!
+                        ✅ You are on Pro — Unlimited requests!
                       </div>
                     )}
                   </div>
@@ -198,7 +235,7 @@ const SettingsModal = ({ onClose }) => {
                     <div className="step-number">2</div>
                     <div>
                       <h4>Type or Speak</h4>
-                      <p>Type your prompt or click the <strong>Mic</strong> icon. Say <em>"send it"</em> to auto-send hands-free!</p>
+                      <p>Type your prompt or click the <strong>Mic</strong> icon. Say <em>&quot;send it&quot;</em> to auto-send hands-free!</p>
                     </div>
                   </div>
                   <div className="instruction-step">
@@ -211,7 +248,7 @@ const SettingsModal = ({ onClose }) => {
                   <div className="instruction-step">
                     <div className="step-number">4</div>
                     <div>
-                      <h4>Generate & Listen</h4>
+                      <h4>Generate &amp; Listen</h4>
                       <p>Select <strong>Generate Audio (TTS)</strong> to have vAIbes speak the response out loud!</p>
                     </div>
                   </div>
@@ -225,7 +262,7 @@ const SettingsModal = ({ onClose }) => {
                   <div className="instruction-step">
                     <div className="step-number">6</div>
                     <div>
-                      <h4>AI Models & Sources</h4>
+                      <h4>AI Models &amp; Sources</h4>
                       <p>Use the right sidebar (or Models button on mobile) to visit ChatGPT, Gemini, and more!</p>
                     </div>
                   </div>
