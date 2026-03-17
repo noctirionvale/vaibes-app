@@ -1,50 +1,64 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   try {
     const event = req.body;
+    console.log('Webhook received:', JSON.stringify(event?.data?.attributes?.type));
 
-    // Only handle successful payments
-    if (event?.data?.attributes?.type !== 'payment.paid') {
+    // Handle payment paid event
+    const eventType = event?.data?.attributes?.type;
+    if (eventType !== 'payment.paid' && eventType !== 'link.payment.paid') {
       return res.status(200).json({ received: true });
     }
 
-    const remarks = event?.data?.attributes?.data?.attributes?.remarks || '';
+    // Get remarks from the payment
+    const attributes = event?.data?.attributes?.data?.attributes;
+    const remarks = attributes?.remarks || 
+                   event?.data?.attributes?.remarks || '';
 
-    // Extract userId from remarks — format: "userId:xxx|plan:pro"
+    console.log('Remarks:', remarks);
+
     const userIdMatch = remarks.match(/userId:([^\|]+)/);
     const planMatch = remarks.match(/plan:(\w+)/);
 
     if (!userIdMatch || !planMatch) {
-      console.log('No userId or plan in remarks');
+      console.log('No userId or plan found in remarks:', remarks);
       return res.status(200).json({ received: true });
     }
 
-    const userId = userIdMatch[1];
-    const plan = planMatch[1];
+    const userId = userIdMatch[1].trim();
+    const plan = planMatch[1].trim();
 
-    // Upgrade user tier in Supabase
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        tier: plan,
-        upgraded_at: new Date().toISOString()
-      })
-      .eq('id', userId);
+    console.log('Upgrading user:', userId, 'to plan:', plan);
 
-    if (error) {
-      console.error('Supabase update error:', error);
-      return res.status(500).json({ error: error.message });
+    // Use service key to bypass RLS
+    const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+
+    const updateRes = await fetch(
+      supabaseUrl + '/rest/v1/profiles?id=eq.' + userId,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': serviceKey,
+          'Authorization': 'Bearer ' + serviceKey,
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          tier: plan,
+          upgraded_at: new Date().toISOString()
+        })
+      }
+    );
+
+    if (!updateRes.ok) {
+      const err = await updateRes.text();
+      console.error('Supabase update failed:', err);
+      return res.status(500).json({ error: err });
     }
 
-    console.log('✅ Upgraded user', userId, 'to', plan);
+    console.log('✅ Successfully upgraded user', userId, 'to', plan);
     return res.status(200).json({ success: true });
 
   } catch (error) {
@@ -52,16 +66,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
-```
-
----
-
-## Step 3 — Add `SUPABASE_SERVICE_KEY` to Vercel
-
-This is different from the anon key — it's the **service role key** that bypasses RLS for admin operations.
-
-Go to **Supabase → Project Settings → API → service_role key** → copy it.
-
-Add to Vercel env vars:
-```
-SUPABASE_SERVICE_KEY=your_service_role_key
