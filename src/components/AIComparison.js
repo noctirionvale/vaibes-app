@@ -135,57 +135,56 @@ Your current task: GENERATE AUDIO SCRIPT
   const DAILY_LIMIT = 10;
 
   const checkAndIncrementUsage = async () => {
-    if (!user?.id) {
-      return { allowed: false, remaining: 0 };
-    }
+  const today = new Date().toISOString().split('T')[0];
 
-    const today = new Date().toISOString().split('T')[0];
+  // Check if user is Pro — skip rate limiting
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('tier')
+    .eq('id', user.id)
+    .single();
 
-    try {
-      const {  usage, error } = await supabase
-        .from('user_usage')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+  if (profile?.tier === 'pro') {
+    return { allowed: true, remaining: 999, isPro: true };
+  }
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
+  // Free tier — check daily limit
+  const { data: usage } = await supabase
+    .from('user_usage')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
 
-      if (!usage) {
-        await supabase.from('user_usage').insert({
-          user_id: user.id,
-          request_count: 1,
-          last_reset: today
-        });
-        return { allowed: true, remaining: DAILY_LIMIT - 1 };
-      }
+  if (!usage) {
+    await supabase.from('user_usage').insert({
+      user_id: user.id,
+      request_count: 1,
+      last_reset: today
+    });
+    return { allowed: true, remaining: DAILY_LIMIT - 1 };
+  }
 
-      if (usage.last_reset !== today) {
-        await supabase.from('user_usage').update({
-          request_count: 1,
-          last_reset: today
-        }).eq('user_id', user.id);
-        return { allowed: true, remaining: DAILY_LIMIT - 1 };
-      }
+  if (usage.last_reset !== today) {
+    await supabase.from('user_usage').update({
+      request_count: 1,
+      last_reset: today
+    }).eq('user_id', user.id);
+    return { allowed: true, remaining: DAILY_LIMIT - 1 };
+  }
 
-      if (usage.request_count >= DAILY_LIMIT) {
-        return { allowed: false, remaining: 0 };
-      }
+  if (usage.request_count >= DAILY_LIMIT) {
+    return { allowed: false, remaining: 0 };
+  }
 
-      await supabase.from('user_usage').update({
-        request_count: usage.request_count + 1
-      }).eq('user_id', user.id);
+  await supabase.from('user_usage').update({
+    request_count: usage.request_count + 1
+  }).eq('user_id', user.id);
 
-      return {
-        allowed: true,
-        remaining: DAILY_LIMIT - (usage.request_count + 1)
-      };
-    } catch (err) {
-      console.error('Usage check error:', err);
-      return { allowed: true, remaining: DAILY_LIMIT };
-    }
+  return {
+    allowed: true,
+    remaining: DAILY_LIMIT - (usage.request_count + 1)
   };
+};
 
   const handleSend = async (overrideText = null) => {
     if (!user) {
@@ -382,19 +381,22 @@ if (currentMode === 'summarize' && activeVideoId) {
       <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
 
         {/* Requests remaining counter */}
-        {user && requestsRemaining !== null && (
-          <div style={{
-            textAlign: 'right',
-            fontSize: '0.75rem',
-            color: requestsRemaining <= 3
-              ? '#ff6b6b'
-              : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
-            paddingRight: '0.5rem',
-            marginTop: '0.25rem'
-          }}>
-            {requestsRemaining} / {DAILY_LIMIT} requests remaining today
-          </div>
-        )}
+       {user && requestsRemaining !== null && (
+  <div style={{
+    textAlign: 'right',
+    fontSize: '0.75rem',
+    color: requestsRemaining <= 3
+      ? '#ff6b6b'
+      : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+    paddingRight: '0.5rem',
+    marginTop: '0.25rem'
+  }}>
+    {requestsRemaining === 999
+      ? '⚡ Pro — Unlimited requests'
+      : requestsRemaining + ' / ' + DAILY_LIMIT + ' requests remaining today'
+    }
+  </div>
+)}
 
         {/* ✅ CHANGE 3: Hide YouTube preview when summarizeDone is true */}
         {activeVideoId && currentMode === 'summarize' && !summarizeDone && (

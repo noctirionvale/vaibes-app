@@ -1,14 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ProfilePanel from './ProfilePanel';
+import { supabase } from '../lib/supabase'; // ⚠️ Adjust path to your supabase client
 
 const SettingsModal = ({ onClose }) => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
+  const [userTier, setUserTier] = useState('free');
+
+  useEffect(() => {
+    const fetchTier = async () => {
+      if (!user?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('tier')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) throw error;
+        if (data?.tier) setUserTier(data.tier);
+      } catch (err) {
+        console.error('Error fetching user tier:', err);
+        // Fallback to free on error
+        setUserTier('free');
+      }
+    };
+    fetchTier();
+  }, [user]);
 
   const handleSignOut = () => {
     signOut();
     onClose();
+  };
+
+  const handleUpgrade = () => {
+    const paymentUrl = "https://pm.link/org-UBHZub9YaGxWSeTeF5F7MLfW/t24pzX5";
+    window.open(paymentUrl + "?remarks=userId:" + user.id + "|plan:pro", '_blank');
   };
 
   return (
@@ -74,15 +102,15 @@ const SettingsModal = ({ onClose }) => {
             {activeTab === 'billing' && (
               <div className="billing-panel">
                 <p className="billing-current">
-                  Current Plan: <span className="billing-badge free">Free</span>
+                  Current Plan: <span className={"billing-badge " + userTier}>{userTier.toUpperCase()}</span>
                 </p>
                 <p className="billing-usage">
-                  10 requests / day · Resets at midnight
+                  {userTier === 'pro' ? '✅ Unlimited requests' : '10 requests / day · Resets at midnight'}
                 </p>
 
                 <div className="billing-tiers">
                   {/* Free Tier */}
-                  <div className="billing-tier current-tier">
+                  <div className={"billing-tier" + (userTier === 'free' ? ' current-tier' : '')}>
                     <div className="tier-header">
                       <span className="tier-name">Free</span>
                       <span className="tier-price">₱0 <small>/month</small></span>
@@ -95,11 +123,13 @@ const SettingsModal = ({ onClose }) => {
                       <li>❌ Unlimited requests</li>
                       <li>❌ Priority responses</li>
                     </ul>
-                    <div className="tier-current-label">Your current plan</div>
+                    {userTier === 'free' && (
+                      <div className="tier-current-label">Your current plan</div>
+                    )}
                   </div>
 
                   {/* Pro Tier */}
-                  <div className="billing-tier pro-tier">
+                  <div className={"billing-tier" + (userTier === 'pro' ? ' current-tier' : '')}>
                     <div className="tier-badge-pro">BEST VALUE</div>
                     <div className="tier-header">
                       <span className="tier-name">Pro</span>
@@ -113,9 +143,16 @@ const SettingsModal = ({ onClose }) => {
                       <li>✅ Priority responses</li>
                       <li>✅ Early access to new features</li>
                     </ul>
-                    <button className="upgrade-btn" onClick={() => alert('Payment coming soon! 🚀')}>
-                      Upgrade to Pro
-                    </button>
+                    
+                    {userTier !== 'pro' ? (
+                      <button className="upgrade-btn" onClick={handleUpgrade}>
+                        Upgrade to Pro — ₱199/month
+                      </button>
+                    ) : (
+                      <div className="tier-current-label" style={{ color: 'var(--accent2)' }}>
+                        ✅ You are on Pro!
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
