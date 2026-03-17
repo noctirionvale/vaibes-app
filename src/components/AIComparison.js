@@ -21,6 +21,7 @@ const AIComparison = () => {
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const [userTier, setUserTier] = useState('free');
 
   const extractYouTubeID = useCallback((url) => {
     if (!url) return null;
@@ -45,6 +46,19 @@ const AIComparison = () => {
       setPersistedVideoId(detected);
     }
   }, [inputText, extractYouTubeID]);
+
+  useEffect(() => {
+  const fetchTier = async () => {
+    if (!user?.id) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('tier')
+      .eq('id', user.id)
+      .single();
+    if (data?.tier) setUserTier(data.tier);
+  };
+  fetchTier();
+}, [user]);
 
   const activeVideoId = extractYouTubeID(inputText) || persistedVideoId;
 
@@ -120,17 +134,55 @@ Your current task: GENERATE AUDIO SCRIPT
     generateAudio: "Generate Audio (TTS)"
   };
 
-  const handleAudioPlayback = (textToSpeak) => {
-    if (!window.speechSynthesis) {
-      console.warn('Speech synthesis not supported');
-      return;
+  const handleAudioPlayback = async (textToSpeak) => {
+  setIsSpeaking(true);
+
+  try {
+    const response = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: textToSpeak,
+        isPro: userTier === 'pro'
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.audioContent) {
+      // Decode base64 MP3 and play
+      const audioBytes = atob(data.audioContent);
+      const arrayBuffer = new ArrayBuffer(audioBytes.length);
+      const view = new Uint8Array(arrayBuffer);
+      for (let i = 0; i < audioBytes.length; i++) {
+        view[i] = audioBytes.charCodeAt(i);
+      }
+      const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        fallbackTTS(textToSpeak);
+      };
+      audio.play();
+    } else {
+      fallbackTTS(textToSpeak);
     }
-    setIsSpeaking(true);
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-  };
+  } catch (error) {
+    console.error('TTS error:', error);
+    fallbackTTS(textToSpeak);
+  }
+};
+
+const fallbackTTS = (text) => {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.onend = () => setIsSpeaking(false);
+  window.speechSynthesis.speak(utterance);
+};
 
   const DAILY_LIMIT = 10;
 
@@ -245,6 +297,9 @@ Your current task: GENERATE AUDIO SCRIPT
       if (data.choices && data.choices.length > 0) {
         const replyText = data.choices[0].message.content;
         setResponse(replyText);
+        if (currentMode === 'generateAudio') {
+  await handleAudioPlayback(replyText);
+}
         
         // Collapse everything after summarize
         if (currentMode === 'summarize') {

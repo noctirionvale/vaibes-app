@@ -141,6 +141,7 @@ const SettingsModal = ({ onClose }) => {
                       <li>✅ All 6 AI modes</li>
                       <li>✅ Google &amp; X sign in</li>
                       <li>✅ Dark / light mode</li>
+                      <li>✅ WaveNet voice (high quality)</li>
                       <li>❌ Unlimited requests</li>
                       <li>❌ Priority responses</li>
                     </ul>
@@ -159,6 +160,7 @@ const SettingsModal = ({ onClose }) => {
                     <ul className="tier-features">
                       <li>✅ Unlimited requests</li>
                       <li>✅ All 6 AI modes</li>
+                      <li>✅ Neural2 voice (premium quality)</li>
                       <li>✅ Google &amp; X sign in</li>
                       <li>✅ Dark / light mode</li>
                       <li>✅ Priority responses</li>
