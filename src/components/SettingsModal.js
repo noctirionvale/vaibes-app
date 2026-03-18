@@ -134,7 +134,7 @@ const SettingsModal = ({ onClose }) => {
                   <div className={`billing-tier ${userTier === 'free' ? 'current-tier' : ''}`}>
                     <div className="tier-header">
                       <span className="tier-name">Free</span>
-                      <span className="tier-price">₱0 <small>/month</small></span>
+                      <span className="tier-price">$0 <small>/month</small></span>
                     </div>
                     <ul className="tier-features">
                       <li>✅ 10 requests per day</li>
@@ -155,7 +155,7 @@ const SettingsModal = ({ onClose }) => {
                     <div className="tier-badge-pro">BEST VALUE</div>
                     <div className="tier-header">
                       <span className="tier-name">Pro</span>
-                      <span className="tier-price">₱199 <small>/month</small></span>
+                      <span className="tier-price">$3.34 <small>/month</small></span>
                     </div>
                     <ul className="tier-features">
                       <li>✅ Unlimited requests</li>
