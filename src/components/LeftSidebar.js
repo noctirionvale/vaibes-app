@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
 import SettingsModal from './SettingsModal';
+import StudyMode from './StudyMode';
 
 const LeftSidebar = () => {
   const { user } = useAuth();
@@ -59,6 +60,25 @@ const LeftSidebar = () => {
             </button>
           )}
         </div>
+
+        <aside className="brand-sidebar">
+
+  {/* TOP ZONE */}
+  <div className="sidebar-top-zone">
+    {/* ... existing auth code ... */}
+  </div>
+
+  {/* STUDY MODE — middle of sidebar */}
+  <div className="sidebar-study-zone">
+    <StudyMode />
+  </div>
+
+  {/* BOTTOM ZONE — logo + tagline */}
+  <div className="sidebar-bottom-zone">
+    {/* ... existing logo code ... */}
+  </div>
+
+</aside>
 
         {/* BOTTOM ZONE — Logo + Tagline */}
         <div className="sidebar-bottom-zone">
