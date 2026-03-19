@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import AuthModal from './AuthModal';
 import SettingsModal from './SettingsModal';
+import StudyMode from './StudyMode';
 
 const MobileTopbar = () => {
   const { user } = useAuth();
@@ -10,6 +11,7 @@ const MobileTopbar = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showModels, setShowModels] = useState(false);
+  const [showStudy, setShowStudy] = useState(false);
 
   const avatarUrl = user?.user_metadata?.avatar_url;
   const displayName = user?.user_metadata?.full_name
@@ -39,6 +41,13 @@ const MobileTopbar = () => {
           <span className="mobile-brand-name">vAIbes</span>
         </div>
 
+        {/* Study Mode Panel */}
+{showStudy && (
+  <div className="mobile-study-wrapper">
+    <StudyMode />
+  </div>
+)}
+
         {/* Right: Actions */}
         <div className="mobile-topbar-right">
 
@@ -62,6 +71,15 @@ const MobileTopbar = () => {
               </svg>
             )}
           </button>
+
+          {/* Study Mode Button */}
+<button 
+  className="mobile-icon-btn" 
+  onClick={() => setShowStudy(!showStudy)} 
+  title="Study Mode"
+>
+  🎓
+</button>
 
           {/* AI Models button */}
           <button className="mobile-icon-btn" onClick={() => setShowModels(true)} title="AI Models">

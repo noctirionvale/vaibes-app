@@ -4206,3 +4206,19 @@ body.light-mode .study-mode-credit {
 body.light-mode .study-volume-slider {
   background: rgba(0,0,0,0.1);
 }
+
+.mobile-study-wrapper {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  z-index: 199;
+  padding: 0 1rem;
+  background: rgba(10,10,20,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(106,92,255,0.2);
+}
+
+body.light-mode .mobile-study-wrapper {
+  background: rgba(240,240,252,0.98);
+}
