@@ -140,7 +140,6 @@ const SettingsModal = ({ onClose }) => {
                       <li>✅ 5 requests on signup day</li>
                       <li>✅ 2 requests/day after</li>
                       <li>✅ WaveNet voice</li>
-                      <li>✅ Dark / light mode</li>
                       <li>❌ Unlimited requests</li>
                       <li>❌ Priority responses</li>
                     </ul>
@@ -160,8 +159,6 @@ const SettingsModal = ({ onClose }) => {
                       <li>✅ 100 requests per day (resets at midnight)</li>
                       <li>✅ All 6 AI modes</li>
                       <li>✅ Neural2 voice (premium quality)</li>
-                      <li>✅ Google &amp; X sign in</li>
-                      <li>✅ Dark / light mode</li>
                       <li>✅ Priority responses</li>
                       <li>✅ Early access to new features</li>
                     </ul>
@@ -213,7 +210,7 @@ const SettingsModal = ({ onClose }) => {
 
                     {userTier === 'pro' && (
                       <div className="tier-current-label" style={{ color: 'var(--accent2)' }}>
-                        ✅ You are on Pro — Unlimited requests!
+                        ✅ You are on Pro — 100 requests per day!
                       </div>
                     )}
                   </div>
