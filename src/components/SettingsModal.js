@@ -126,7 +126,7 @@ const SettingsModal = ({ onClose }) => {
                   Current Plan: <span className={`billing-badge ${userTier}`}>{userTier.toUpperCase()}</span>
                 </p>
                 <p className="billing-usage">
-                  {userTier === 'pro' ? '✅ Unlimited requests' : '10 requests / day · Resets at midnight'}
+                  {userTier === 'pro' ? '✅ 100 requests' : '2 requests / day · Resets at midnight'}
                 </p>
 
                 <div className="billing-tiers">
@@ -139,6 +139,7 @@ const SettingsModal = ({ onClose }) => {
                     <ul className="tier-features">
                       <li>✅ 5 requests on signup day</li>
                       <li>✅ 2 requests/day after</li>
+                      <li>✅ Study Mode with music</li>
                       <li>✅ WaveNet voice</li>
                       <li>❌ Unlimited requests</li>
                       <li>❌ Priority responses</li>
@@ -158,6 +159,7 @@ const SettingsModal = ({ onClose }) => {
                     <ul className="tier-features">
                       <li>✅ 100 requests per day (resets at midnight)</li>
                       <li>✅ All 6 AI modes</li>
+                      <li>✅ Study Mode with music</li>
                       <li>✅ Neural2 voice (premium quality)</li>
                       <li>✅ Priority responses</li>
                       <li>✅ Early access to new features</li>

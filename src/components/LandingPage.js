@@ -187,6 +187,7 @@ const LandingPage = () => {
               <ul>
                 <li>✅ 5 requests on day 1</li>
                 <li>✅ 2 requests/day reset</li>
+                <li>✅ Study Mode with music</li>
                 <li>✅ WaveNet voice</li>
               </ul>
               <button className="landing-cta-primary" onClick={handleGetStarted}>
@@ -201,6 +202,7 @@ const LandingPage = () => {
               <ul>
                 <li>✅ 100 requests per day (resets at midnight)</li>
                 <li>✅ All 6 AI modes</li>
+                <li>✅ Study Mode with music</li>
                 <li>✅ Neural2 premium voice</li>
                 <li>✅ Priority responses</li>
                 <li>✅ Early access to features</li>
