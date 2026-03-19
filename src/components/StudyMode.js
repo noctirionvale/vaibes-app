@@ -6,35 +6,35 @@ const stations = [
     name: 'Lo-fi Hip Hop',
     emoji: '🎧',
     color: '#6a5cff',
-    youtubeId: 'jfKfPfyJRdk', // lofi girl
+    youtubeId: 'BCxTQq0UiFs', // lofi girl
   },
   {
     id: 'ambient',
     name: 'Ambient Nature',
     emoji: '🌿',
     color: '#10b981',
-    youtubeId: 'eKFTSSKCzWA', // nature sounds
+    youtubeId: 'DRFHklnN-SM', // nature sounds
   },
   {
     id: 'jazz',
     name: 'Jazz Cafe',
     emoji: '☕',
     color: '#d97706',
-    youtubeId: 'VMAPTo7RVCo', // jazz cafe
+    youtubeId: 'MYPVQccHhAQ', // jazz cafe
   },
   {
     id: 'focus',
     name: 'Deep Focus',
     emoji: '🧠',
     color: '#8b5cf6',
-    youtubeId: 'WPni755-Krg', // deep focus
+    youtubeId: 'oPVte6aMprI', // deep focus
   },
   {
     id: 'classical',
     name: 'Classical',
     emoji: '🎻',
     color: '#ec4899',
-    youtubeId: 'mDX8Q4oGgcA', // classical focus
+    youtubeId: 'mIYzp5rcTvU', // classical focus
   }
 ];
 
