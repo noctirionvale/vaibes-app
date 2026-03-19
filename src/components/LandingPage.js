@@ -185,10 +185,9 @@ const LandingPage = () => {
               <h3>Free</h3>
               <div className="landing-price">$0 <span>/month</span></div>
               <ul>
-                <li>✅ 10 requests per day</li>
-                <li>✅ All 6 AI modes</li>
+                <li>✅ 5 requests on day 1</li>
+                <li>✅ 2 requests/day reset</li>
                 <li>✅ WaveNet voice</li>
-                <li>✅ Dark / light mode</li>
               </ul>
               <button className="landing-cta-primary" onClick={handleGetStarted}>
                 Start Free
@@ -200,7 +199,7 @@ const LandingPage = () => {
               <h3>Pro</h3>
               <div className="landing-price">$3.34 <span>/month</span></div>
               <ul>
-                <li>✅ Unlimited requests</li>
+                <li>✅ 100 requests per day (resets at midnight)</li>
                 <li>✅ All 6 AI modes</li>
                 <li>✅ Neural2 premium voice</li>
                 <li>✅ Priority responses</li>

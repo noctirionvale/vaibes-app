@@ -17,11 +17,16 @@ const AIComparison = () => {
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [persistedVideoId, setPersistedVideoId] = useState(null);
   const [isTranscriptPasted, setIsTranscriptPasted] = useState(false);
-  const [summarizeDone, setSummarizeDone] = useState(false); // ✅ Added state
+  const [summarizeDone, setSummarizeDone] = useState(false);
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [userTier, setUserTier] = useState('free');
+
+  // ✅ Rate limit constants
+  const DAILY_LIMIT_NEW = 5;      // first day welcome bonus
+  const DAILY_LIMIT_FREE = 2;     // standard free tier
+  const PRO_DAILY_LIMIT = 100;    // ✅ Pro tier daily limit
 
   const extractYouTubeID = useCallback((url) => {
     if (!url) return null;
@@ -48,17 +53,17 @@ const AIComparison = () => {
   }, [inputText, extractYouTubeID]);
 
   useEffect(() => {
-  const fetchTier = async () => {
-    if (!user?.id) return;
-    const { data } = await supabase
-      .from('profiles')
-      .select('tier')
-      .eq('id', user.id)
-      .single();
-    if (data?.tier) setUserTier(data.tier);
-  };
-  fetchTier();
-}, [user]);
+    const fetchTier = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('tier')
+        .eq('id', user.id)
+        .single();
+      if (data?.tier) setUserTier(data.tier);
+    };
+    fetchTier();
+  }, [user]);
 
   const activeVideoId = extractYouTubeID(inputText) || persistedVideoId;
 
@@ -135,108 +140,161 @@ Your current task: GENERATE AUDIO SCRIPT
   };
 
   const handleAudioPlayback = async (textToSpeak) => {
-  setIsSpeaking(true);
+    setIsSpeaking(true);
 
-  try {
-    const response = await fetch('/api/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: textToSpeak,
-        isPro: userTier === 'pro'
-      })
-    });
+    try {
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: textToSpeak,
+          isPro: userTier === 'pro'
+        })
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (data.audioContent) {
-      // Decode base64 MP3 and play
-      const audioBytes = atob(data.audioContent);
-      const arrayBuffer = new ArrayBuffer(audioBytes.length);
-      const view = new Uint8Array(arrayBuffer);
-      for (let i = 0; i < audioBytes.length; i++) {
-        view[i] = audioBytes.charCodeAt(i);
-      }
-      const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(url);
-      };
-      audio.onerror = () => {
-        setIsSpeaking(false);
+      if (data.audioContent) {
+        const audioBytes = atob(data.audioContent);
+        const arrayBuffer = new ArrayBuffer(audioBytes.length);
+        const view = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < audioBytes.length; i++) {
+          view[i] = audioBytes.charCodeAt(i);
+        }
+        const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(url);
+        };
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          fallbackTTS(textToSpeak);
+        };
+        audio.play();
+      } else {
         fallbackTTS(textToSpeak);
-      };
-      audio.play();
-    } else {
+      }
+    } catch (error) {
+      console.error('TTS error:', error);
       fallbackTTS(textToSpeak);
     }
-  } catch (error) {
-    console.error('TTS error:', error);
-    fallbackTTS(textToSpeak);
-  }
-};
-
-const fallbackTTS = (text) => {
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.onend = () => setIsSpeaking(false);
-  window.speechSynthesis.speak(utterance);
-};
-
-  const DAILY_LIMIT = 10;
-
-  const checkAndIncrementUsage = async () => {
-  const today = new Date().toISOString().split('T')[0];
-
-  // Check if user is Pro — skip rate limiting
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('tier')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.tier === 'pro') {
-    return { allowed: true, remaining: 999, isPro: true };
-  }
-
-  // Free tier — check daily limit
-  const { data: usage } = await supabase
-    .from('user_usage')
-    .select('*')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!usage) {
-    await supabase.from('user_usage').insert({
-      user_id: user.id,
-      request_count: 1,
-      last_reset: today
-    });
-    return { allowed: true, remaining: DAILY_LIMIT - 1 };
-  }
-
-  if (usage.last_reset !== today) {
-    await supabase.from('user_usage').update({
-      request_count: 1,
-      last_reset: today
-    }).eq('user_id', user.id);
-    return { allowed: true, remaining: DAILY_LIMIT - 1 };
-  }
-
-  if (usage.request_count >= DAILY_LIMIT) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  await supabase.from('user_usage').update({
-    request_count: usage.request_count + 1
-  }).eq('user_id', user.id);
-
-  return {
-    allowed: true,
-    remaining: DAILY_LIMIT - (usage.request_count + 1)
   };
-};
+
+  const fallbackTTS = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onend = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // ✅ UPDATED: Pro tier now has 100 requests/day with tracking
+  const checkAndIncrementUsage = async () => {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Check user tier first
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('tier')
+      .eq('id', user.id)
+      .single();
+
+    // ✅ PRO TIER: 100 requests/day with tracking
+    if (profile?.tier === 'pro') {
+      const { data: usage } = await supabase
+        .from('user_usage')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      // New Pro user — create usage record
+      if (!usage) {
+        await supabase.from('user_usage').insert({
+          user_id: user.id,
+          request_count: 1,
+          last_reset: today,
+          is_first_day: true
+        });
+        return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true };
+      }
+
+      // Reset counter at midnight
+      if (usage.last_reset !== today) {
+        await supabase.from('user_usage').update({
+          request_count: 1,
+          last_reset: today
+        }).eq('user_id', user.id);
+        return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true };
+      }
+
+      // Check if Pro limit exceeded
+      if (usage.request_count >= PRO_DAILY_LIMIT) {
+        return { allowed: false, remaining: 0, isPro: true, hitProLimit: true };
+      }
+
+      // Increment Pro counter
+      await supabase.from('user_usage').update({
+        request_count: usage.request_count + 1
+      }).eq('user_id', user.id);
+
+      return {
+        allowed: true,
+        remaining: PRO_DAILY_LIMIT - (usage.request_count + 1),
+        isPro: true
+      };
+    }
+
+    // ✅ FREE TIER: Tiered limits (5 first day → 2/day after)
+    const { data: usage } = await supabase
+      .from('user_usage')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    // Brand new free user
+    if (!usage) {
+      await supabase.from('user_usage').insert({
+        user_id: user.id,
+        request_count: 1,
+        last_reset: today,
+        is_first_day: true
+      });
+      return { allowed: true, remaining: DAILY_LIMIT_NEW - 1, isNewUser: true };
+    }
+
+    // New day reset for free tier
+    if (usage.last_reset !== today) {
+      await supabase.from('user_usage').update({
+        request_count: 1,
+        last_reset: today,
+        is_first_day: false
+      }).eq('user_id', user.id);
+      return { 
+        allowed: true, 
+        remaining: DAILY_LIMIT_FREE - 1,
+        isNewUser: false 
+      };
+    }
+
+    // Determine free tier limit
+    const limit = usage.is_first_day ? DAILY_LIMIT_NEW : DAILY_LIMIT_FREE;
+
+    // Check if free limit exceeded
+    if (usage.request_count >= limit) {
+      return { allowed: false, remaining: 0, isNewUser: usage.is_first_day };
+    }
+
+    // Increment free counter
+    await supabase.from('user_usage').update({
+      request_count: usage.request_count + 1
+    }).eq('user_id', user.id);
+
+    return {
+      allowed: true,
+      remaining: limit - (usage.request_count + 1),
+      isNewUser: usage.is_first_day
+    };
+  };
 
   const handleSend = async (overrideText = null) => {
     if (!user) {
@@ -244,9 +302,17 @@ const fallbackTTS = (text) => {
       return;
     }
 
-    const { allowed, remaining } = await checkAndIncrementUsage();
+    const { allowed, remaining, isNewUser, isPro, hitProLimit } = await checkAndIncrementUsage();
+    
+    // ✅ UPDATED: Contextual messages for all tier states
     if (!allowed) {
-      setResponse(`⚠️ You've used all ${DAILY_LIMIT} of your free daily requests. Come back tomorrow or upgrade to Pro for unlimited access!`);
+      setResponse(
+        isPro && hitProLimit
+          ? `⚠️ You've hit the 100 request daily limit. Resets at midnight. Thank you for being a Pro member! 🙏`
+          : isNewUser
+            ? `⚠️ You've used your 5 welcome requests! You now get 2 requests per day free. Upgrade to Pro for 100 requests/day! 🚀`
+            : `⚠️ You've used your 2 free requests today. Come back tomorrow or upgrade to Pro for 100 requests/day! 🚀`
+      );
       return;
     }
     setRequestsRemaining(remaining);
@@ -293,23 +359,18 @@ const fallbackTTS = (text) => {
         return;
       }
 
-      // ✅ CHANGE 1: Added summarizeDone logic + audio playback
       if (data.choices && data.choices.length > 0) {
         const replyText = data.choices[0].message.content;
         setResponse(replyText);
-        if (currentMode === 'generateAudio') {
-  await handleAudioPlayback(replyText);
-}
         
-        // Collapse everything after summarize
+        if (currentMode === 'generateAudio') {
+          await handleAudioPlayback(replyText);
+        }
+        
         if (currentMode === 'summarize') {
           setSummarizeDone(true);
           setIsTranscriptPasted(false);
           setShowVideoPreview(false);
-        }
-        
-        if (currentMode === 'generateAudio') {
-          handleAudioPlayback(replyText);
         }
       } else {
         setResponse("Error: Received an unexpected response.");
@@ -374,15 +435,11 @@ const fallbackTTS = (text) => {
   const handleTextareaChange = (e) => {
     const value = e.target.value;
     setInputText(value);
-    
-    // ✅ CHANGE 2: Reset summarizeDone when user types
     setSummarizeDone(false);
     
-    // Auto-resize textarea
     e.target.style.height = 'auto';
     e.target.style.height = (e.target.scrollHeight) + 'px';
     
-    // Detect if transcript was pasted (long text without YouTube link)
     if (currentMode === 'summarize' && value.length > 500 && !extractYouTubeID(value)) {
       setIsTranscriptPasted(true);
     } else {
@@ -390,16 +447,16 @@ const fallbackTTS = (text) => {
     }
   };
 
- const isMobile = window.innerWidth <= 768;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
-let inputPlaceholder = `Enter text or data to ${currentMode}...`;
-if (currentMode === 'summarize' && activeVideoId) {
-  inputPlaceholder = "Video ready! Clear this box, paste the transcript here, then hit Send...";
-} else if (currentMode === 'summarize' && isMobile) {
-  inputPlaceholder = "📱 Tip: YouTube transcript copy works best on desktop. Or paste any article text here!";
-} else if (currentMode === 'summarize') {
-  inputPlaceholder = "Paste an article, text, or a YouTube link here...";
-}
+  let inputPlaceholder = `Enter text or data to ${currentMode}...`;
+  if (currentMode === 'summarize' && activeVideoId) {
+    inputPlaceholder = "Video ready! Clear this box, paste the transcript here, then hit Send...";
+  } else if (currentMode === 'summarize' && isMobile) {
+    inputPlaceholder = "📱 Tip: YouTube transcript copy works best on desktop. Or paste any article text here!";
+  } else if (currentMode === 'summarize') {
+    inputPlaceholder = "Paste an article, text, or a YouTube link here...";
+  }
 
   return (
     <div className="ai-utility-section">
@@ -435,31 +492,28 @@ if (currentMode === 'summarize' && activeVideoId) {
 
       <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
 
-        {/* Requests remaining counter */}
-       {user && requestsRemaining !== null && (
-  <div style={{
-    textAlign: 'right',
-    fontSize: '0.75rem',
-    color: requestsRemaining <= 3
-      ? '#ff6b6b'
-      : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
-    paddingRight: '0.5rem',
-    marginTop: '0.25rem'
-  }}>
-    {requestsRemaining === 999
-      ? '⚡ Pro — Unlimited requests'
-      : requestsRemaining + ' / ' + DAILY_LIMIT + ' requests remaining today'
-    }
-  </div>
-)}
+        {/* ✅ UPDATED: Counter display with Pro tier formatting */}
+        {user && requestsRemaining !== null && (
+          <div style={{
+            textAlign: 'right',
+            fontSize: '0.75rem',
+            color: requestsRemaining <= 1
+              ? '#ff6b6b'
+              : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+            paddingRight: '0.5rem',
+            marginTop: '0.25rem'
+          }}>
+            {userTier === 'pro'
+              ? `⚡ Pro — ${requestsRemaining} / ${PRO_DAILY_LIMIT} requests today`
+              : `${requestsRemaining} requests remaining today`
+            }
+          </div>
+        )}
 
-        {/* ✅ CHANGE 3: Hide YouTube preview when summarizeDone is true */}
+        {/* YouTube Preview Section */}
         {activeVideoId && currentMode === 'summarize' && !summarizeDone && (
           <div className="youtube-preview-section">
-
-            {/* Row 1: Thumbnail + Title + Button */}
             <div className="youtube-thumb-row">
-              {/* ✅ Also fixed: removed extra spaces in URLs */}
               <img
                 src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`}
                 alt="Video thumbnail"
@@ -487,7 +541,6 @@ if (currentMode === 'summarize' && activeVideoId) {
               </a>
             </div>
 
-            {/* Row 2: Collapsible Player */}
             {showVideoPreview && (
               <div className="youtube-player-wrapper">
                 <iframe
@@ -503,7 +556,6 @@ if (currentMode === 'summarize' && activeVideoId) {
               </div>
             )}
 
-            {/* Row 3: Step instructions */}
             <div className="transcript-instructions">
               <div className="transcript-step">
                 <span className="transcript-step-num">1</span>
@@ -522,7 +574,6 @@ if (currentMode === 'summarize' && activeVideoId) {
                 <span>Come back here → <strong>clear this box</strong> → paste transcript → hit Send</span>
               </div>
             </div>
-
           </div>
         )}
 
@@ -548,16 +599,15 @@ if (currentMode === 'summarize' && activeVideoId) {
                     key={modeKey}
                     className={`dropdown-item ${currentMode === modeKey ? 'active' : ''}`}
                     onClick={() => {
-  setCurrentMode(modeKey);
-  setIsDropdownOpen(false);
-  // Reset all transcript/video state on mode switch
-  setIsTranscriptPasted(false);
-  setSummarizeDone(false);
-  setPersistedVideoId(null);
-  setShowVideoPreview(false);
-  setInputText('');
-  setResponse('');
-}}
+                      setCurrentMode(modeKey);
+                      setIsDropdownOpen(false);
+                      setIsTranscriptPasted(false);
+                      setSummarizeDone(false);
+                      setPersistedVideoId(null);
+                      setShowVideoPreview(false);
+                      setInputText('');
+                      setResponse('');
+                    }}
                   >
                     {modeLabels[modeKey]}
                   </div>
@@ -566,7 +616,7 @@ if (currentMode === 'summarize' && activeVideoId) {
             )}
           </div>
 
-          {/* Conditional rendering for transcript box vs textarea */}
+          {/* Transcript paste box or textarea */}
           {isTranscriptPasted && currentMode === 'summarize' ? (
             <div className="transcript-paste-box" style={{
               flex: 1,
@@ -579,13 +629,13 @@ if (currentMode === 'summarize' && activeVideoId) {
                 <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>📄 Transcript Ready</span>
                 <button 
                   className="transcript-clear-btn"
-                 onClick={() => {
-  setInputText('');
-  setIsTranscriptPasted(false);
-  setSummarizeDone(false);
-  setPersistedVideoId(null);
-  setShowVideoPreview(false);
-}}
+                  onClick={() => {
+                    setInputText('');
+                    setIsTranscriptPasted(false);
+                    setSummarizeDone(false);
+                    setPersistedVideoId(null);
+                    setShowVideoPreview(false);
+                  }}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -668,7 +718,7 @@ if (currentMode === 'summarize' && activeVideoId) {
         </div>
       </div>
 
-      {/* ✅ CHANGE 4: Added position: relative + zIndex to fix scrolling/layering issue */}
+      {/* Response Card */}
       {response && (
         <div 
           className="ai-response-card" 
@@ -682,18 +732,17 @@ if (currentMode === 'summarize' && activeVideoId) {
                   <span className="playing-dot"></span> Playing Audio...
                 </span>
               )}
-              {/* ✅ CHANGE 5: Added setSummarizeDone(false) + setPersistedVideoId(null) to close button */}
               <button
-               onClick={() => {
-  setResponse('');
-  setSummarizeDone(false);
-  setIsTranscriptPasted(false);
-  setPersistedVideoId(null);
-  setShowVideoPreview(false);
-  setInputText('');
-  window.speechSynthesis.cancel();
-  setIsSpeaking(false);
-}}
+                onClick={() => {
+                  setResponse('');
+                  setSummarizeDone(false);
+                  setIsTranscriptPasted(false);
+                  setPersistedVideoId(null);
+                  setShowVideoPreview(false);
+                  setInputText('');
+                  window.speechSynthesis.cancel();
+                  setIsSpeaking(false);
+                }}
                 style={{
                   background: 'transparent',
                   border: 'none',

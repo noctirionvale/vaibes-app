@@ -137,11 +137,10 @@ const SettingsModal = ({ onClose }) => {
                       <span className="tier-price">$0 <small>/month</small></span>
                     </div>
                     <ul className="tier-features">
-                      <li>✅ 10 requests per day</li>
-                      <li>✅ All 6 AI modes</li>
-                      <li>✅ Google &amp; X sign in</li>
+                      <li>✅ 5 requests on signup day</li>
+                      <li>✅ 2 requests/day after</li>
+                      <li>✅ WaveNet voice</li>
                       <li>✅ Dark / light mode</li>
-                      <li>✅ WaveNet voice (high quality)</li>
                       <li>❌ Unlimited requests</li>
                       <li>❌ Priority responses</li>
                     </ul>
@@ -158,7 +157,7 @@ const SettingsModal = ({ onClose }) => {
                       <span className="tier-price">$3.34 <small>/month</small></span>
                     </div>
                     <ul className="tier-features">
-                      <li>✅ Unlimited requests</li>
+                      <li>✅ 100 requests per day (resets at midnight)</li>
                       <li>✅ All 6 AI modes</li>
                       <li>✅ Neural2 voice (premium quality)</li>
                       <li>✅ Google &amp; X sign in</li>
