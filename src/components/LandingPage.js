@@ -203,6 +203,7 @@ const LandingPage = () => {
                 <li>✅ 100 requests per day (resets at midnight)</li>
                 <li>✅ All 6 AI modes</li>
                 <li>✅ Study Mode with music</li>
+                <li>✅ Image Analysis</li>
                 <li>✅ Neural2 premium voice</li>
                 <li>✅ Priority responses</li>
                 <li>✅ Early access to features</li>

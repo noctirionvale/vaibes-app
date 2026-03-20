@@ -18,6 +18,13 @@ const AIComparison = () => {
   const [persistedVideoId, setPersistedVideoId] = useState(null);
   const [isTranscriptPasted, setIsTranscriptPasted] = useState(false);
   const [summarizeDone, setSummarizeDone] = useState(false);
+  
+  // ✅ NEW: Image Analysis states
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const fileInputRef = useRef(null);
+  
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -26,7 +33,7 @@ const AIComparison = () => {
   // ✅ Rate limit constants
   const DAILY_LIMIT_NEW = 5;      // first day welcome bonus
   const DAILY_LIMIT_FREE = 2;     // standard free tier
-  const PRO_DAILY_LIMIT = 100;    // ✅ Pro tier daily limit
+  const PRO_DAILY_LIMIT = 100;    // Pro tier daily limit
 
   const extractYouTubeID = useCallback((url) => {
     if (!url) return null;
@@ -127,7 +134,18 @@ Your current task: GENERATE AUDIO SCRIPT
 - Write naturally spoken words only
 - No markdown, no bullet points, no headers
 - Use rhythm and flow — this will be read aloud
-- Sound like a real person having a conversation, not presenting a report`
+- Sound like a real person having a conversation, not presenting a report`,
+
+    // ✅ NEW: Image Analysis prompt
+    imageAnalysis: `${vAIbesCore}
+
+Your current task: IMAGE ANALYSIS
+- You have been given the results of a Google Vision AI scan of an image
+- Describe what you see in a warm, clear, engaging way
+- Explain the labels, objects and any text found
+- If there's text in the image, read and explain it
+- Make it feel like a knowledgeable friend describing the photo
+- Be specific and insightful, not just listing labels`
   };
 
   const modeLabels = {
@@ -136,7 +154,8 @@ Your current task: GENERATE AUDIO SCRIPT
     describe: "Describe Concept",
     analyze: "Analyze Data",
     generateDesc: "Generate Description",
-    generateAudio: "Generate Audio (TTS)"
+    generateAudio: "Generate Audio (TTS)",
+    imageAnalysis: "Image Analysis 🔒"  // ✅ NEW
   };
 
   const handleAudioPlayback = async (textToSpeak) => {
@@ -186,6 +205,105 @@ Your current task: GENERATE AUDIO SCRIPT
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.onend = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
+  };
+
+  // ✅ NEW: Image upload handler
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setResponse('Please upload an image file.');
+      return;
+    }
+    
+    // Validate file size (4MB max)
+    if (file.size > 4 * 1024 * 1024) {
+      setResponse('Image must be under 4MB.');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+      // Extract base64 without prefix
+      const base64 = reader.result.split(',')[1];
+      setUploadedImage(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ✅ NEW: Image analysis handler
+  const handleImageAnalysis = async () => {
+    if (!user) { 
+      setShowAuthModal(true); 
+      return; 
+    }
+    
+    if (userTier !== 'pro') {
+      setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to Pro for ₱199/month to unlock it!');
+      return;
+    }
+    
+    if (!uploadedImage) return;
+
+    setIsAnalyzing(true);
+    setIsLoading(true);
+    setResponse('');
+
+    try {
+      // Step 1: Analyze with Google Vision
+      const visionRes = await fetch('/api/vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: uploadedImage,
+          mimeType: 'image/jpeg'
+        })
+      });
+
+      const visionData = await visionRes.json();
+
+      if (!visionRes.ok || visionData.error) {
+        setResponse('⚠️ ' + (visionData.error || 'Could not analyze image.'));
+        return;
+      }
+
+      setIsAnalyzing(false);
+
+      // Step 2: Send to vAIbes for explanation
+      const secretToken = localStorage.getItem('admin_bypass_key') || '';
+      const apiResponse = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-bypass': secretToken
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompts.imageAnalysis },
+            {
+              role: 'user',
+              content: `Here is what Google Vision detected in the image:\n\n${visionData.summary}\n\n${inputText ? 'User also says: ' + inputText : 'Please explain what you see in this image.'}`
+            }
+          ]
+        })
+      });
+
+      const data = await apiResponse.json();
+      if (data.choices?.[0]) {
+        setResponse(data.choices[0].message.content);
+      }
+
+    } catch (error) {
+      console.error('Image analysis error:', error);
+      setResponse('Failed to analyze image. Please try again.');
+    } finally {
+      setIsLoading(false);
+      setIsAnalyzing(false);
+    }
   };
 
   // ✅ UPDATED: Pro tier now has 100 requests/day with tracking
@@ -456,6 +574,8 @@ Your current task: GENERATE AUDIO SCRIPT
     inputPlaceholder = "📱 Tip: YouTube transcript copy works best on desktop. Or paste any article text here!";
   } else if (currentMode === 'summarize') {
     inputPlaceholder = "Paste an article, text, or a YouTube link here...";
+  } else if (currentMode === 'imageAnalysis') {
+    inputPlaceholder = "Add optional notes about the image...";
   }
 
   return (
@@ -492,7 +612,7 @@ Your current task: GENERATE AUDIO SCRIPT
 
       <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
 
-        {/* ✅ UPDATED: Counter display with Pro tier formatting */}
+        {/* Requests remaining counter */}
         {user && requestsRemaining !== null && (
           <div style={{
             textAlign: 'right',
@@ -507,6 +627,54 @@ Your current task: GENERATE AUDIO SCRIPT
               ? `⚡ Pro — ${requestsRemaining} / ${PRO_DAILY_LIMIT} requests today`
               : `${requestsRemaining} requests remaining today`
             }
+          </div>
+        )}
+
+        {/* ✅ NEW: Image Upload Zone — only in imageAnalysis mode */}
+        {currentMode === 'imageAnalysis' && (
+          <div className="image-upload-zone">
+            {imagePreview ? (
+              <div className="image-preview-wrapper">
+                <img
+                  src={imagePreview}
+                  alt="Uploaded"
+                  className="image-preview"
+                />
+                <button
+                  className="image-remove-btn"
+                  onClick={() => {
+                    setUploadedImage(null);
+                    setImagePreview(null);
+                  }}
+                >
+                  ✕ Remove
+                </button>
+              </div>
+            ) : (
+              <div
+                className="image-drop-area"
+                onClick={() => userTier === 'pro'
+                  ? fileInputRef.current.click()
+                  : setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to unlock!')
+                }
+              >
+                <span className="image-drop-icon">🖼️</span>
+                <span className="image-drop-text">
+                  {userTier === 'pro'
+                    ? 'Click to upload image'
+                    : '🔒 Pro feature — Upgrade to upload images'
+                  }
+                </span>
+                <span className="image-drop-hint">JPG, PNG, GIF under 4MB</span>
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleImageUpload}
+            />
           </div>
         )}
 
@@ -597,19 +765,25 @@ Your current task: GENERATE AUDIO SCRIPT
                 {Object.keys(modeLabels).map((modeKey) => (
                   <div
                     key={modeKey}
-                    className={`dropdown-item ${currentMode === modeKey ? 'active' : ''}`}
+                    className={
+                      "dropdown-item " +
+                      (currentMode === modeKey ? 'active' : '') +
+                      (modeKey === 'imageAnalysis' && userTier !== 'pro' ? ' locked-item' : '')
+                    }
                     onClick={() => {
                       setCurrentMode(modeKey);
                       setIsDropdownOpen(false);
-                      setIsTranscriptPasted(false);
-                      setSummarizeDone(false);
-                      setPersistedVideoId(null);
-                      setShowVideoPreview(false);
-                      setInputText('');
-                      setResponse('');
+                      // Reset image state when switching modes
+                      if (modeKey !== 'imageAnalysis') {
+                        setUploadedImage(null);
+                        setImagePreview(null);
+                      }
                     }}
                   >
                     {modeLabels[modeKey]}
+                    {modeKey === 'imageAnalysis' && userTier !== 'pro' && (
+                      <span className="dropdown-pro-badge">PRO</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -676,7 +850,11 @@ Your current task: GENERATE AUDIO SCRIPT
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  handleSend();
+                  if (currentMode === 'imageAnalysis') {
+                    handleImageAnalysis();
+                  } else {
+                    handleSend();
+                  }
                 }
               }}
               style={{ flex: 1 }}
@@ -698,14 +876,17 @@ Your current task: GENERATE AUDIO SCRIPT
             </svg>
           </button>
 
-          {/* SEND */}
+          {/* ✅ UPDATED: Send button triggers image analysis when in that mode */}
           <button
             id="submit-btn"
-            onClick={handleSend}
-            disabled={isLoading || (!inputText.trim() && !isTranscriptPasted)}
-            title="Send"
+            onClick={currentMode === 'imageAnalysis' ? handleImageAnalysis : handleSend}
+            disabled={
+              isLoading ||
+              (currentMode === 'imageAnalysis' ? !uploadedImage : !inputText.trim())
+            }
+            title={currentMode === 'imageAnalysis' ? 'Analyze Image' : 'Send'}
           >
-            {isLoading ? (
+            {isLoading || isAnalyzing ? (
               <span className="loading-dots">...</span>
             ) : (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

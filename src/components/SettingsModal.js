@@ -141,6 +141,7 @@ const SettingsModal = ({ onClose }) => {
                       <li>✅ 2 requests/day after</li>
                       <li>✅ Study Mode with music</li>
                       <li>✅ WaveNet voice</li>
+                      <li>❌ Image Analysis (Google Vision)</li>
                       <li>❌ Unlimited requests</li>
                       <li>❌ Priority responses</li>
                     </ul>
@@ -160,6 +161,7 @@ const SettingsModal = ({ onClose }) => {
                       <li>✅ 100 requests per day (resets at midnight)</li>
                       <li>✅ All 6 AI modes</li>
                       <li>✅ Study Mode with music</li>
+                      <li>✅ Image Analysis (Google Vision)</li>
                       <li>✅ Neural2 voice (premium quality)</li>
                       <li>✅ Priority responses</li>
                       <li>✅ Early access to new features</li>

@@ -4222,3 +4222,106 @@ body.light-mode .study-volume-slider {
 body.light-mode .mobile-study-wrapper {
   background: rgba(240,240,252,0.98);
 }
+
+/* ========== IMAGE ANALYSIS ========== */
+.image-upload-zone {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.image-drop-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1.5rem;
+  border: 2px dashed rgba(106,92,255,0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(106,92,255,0.03);
+}
+
+.image-drop-area:hover {
+  border-color: rgba(106,92,255,0.6);
+  background: rgba(106,92,255,0.06);
+}
+
+.image-drop-icon {
+  font-size: 2rem;
+}
+
+.image-drop-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.image-drop-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.image-preview-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.image-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid rgba(106,92,255,0.3);
+  background: rgba(0,0,0,0.2);
+}
+
+.image-remove-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255,75,75,0.9);
+  border: none;
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.image-remove-btn:hover {
+  background: #ff4444;
+}
+
+/* Pro badge in dropdown */
+.dropdown-pro-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  color: white;
+  border-radius: 4px;
+  margin-left: auto;
+  letter-spacing: 0.05em;
+}
+
+.locked-item {
+  opacity: 0.7;
+}
+
+.locked-item:hover {
+  color: var(--accent1) !important;
+}
+
+/* Light mode */
+body.light-mode .image-drop-area {
+  border-color: rgba(106,92,255,0.2);
+  background: rgba(106,92,255,0.02);
+}
+
+body.light-mode .image-preview {
+  background: rgba(255,255,255,0.9);
+}
