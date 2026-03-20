@@ -78,7 +78,7 @@ const MobileTopbar = () => {
   onClick={() => setShowStudy(!showStudy)} 
   title="Study Mode"
 >
-  🎓🎶
+  🎶
 </button>
 
           {/* AI Models button */}
