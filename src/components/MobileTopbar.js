@@ -41,11 +41,13 @@ const MobileTopbar = () => {
           <span className="mobile-brand-name">vAIbes</span>
         </div>
 
-        {/* Study Mode Panel */}
-{showStudy && (
-  <div className="mobile-study-wrapper">
-    <StudyMode />
-  </div>
+        {/* Study Mode Panel — display:none keeps music playing */}
+<div 
+  className="mobile-study-wrapper" 
+  style={{ display: showStudy ? 'block' : 'none' }}
+>
+  <StudyMode />
+</div>
 )}
 
         {/* Right: Actions */}
@@ -78,7 +80,7 @@ const MobileTopbar = () => {
   onClick={() => setShowStudy(!showStudy)} 
   title="Study Mode"
 >
-  🎶
+  🎼
 </button>
 
           {/* AI Models button */}
