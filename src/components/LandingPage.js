@@ -201,7 +201,7 @@ const LandingPage = () => {
               <div className="landing-price">$3.34 <span>/month</span></div>
               <ul>
                 <li>✅ 100 requests per day (resets at midnight)</li>
-                <li>✅ All 6 AI modes</li>
+                <li>✅ All 7 AI modes</li>
                 <li>✅ Study Mode with music</li>
                 <li>✅ Image Analysis</li>
                 <li>✅ Neural2 premium voice</li>

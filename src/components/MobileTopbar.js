@@ -48,7 +48,7 @@ const MobileTopbar = () => {
 >
   <StudyMode />
 </div>
-)}
+
 
         {/* Right: Actions */}
         <div className="mobile-topbar-right">

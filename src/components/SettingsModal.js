@@ -159,7 +159,7 @@ const SettingsModal = ({ onClose }) => {
                     </div>
                     <ul className="tier-features">
                       <li>✅ 100 requests per day (resets at midnight)</li>
-                      <li>✅ All 6 AI modes</li>
+                      <li>✅ All 7 AI modes</li>
                       <li>✅ Study Mode with music</li>
                       <li>✅ Image Analysis (Google Vision)</li>
                       <li>✅ Neural2 voice (premium quality)</li>
