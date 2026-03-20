@@ -24,23 +24,23 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { 
-        redirectTo: 'https://vaibes.pro/app'  // ✅ Updated
-      }
-    });
-  };
+ const signInWithGoogle = async () => {
+  await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: 'https://vaibes.pro/app'
+    }
+  });
+};
 
-  const signInWithTwitter = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'twitter',
-      options: { 
-        redirectTo: 'https://vaibes.pro/app'  // ✅ Updated
-      }
-    });
-  };
+const signInWithTwitter = async () => {
+  await supabase.auth.signInWithOAuth({
+    provider: 'twitter',
+    options: {
+      redirectTo: 'https://vaibes.pro/app'
+    }
+  });
+};
 
   const signInWithEmail = async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
