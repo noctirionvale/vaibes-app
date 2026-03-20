@@ -662,7 +662,7 @@ Your current task: IMAGE ANALYSIS
                 <span className="image-drop-text">
                   {userTier === 'pro'
                     ? 'Click to upload image'
-                    : '🔒 Pro feature — Upgrade to upload images'
+                    : 'Pro feature — Upgrade to upload images'
                   }
                 </span>
                 <span className="image-drop-hint">JPG, PNG, GIF under 4MB</span>
