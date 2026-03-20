@@ -61,6 +61,7 @@ const StudyMode = () => {
 
   const getYouTubeUrl = (station) => {
     if (!station || !isPlaying) return '';
+    // ✅ Fixed: Removed extra spaces in URL
     return `https://www.youtube-nocookie.com/embed/${station.youtubeId}?autoplay=1&loop=1&playlist=${station.youtubeId}&controls=0&modestbranding=1&rel=0&showinfo=0&mute=0&volume=${volume}`;
   };
 
@@ -104,91 +105,92 @@ const StudyMode = () => {
         </svg>
       </button>
 
-      {/* Player Panel */}
-      {isOpen && (
-        <div className="study-mode-panel">
+      {/* ✅ Player Panel — hidden with display:none but stays mounted */}
+      <div 
+        className="study-mode-panel" 
+        style={{ display: isOpen ? 'flex' : 'none' }}
+      >
 
-          {/* Now Playing */}
-          {currentStation && (
-            <div
-              className="study-now-playing"
-              style={{ borderColor: currentStation.color + '40' }}
-            >
-              <div className="study-now-playing-info">
-                <span className="study-now-playing-emoji">
-                  {currentStation.emoji}
-                </span>
-                <div>
-                  <div className="study-now-playing-name">
-                    {currentStation.name}
-                  </div>
-                  <div className="study-now-playing-status">
-                    {isPlaying ? '▶ Playing' : '⏸ Paused'}
-                  </div>
+        {/* Now Playing */}
+        {currentStation && (
+          <div
+            className="study-now-playing"
+            style={{ borderColor: currentStation.color + '40' }}
+          >
+            <div className="study-now-playing-info">
+              <span className="study-now-playing-emoji">
+                {currentStation.emoji}
+              </span>
+              <div>
+                <div className="study-now-playing-name">
+                  {currentStation.name}
+                </div>
+                <div className="study-now-playing-status">
+                  {isPlaying ? '▶ Playing' : '⏸ Paused'}
                 </div>
               </div>
-              <button
-                className="study-playpause-btn"
-                onClick={handlePlayPause}
-                style={{ background: currentStation.color }}
-              >
-                {isPlaying ? '⏸' : '▶'}
-              </button>
             </div>
-          )}
-
-          {/* Volume */}
-          <div className="study-volume-row">
-            <span>🔈</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={volume}
-              onChange={e => setVolume(e.target.value)}
-              className="study-volume-slider"
-            />
-            <span>🔊</span>
+            <button
+              className="study-playpause-btn"
+              onClick={handlePlayPause}
+              style={{ background: currentStation.color }}
+            >
+              {isPlaying ? '⏸' : '▶'}
+            </button>
           </div>
+        )}
 
-          {/* Stations */}
-          <div className="study-stations">
-            {stations.map(station => (
-              <button
-                key={station.id}
-                className={"study-station-btn " + (currentStation?.id === station.id ? 'active' : '')}
-                onClick={() => handleStationSelect(station)}
-                style={currentStation?.id === station.id ? {
-                  borderColor: station.color,
-                  background: station.color + '15'
-                } : {}}
-              >
-                <span className="study-station-emoji">{station.emoji}</span>
-                <span className="study-station-name">{station.name}</span>
-                {currentStation?.id === station.id && isPlaying && (
-                  <div className="study-station-playing">
-                    <span /><span /><span />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Hidden YouTube iframe */}
-          {currentStation && isPlaying && (
-            <iframe
-              ref={iframeRef}
-              src={getYouTubeUrl(currentStation)}
-              style={{ display: 'none' }}
-              allow="autoplay"
-              title="Study Music"
-            />
-          )}
-
-          <p className="study-mode-credit">
-            Powered by YouTube • Audio only
-          </p>
+        {/* Volume */}
+        <div className="study-volume-row">
+          <span>🔈</span>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={e => setVolume(e.target.value)}
+            className="study-volume-slider"
+          />
+          <span>🔊</span>
         </div>
+
+        {/* Stations */}
+        <div className="study-stations">
+          {stations.map(station => (
+            <button
+              key={station.id}
+              className={"study-station-btn " + (currentStation?.id === station.id ? 'active' : '')}
+              onClick={() => handleStationSelect(station)}
+              style={currentStation?.id === station.id ? {
+                borderColor: station.color,
+                background: station.color + '15'
+              } : {}}
+            >
+              <span className="study-station-emoji">{station.emoji}</span>
+              <span className="study-station-name">{station.name}</span>
+              {currentStation?.id === station.id && isPlaying && (
+                <div className="study-station-playing">
+                  <span /><span /><span />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <p className="study-mode-credit">
+          Powered by YouTube • Audio only
+        </p>
+      </div>
+
+      {/* ✅ Hidden YouTube iframe — OUTSIDE panel, always mounted when playing */}
+      {currentStation && isPlaying && (
+        <iframe
+          ref={iframeRef}
+          src={getYouTubeUrl(currentStation)}
+          style={{ display: 'none' }}
+          allow="autoplay"
+          title="Study Music"
+        />
       )}
 
     </div>
