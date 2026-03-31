@@ -21,29 +21,38 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Handle initial load / OAuth redirect
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // 1. We wrap everything in an async function to control the exact execution order
+    const initializeAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id); // Fetch profile if already logged in
+        await fetchProfile(session.user.id);
       } else {
         setLoading(false);
       }
-    });
+    };
 
-    // Listen for auth state changes (logging in/out)
+    // Run the initial check
+    initializeAuth();
+
+    // 2. Set up the listener for FUTURE changes, ignoring the initial load
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        // ✅ THIS IS THE MAGIC FIX: Ignore the initial event to prevent the token collision
+        if (event === 'INITIAL_SESSION') return; 
+
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchProfile(session.user.id); // Fetch profile on fresh login
+          await fetchProfile(session.user.id);
         } else {
-          setProfile(null); // Clear profile on logout
+          setProfile(null);
         }
         setLoading(false);
       }
     );
 
+    // Cleanup the listener when the component unmounts
     return () => subscription.unsubscribe();
   }, []);
 
@@ -72,14 +81,18 @@ export const AuthProvider = ({ children }) => {
 
   // ✅ UPDATED: Now passes the display name into the metadata so the trigger can catch it
   const signUpWithEmail = async (email, password, displayName = 'New User') => {
-    const { error } = await supabase.auth.signUp({ 
+    const { data, error } = await supabase.auth.signUp({ 
       email, 
       password,
       options: {
         data: { display_name: displayName }
       }
     });
+    
     if (error) throw error;
+    
+    // ✅ NEW: Return the data so our UI knows what to do next
+    return data; 
   };
 
   const signOut = async () => {

@@ -3,15 +3,17 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 const ProfilePanel = ({ onClose, embedded = false }) => {
-  const { user } = useAuth();
+  // ✅ 1. Pull BOTH user and our new profile object
+  const { user, profile } = useAuth();
   const fileInputRef = useRef(null);
 
+  // ✅ 2. Initialize from the database profile first, fallback to auth metadata
   const [displayName, setDisplayName] = useState(
-    user?.user_metadata?.full_name || user?.user_metadata?.name || ''
+    profile?.display_name || user?.user_metadata?.display_name || user?.user_metadata?.full_name || ''
   );
   const [email] = useState(user?.email || '');
   const [avatarUrl, setAvatarUrl] = useState(
-    user?.user_metadata?.avatar_url || ''
+    profile?.avatar_url || user?.user_metadata?.avatar_url || ''
   );
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -53,11 +55,23 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
     setError('');
     setMessage('');
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { full_name: displayName, avatar_url: avatarUrl }
+      // Update the hidden auth metadata for consistency
+      await supabase.auth.updateUser({
+        data: { display_name: displayName, avatar_url: avatarUrl }
       });
-      if (error) throw error;
-      setMessage('Profile saved successfully!');
+
+      // ✅ 3. Update our custom profiles table!
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({
+          display_name: displayName,
+          avatar_url: avatarUrl
+        })
+        .eq('id', user.id);
+
+      if (dbError) throw dbError;
+
+      setMessage('Profile saved successfully! (Refresh page to see updates)');
     } catch (err) {
       setError('Save failed: ' + err.message);
     } finally {
