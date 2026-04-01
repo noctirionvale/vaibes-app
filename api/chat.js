@@ -5,9 +5,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // ✨ NEW: The VIP Bypass Check
-  const bypassToken = req.headers['x-admin-bypass'];
-  const isAdmin = bypassToken && bypassToken === process.env.ADMIN_BYPASS_TOKEN;
+  // ✨ NEW: The VIP Email Bypass Check
+  // We grab the userEmail that the frontend will send us in the request body
+  const userEmail = req.body.userEmail;
+  
+  // If the email matches yours, isAdmin becomes true and skips the rate limiter!
+  const isAdmin = userEmail === 'noctirionvale@gmail.com';
 
   // 2. THE CAPPING LOGIC (Only runs if you are NOT the admin)
   if (!isAdmin) {

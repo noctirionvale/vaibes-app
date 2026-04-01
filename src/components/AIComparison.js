@@ -273,24 +273,28 @@ Your current task: IMAGE ANALYSIS
 
       setIsAnalyzing(false);
 
-      // Step 2: Send to vAIbes for explanation
-      const secretToken = localStorage.getItem('admin_bypass_key') || '';
-      const apiResponse = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-bypass': secretToken
-        },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompts.imageAnalysis },
-            {
-              role: 'user',
-              content: `Here is what Google Vision detected in the image:\n\n${visionData.summary}\n\n${inputText ? 'User also says: ' + inputText : 'Please explain what you see in this image.'}`
-            }
-          ]
-        })
-      });
+      // 💡 IMPORTANT: Make sure you are pulling 'user' from your AuthContext 
+// at the very top of this component like this: const { user } = useAuth();
+
+// Step 2: Send to vAIbes for explanation
+const apiResponse = await fetch('/api/chat', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    // ❌ We completely deleted the 'x-admin-bypass' header here
+  },
+  body: JSON.stringify({
+    // ✅ ADDED: We hand your email directly to the backend here
+    userEmail: user?.email, 
+    messages: [
+      { role: 'system', content: systemPrompts.imageAnalysis },
+      {
+        role: 'user',
+        content: `Here is what Google Vision detected in the image:\n\n${visionData.summary}\n\n${inputText ? 'User also says: ' + inputText : 'Please explain what you see in this image.'}`
+      }
+    ]
+  })
+});
 
       const data = await apiResponse.json();
       if (data.choices?.[0]) {
