@@ -459,19 +459,20 @@ const apiResponse = await fetch('/api/chat', {
         console.warn('localStorage not accessible');
       }
 
-      const apiResponse = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-bypass': secretToken
-        },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompts[currentMode] },
-            { role: 'user', content: textToSend }
-          ]
-        })
-      });
+      // Get the session token
+const { data: { session } } = await supabase.auth.getSession()
+
+const response = await fetch('/api/your-handler', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session?.access_token}` // ✅ Token not email
+  },
+  body: JSON.stringify({
+    messages: messages
+    // ❌ Remove userEmail from here entirely
+  })
+})
 
       const data = await apiResponse.json();
 
