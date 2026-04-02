@@ -88,64 +88,13 @@ Who you are:
 Your mission: Make AI make sense to real people.`;
 
   const systemPrompts = {
-    explain: `${vAIbesCore}
-
-Your current task: EXPLAIN
-- Break down the concept clearly and simply
-- Use real-world analogies when helpful
-- Check your explanation makes sense end-to-end
-- End with one sentence that ties it all together`,
-
-    summarize: `${vAIbesCore}
-
-Your current task: SUMMARIZE
-- Extract only the most important points
-- Cut ruthlessly — if it's not essential, drop it
-- Structure it so someone who hasn't read the original immediately gets it
-- Keep it tight and scannable`,
-
-    describe: `${vAIbesCore}
-
-Your current task: DESCRIBE
-- Paint a vivid, structured picture with words
-- Be specific and observational
-- Organize your description logically (big picture first, then details)
-- Make the reader feel like they can see it`,
-
-    analyze: `${vAIbesCore}
-
-Your current task: ANALYZE
-- Look for patterns, contradictions, and hidden insights
-- Don't just describe — interpret what it means
-- Point out what's strong, what's weak, what's missing
-- Be direct about your findings, even if uncomfortable`,
-
-    generateDesc: `${vAIbesCore}
-
-Your current task: GENERATE DESCRIPTION
-- Write compelling, professional copy
-- Lead with the strongest benefit or hook
-- Be specific — vague descriptions don't sell
-- Make it feel human, not like a robot wrote it`,
-
-    generateAudio: `${vAIbesCore}
-
-Your current task: GENERATE AUDIO SCRIPT
-- Write naturally spoken words only
-- No markdown, no bullet points, no headers
-- Use rhythm and flow — this will be read aloud
-- Sound like a real person having a conversation, not presenting a report`,
-
-    // ✅ NEW: Image Analysis prompt
-    imageAnalysis: `${vAIbesCore}
-
-Your current task: IMAGE ANALYSIS
-- You have been given the results of a Google Vision AI scan of an image
-- Describe what you see in a warm, clear, engaging way
-- Explain the labels, objects and any text found
-- If there's text in the image, read and explain it
-- Make it feel like a knowledgeable friend describing the photo
-- Be specific and insightful, not just listing labels`
+    explain: `${vAIbesCore}\n\nYour current task: EXPLAIN\n- Break down the concept clearly and simply\n- Use real-world analogies when helpful\n- Check your explanation makes sense end-to-end\n- End with one sentence that ties it all together`,
+    summarize: `${vAIbesCore}\n\nYour current task: SUMMARIZE\n- Extract only the most important points\n- Cut ruthlessly — if it's not essential, drop it\n- Structure it so someone who hasn't read the original immediately gets it\n- Keep it tight and scannable`,
+    describe: `${vAIbesCore}\n\nYour current task: DESCRIBE\n- Paint a vivid, structured picture with words\n- Be specific and observational\n- Organize your description logically (big picture first, then details)\n- Make the reader feel like they can see it`,
+    analyze: `${vAIbesCore}\n\nYour current task: ANALYZE\n- Look for patterns, contradictions, and hidden insights\n- Don't just describe — interpret what it means\n- Point out what's strong, what's weak, what's missing\n- Be direct about your findings, even if uncomfortable`,
+    generateDesc: `${vAIbesCore}\n\nYour current task: GENERATE DESCRIPTION\n- Write compelling, professional copy\n- Lead with the strongest benefit or hook\n- Be specific — vague descriptions don't sell\n- Make it feel human, not like a robot wrote it`,
+    generateAudio: `${vAIbesCore}\n\nYour current task: GENERATE AUDIO SCRIPT\n- Write naturally spoken words only\n- No markdown, no bullet points, no headers\n- Use rhythm and flow — this will be read aloud\n- Sound like a real person having a conversation, not presenting a report`,
+    imageAnalysis: `${vAIbesCore}\n\nYour current task: IMAGE ANALYSIS\n- You have been given the results of a Google Vision AI scan of an image\n- Describe what you see in a warm, clear, engaging way\n- Explain the labels, objects and any text found\n- If there's text in the image, read and explain it\n- Make it feel like a knowledgeable friend describing the photo\n- Be specific and insightful, not just listing labels`
   };
 
   const modeLabels = {
@@ -155,7 +104,7 @@ Your current task: IMAGE ANALYSIS
     analyze: "Analyze Data",
     generateDesc: "Generate Description",
     generateAudio: "Generate Audio (TTS)",
-    imageAnalysis: "Image Analysis 🔒"  // ✅ NEW
+    imageAnalysis: "Image Analysis 🔒"
   };
 
   const handleAudioPlayback = async (textToSpeak) => {
@@ -207,35 +156,29 @@ Your current task: IMAGE ANALYSIS
     window.speechSynthesis.speak(utterance);
   };
 
-  // ✅ NEW: Image upload handler
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       setResponse('Please upload an image file.');
       return;
     }
     
-    // Validate file size (4MB max)
     if (file.size > 4 * 1024 * 1024) {
       setResponse('Image must be under 4MB.');
       return;
     }
 
-    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
-      // Extract base64 without prefix
       const base64 = reader.result.split(',')[1];
       setUploadedImage(base64);
     };
     reader.readAsDataURL(file);
   };
 
-  // ✅ NEW: Image analysis handler
   const handleImageAnalysis = async () => {
     if (!user) { 
       setShowAuthModal(true); 
@@ -254,7 +197,6 @@ Your current task: IMAGE ANALYSIS
     setResponse('');
 
     try {
-      // Step 1: Analyze with Google Vision
       const visionRes = await fetch('/api/vision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -273,28 +215,25 @@ Your current task: IMAGE ANALYSIS
 
       setIsAnalyzing(false);
 
-      // 💡 IMPORTANT: Make sure you are pulling 'user' from your AuthContext 
-// at the very top of this component like this: const { user } = useAuth();
+      // ✅ FIX 1: Fetch Supabase Auth Token for the backend
+      const { data: { session } } = await supabase.auth.getSession();
 
-// Step 2: Send to vAIbes for explanation
-const apiResponse = await fetch('/api/chat', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    // ❌ We completely deleted the 'x-admin-bypass' header here
-  },
-  body: JSON.stringify({
-    // ✅ ADDED: We hand your email directly to the backend here
-    userEmail: user?.email, 
-    messages: [
-      { role: 'system', content: systemPrompts.imageAnalysis },
-      {
-        role: 'user',
-        content: `Here is what Google Vision detected in the image:\n\n${visionData.summary}\n\n${inputText ? 'User also says: ' + inputText : 'Please explain what you see in this image.'}`
-      }
-    ]
-  })
-});
+      const apiResponse = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}` // ✅ Added Auth Token
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompts.imageAnalysis },
+            {
+              role: 'user',
+              content: `Here is what Google Vision detected in the image:\n\n${visionData.summary}\n\n${inputText ? 'User also says: ' + inputText : 'Please explain what you see in this image.'}`
+            }
+          ]
+        })
+      });
 
       const data = await apiResponse.json();
       if (data.choices?.[0]) {
@@ -310,18 +249,15 @@ const apiResponse = await fetch('/api/chat', {
     }
   };
 
-  // ✅ UPDATED: Pro tier now has 100 requests/day with tracking
   const checkAndIncrementUsage = async () => {
     const today = new Date().toISOString().split('T')[0];
 
-    // Check user tier first
     const { data: profile } = await supabase
       .from('profiles')
       .select('tier')
       .eq('id', user.id)
       .single();
 
-    // ✅ PRO TIER: 100 requests/day with tracking
     if (profile?.tier === 'pro') {
       const { data: usage } = await supabase
         .from('user_usage')
@@ -329,7 +265,6 @@ const apiResponse = await fetch('/api/chat', {
         .eq('user_id', user.id)
         .single();
 
-      // New Pro user — create usage record
       if (!usage) {
         await supabase.from('user_usage').insert({
           user_id: user.id,
@@ -340,7 +275,6 @@ const apiResponse = await fetch('/api/chat', {
         return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true };
       }
 
-      // Reset counter at midnight
       if (usage.last_reset !== today) {
         await supabase.from('user_usage').update({
           request_count: 1,
@@ -349,12 +283,10 @@ const apiResponse = await fetch('/api/chat', {
         return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true };
       }
 
-      // Check if Pro limit exceeded
       if (usage.request_count >= PRO_DAILY_LIMIT) {
         return { allowed: false, remaining: 0, isPro: true, hitProLimit: true };
       }
 
-      // Increment Pro counter
       await supabase.from('user_usage').update({
         request_count: usage.request_count + 1
       }).eq('user_id', user.id);
@@ -366,14 +298,12 @@ const apiResponse = await fetch('/api/chat', {
       };
     }
 
-    // ✅ FREE TIER: Tiered limits (5 first day → 2/day after)
     const { data: usage } = await supabase
       .from('user_usage')
       .select('*')
       .eq('user_id', user.id)
       .single();
 
-    // Brand new free user
     if (!usage) {
       await supabase.from('user_usage').insert({
         user_id: user.id,
@@ -384,7 +314,6 @@ const apiResponse = await fetch('/api/chat', {
       return { allowed: true, remaining: DAILY_LIMIT_NEW - 1, isNewUser: true };
     }
 
-    // New day reset for free tier
     if (usage.last_reset !== today) {
       await supabase.from('user_usage').update({
         request_count: 1,
@@ -398,15 +327,12 @@ const apiResponse = await fetch('/api/chat', {
       };
     }
 
-    // Determine free tier limit
     const limit = usage.is_first_day ? DAILY_LIMIT_NEW : DAILY_LIMIT_FREE;
 
-    // Check if free limit exceeded
     if (usage.request_count >= limit) {
       return { allowed: false, remaining: 0, isNewUser: usage.is_first_day };
     }
 
-    // Increment free counter
     await supabase.from('user_usage').update({
       request_count: usage.request_count + 1
     }).eq('user_id', user.id);
@@ -426,7 +352,6 @@ const apiResponse = await fetch('/api/chat', {
 
     const { allowed, remaining, isNewUser, isPro, hitProLimit } = await checkAndIncrementUsage();
     
-    // ✅ UPDATED: Contextual messages for all tier states
     if (!allowed) {
       setResponse(
         isPro && hitProLimit
@@ -452,27 +377,25 @@ const apiResponse = await fetch('/api/chat', {
     setIsSpeaking(false);
 
     try {
-      let secretToken = '';
-      try {
-        secretToken = localStorage.getItem('admin_bypass_key') || '';
-      } catch (e) {
-        console.warn('localStorage not accessible');
-      }
+      // ✅ FIX 2: Define the messages array BEFORE sending it
+      const currentMessages = [
+        { role: 'system', content: systemPrompts[currentMode] },
+        { role: 'user', content: textToSend }
+      ];
 
-      // Get the session token
-const { data: { session } } = await supabase.auth.getSession()
+      // ✅ FIX 3: Clean Token Fetch Logic
+      const { data: { session } } = await supabase.auth.getSession();
 
-const response = await fetch('/api/your-handler', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session?.access_token}` // ✅ Token not email
-  },
-  body: JSON.stringify({
-    messages: messages
-    // ❌ Remove userEmail from here entirely
-  })
-})
+      const apiResponse = await fetch('/api/chat', { // using /api/chat
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}` // Sends secure token
+        },
+        body: JSON.stringify({
+          messages: currentMessages // Uses the cleanly defined variable from above
+        })
+      });
 
       const data = await apiResponse.json();
 
@@ -635,7 +558,7 @@ const response = await fetch('/api/your-handler', {
           </div>
         )}
 
-        {/* ✅ NEW: Image Upload Zone — only in imageAnalysis mode */}
+        {/* Image Upload Zone */}
         {currentMode === 'imageAnalysis' && (
           <div className="image-upload-zone">
             {imagePreview ? (
@@ -881,7 +804,7 @@ const response = await fetch('/api/your-handler', {
             </svg>
           </button>
 
-          {/* ✅ UPDATED: Send button triggers image analysis when in that mode */}
+          {/* Send button triggers image analysis when in that mode */}
           <button
             id="submit-btn"
             onClick={currentMode === 'imageAnalysis' ? handleImageAnalysis : handleSend}
