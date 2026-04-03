@@ -64,10 +64,10 @@ const AIComparison = () => {
       if (!user?.id) return;
       const { data } = await supabase
         .from('profiles')
-        .select('tier')
+        .select('plan')
         .eq('id', user.id)
         .single();
-      if (data?.tier) setUserTier(data.tier);
+      if (data?.plan) setUserTier(data.plan);
     };
     fetchTier();
   }, [user]);
@@ -254,7 +254,7 @@ Your mission: Make AI make sense to real people.`;
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('tier')
+      .select('plan')
       .eq('id', user.id)
       .single();
 
