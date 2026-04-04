@@ -103,13 +103,14 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user,
-      profile, // ✅ Export the profile so the rest of vAIbes can read the plan/stats
+      profile,
       loading,
       signInWithGoogle,
       signInWithTwitter,
       signInWithEmail,
       signUpWithEmail,
-      signOut
+      signOut,
+      fetchProfile: () => fetchProfile(user?.id) // ✅ Added
     }}>
       {children}
     </AuthContext.Provider>

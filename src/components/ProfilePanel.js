@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 const ProfilePanel = ({ onClose, embedded = false }) => {
   // ✅ 1. Pull BOTH user and our new profile object
-  const { user, profile } = useAuth();
+  const { user, profile, fetchProfile } = useAuth();
   const fileInputRef = useRef(null);
 
   // ✅ 2. Initialize from the database profile first, fallback to auth metadata
@@ -42,7 +42,7 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
 
       const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
       setAvatarUrl(data.publicUrl);
-      setMessage('Avatar uploaded! Hit Save to apply.');
+      setMessage('✅ Photo uploaded! Hit Save Changes to apply.')
     } catch (err) {
       setError('Upload failed: ' + err.message);
     } finally {
@@ -51,33 +51,38 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
   };
 
   const handleSave = async () => {
-    setSaving(true);
-    setError('');
-    setMessage('');
-    try {
-      // Update the hidden auth metadata for consistency
-      await supabase.auth.updateUser({
-        data: { display_name: displayName, avatar_url: avatarUrl }
-      });
+  setSaving(true)
+  setError('')
+  setMessage('')
+  try {
+    await supabase.auth.updateUser({
+      data: { display_name: displayName, avatar_url: avatarUrl }
+    })
 
-      // ✅ 3. Update our custom profiles table!
-      const { error: dbError } = await supabase
-        .from('profiles')
-        .update({
-          display_name: displayName,
-          avatar_url: avatarUrl
-        })
-        .eq('id', user.id);
+    const { error: dbError } = await supabase
+      .from('profiles')
+      .update({
+        display_name: displayName,
+        avatar_url: avatarUrl
+      })
+      .eq('id', user.id)
 
-      if (dbError) throw dbError;
+    if (dbError) throw dbError
 
-      setMessage('Profile saved successfully! (Refresh page to see updates)');
-    } catch (err) {
-      setError('Save failed: ' + err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
+    // ✅ Refresh global profile so navbar + everywhere updates instantly
+    await fetchProfile()
+
+    setMessage('✅ Profile saved successfully!')
+
+    // Auto-clear message after 3 seconds
+    setTimeout(() => setMessage(''), 3000)
+
+  } catch (err) {
+    setError('Save failed: ' + err.message)
+  } finally {
+    setSaving(false)
+  }
+}
 
   return (
     <div className={embedded ? 'profile-panel-embedded' : 'profile-panel'}>
