@@ -62,12 +62,18 @@ const AIComparison = () => {
   useEffect(() => {
     const fetchTier = async () => {
       if (!user?.id) return;
-      const { data } = await supabase
-        .from('profiles')
-        .select('plan')
-        .eq('id', user.id)
-        .single();
-      if (data?.plan) setUserTier(data.plan);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('plan')
+          .eq('id', user.id)
+          .single();
+        if (error) throw error
+        if (data?.plan) setUserTier(data.plan);
+      } catch (err) {
+        console.error('Error fetching plan:', err);
+        setUserTier('free');
+      }
     };
     fetchTier();
   }, [user]);
@@ -258,7 +264,7 @@ Your mission: Make AI make sense to real people.`;
       .eq('id', user.id)
       .single();
 
-    if (profile?.tier === 'pro') {
+    if (profile?.plan === 'pro') {
       const { data: usage } = await supabase
         .from('user_usage')
         .select('*')

@@ -15,12 +15,12 @@ const SettingsModal = ({ onClose }) => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('tier')
+          .select('plan')
           .eq('id', user.id)
           .single();
         
         if (error) throw error;
-        if (data?.tier) setUserTier(data.tier);
+        if (data?.plan) setUserTier(data.plan);
       } catch (err) {
         console.error('Error fetching user tier:', err);
         setUserTier('free');
