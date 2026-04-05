@@ -21,34 +21,41 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
   const [error, setError] = useState('');
 
   const handleAvatarUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { setError('Please upload an image file.'); return; }
-    if (file.size > 2 * 1024 * 1024) { setError('Image must be under 2MB.'); return; }
+  const file = e.target.files[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) { setError('Please upload an image file.'); return }
+  if (file.size > 2 * 1024 * 1024) { setError('Image must be under 2MB.'); return }
 
-    setUploading(true);
-    setError('');
+  setUploading(true)
+  setError('')
+  setMessage('')
 
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = user.id + '-' + Date.now() + '.' + fileExt;
-      const filePath = 'avatars/' + fileName;
+  try {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`
+    const filePath = `avatars/${fileName}`
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
+    // ✅ Check bucket name matches exactly
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true })
 
-      if (uploadError) throw uploadError;
+    if (uploadError) throw uploadError
 
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      setAvatarUrl(data.publicUrl);
-      setMessage('✅ Photo uploaded! Hit Save Changes to apply.')
-    } catch (err) {
-      setError('Upload failed: ' + err.message);
-    } finally {
-      setUploading(false);
-    }
-  };
+    const { data } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath)
+
+    setAvatarUrl(data.publicUrl)
+    setMessage('✅ Photo uploaded! Hit Save Changes to apply.')
+
+  } catch (err) {
+    console.error('Upload error:', err)
+    setError('Upload failed: ' + err.message)
+  } finally {
+    setUploading(false) // ✅ Always clears uploading state
+  }
+}
 
   const handleSave = async () => {
   setSaving(true)
