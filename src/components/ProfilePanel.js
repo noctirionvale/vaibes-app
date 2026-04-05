@@ -1,6 +1,7 @@
+// src/components/ProfilePanel.jsx
+import React, { useRef, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { useRef, useState, useEffect } from 'react';
 
 const ProfilePanel = ({ onClose, embedded = false }) => {
   const { user, profile, fetchProfile } = useAuth();
@@ -17,13 +18,12 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // Sync local state when context profile changes (e.g., after fetchProfile)
+  // Sync local state when context profile changes
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || '');
       setAvatarUrl(profile.avatar_url || '');
     } else if (user?.user_metadata) {
-      // Fallback to auth metadata if profile not yet loaded
       setDisplayName(user.user_metadata.display_name || user.user_metadata.full_name || '');
       setAvatarUrl(user.user_metadata.avatar_url || '');
     }
@@ -100,7 +100,7 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
         .eq('id', user.id);
       if (dbError) throw dbError;
 
-      // 3. Refresh context profile in background – never await
+      // 3. Refresh context profile in background – NO AWAIT
       fetchProfile().catch(err => console.error('Background profile refresh failed:', err));
 
       if (isMounted.current) {
@@ -115,18 +115,26 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
     }
   };
 
-  // Render (unchanged except for className details)
   return (
     <div className={embedded ? 'profile-panel-embedded' : 'profile-panel'}>
       {!embedded && (
         <div className="profile-panel-header">
           <h3>Edit Profile</h3>
-          <button className="close-modal-btn" onClick={onClose}>✕</button>
+          <button className="close-modal-btn" onClick={onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
       )}
 
       <div className="profile-avatar-section">
-        <div className="profile-avatar-wrapper" onClick={() => fileInputRef.current?.click()}>
+        <div
+          className="profile-avatar-wrapper"
+          onClick={() => fileInputRef.current?.click()}
+          title="Click to change avatar"
+        >
           {avatarUrl ? (
             <img src={avatarUrl} alt="avatar" className="profile-avatar-img" />
           ) : (
@@ -135,21 +143,42 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
             </div>
           )}
           <div className="profile-avatar-overlay">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
             <span>{uploading ? 'Uploading...' : 'Change'}</span>
           </div>
         </div>
-        <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleAvatarUpload} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleAvatarUpload}
+        />
         <p className="profile-avatar-hint">JPG, PNG under 2MB</p>
       </div>
 
       <div className="profile-form">
         <div className="profile-field">
           <label>Display Name</label>
-          <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} />
+          <input
+            type="text"
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            placeholder="Your display name"
+            className="auth-input"
+          />
         </div>
         <div className="profile-field">
           <label>Email Address</label>
-          <input type="email" value={email} disabled className="disabled-input" />
+          <input
+            type="email"
+            value={email}
+            disabled
+            className="auth-input disabled-input"
+          />
           <span className="field-hint">Email cannot be changed</span>
         </div>
       </div>
@@ -157,7 +186,11 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
       {error && <p className="auth-error">{error}</p>}
       {message && <p className="auth-success">{message}</p>}
 
-      <button className="modal-action-btn" onClick={handleSave} disabled={saving || uploading}>
+      <button
+        className="modal-action-btn"
+        onClick={handleSave}
+        disabled={saving || uploading}
+      >
         {saving ? 'Saving...' : 'Save Changes'}
       </button>
     </div>
