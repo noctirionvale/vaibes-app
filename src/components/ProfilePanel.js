@@ -76,18 +76,17 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
 
     if (dbError) throw dbError
 
-    // ✅ Refresh global profile so navbar + everywhere updates instantly
-    await fetchProfile()
+    // ✅ Don't await fetchProfile — let it run in background
+    // If it hangs, it won't block the save from completing
+    fetchProfile().catch(console.error)
 
     setMessage('✅ Profile saved successfully!')
-
-    // Auto-clear message after 3 seconds
     setTimeout(() => setMessage(''), 3000)
 
   } catch (err) {
     setError('Save failed: ' + err.message)
   } finally {
-    setSaving(false)
+    setSaving(false) // ✅ Now guaranteed to run
   }
 }
 
