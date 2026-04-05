@@ -3,42 +3,18 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 const stations = [
-  {
-    id: 'lofi',
-    name: 'Lo-fi Hip Hop',
-    emoji: '🎧',
-    color: '#6a5cff',
-    youtubeId: 'BCxTQq0UiFs',
-  },
-  {
-    id: 'ambient',
-    name: 'Ambient Nature',
-    emoji: '🌿',
-    color: '#10b981',
-    youtubeId: 'DRFHklnN-SM',
-  },
-  {
-    id: 'jazz',
-    name: 'Jazz Cafe',
-    emoji: '☕',
-    color: '#d97706',
-    youtubeId: 'MYPVQccHhAQ',
-  },
-  {
-    id: 'focus',
-    name: 'Deep Focus',
-    emoji: '🧠',
-    color: '#8b5cf6',
-    youtubeId: 'oPVte6aMprI',
-  },
-  {
-    id: 'classical',
-    name: 'Classical',
-    emoji: '🎻',
-    color: '#ec4899',
-    youtubeId: 'mIYzp5rcTvU',
-  },
+  { id: 'lofi', name: 'Lo-fi Hip Hop', emoji: '🎧', color: '#6a5cff', youtubeId: 'BCxTQq0UiFs' },
+  { id: 'ambient', name: 'Ambient Nature', emoji: '🌿', color: '#10b981', youtubeId: 'DRFHklnN-SM' },
+  { id: 'jazz', name: 'Jazz Cafe', emoji: '☕', color: '#d97706', youtubeId: 'MYPVQccHhAQ' },
+  { id: 'focus', name: 'Deep Focus', emoji: '🧠', color: '#8b5cf6', youtubeId: 'oPVte6aMprI' },
+  { id: 'classical', name: 'Classical', emoji: '🎻', color: '#ec4899', youtubeId: 'mIYzp5rcTvU' },
 ];
+
+const extractYoutubeId = (url) => {
+  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+};
 
 const StudyMode = () => {
   const { user } = useAuth();
@@ -52,19 +28,16 @@ const StudyMode = () => {
   const [localAudioUrl, setLocalAudioUrl] = useState(null);
   const [localFileName, setLocalFileName] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
 
-  // Define loadUserPreference with useCallback so it can be used in useEffect
   const loadUserPreference = useCallback(async () => {
     if (!user) return;
-
     const { data, error } = await supabase
       .from('user_preferences')
       .select('study_song_audio_url, study_song_type')
       .eq('user_id', user.id)
       .single();
-
     if (error || !data) return;
-
     if (data.study_song_type === 'local' && data.study_song_audio_url) {
       setLocalAudioUrl(data.study_song_audio_url);
       setLocalFileName('Saved Song');
@@ -74,14 +47,23 @@ const StudyMode = () => {
       const savedStation = stations.find(s => s.youtubeId === data.study_song_audio_url);
       if (savedStation) {
         setCurrentStation(savedStation);
-        setIsPlaying(true);
+      } else {
+        // Custom YouTube video (not in built-in stations)
+        setCurrentStation({
+          id: 'custom',
+          name: 'Custom YouTube',
+          emoji: '📺',
+          color: '#6a5cff',
+          youtubeId: data.study_song_audio_url,
+        });
       }
+      setIsPlaying(true);
     }
   }, [user]);
 
   useEffect(() => {
     loadUserPreference();
-  }, [loadUserPreference]); // ✅ now includes the correct dependency
+  }, [loadUserPreference]);
 
   const savePreference = async (audioUrl, type) => {
     if (!user) return;
@@ -108,6 +90,30 @@ const StudyMode = () => {
     savePreference(station.youtubeId, 'youtube');
   };
 
+  const handleCustomYoutube = async () => {
+    const videoId = extractYoutubeId(customYoutubeUrl);
+    if (!videoId) {
+      alert('Invalid YouTube URL. Please check and try again.');
+      return;
+    }
+    if (localAudioUrl) {
+      setLocalAudioUrl(null);
+      setLocalFileName(null);
+      if (audioRef.current) audioRef.current.pause();
+    }
+    const customStation = {
+      id: 'custom',
+      name: 'Custom YouTube',
+      emoji: '📺',
+      color: '#6a5cff',
+      youtubeId: videoId,
+    };
+    setCurrentStation(customStation);
+    setIsPlaying(true);
+    await savePreference(videoId, 'youtube');
+    setCustomYoutubeUrl('');
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -119,20 +125,14 @@ const StudyMode = () => {
       alert('File too large (max 20MB)');
       return;
     }
-
     setUploading(true);
     try {
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('user_audio')
         .upload(filePath, file);
-
       if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('user_audio')
-        .getPublicUrl(filePath);
-
+      const { data: { publicUrl } } = supabase.storage.from('user_audio').getPublicUrl(filePath);
       setLocalAudioUrl(publicUrl);
       setLocalFileName(file.name);
       setCurrentStation(null);
@@ -202,6 +202,7 @@ const StudyMode = () => {
       </button>
 
       <div className="study-mode-panel" style={{ display: isOpen ? 'flex' : 'none' }}>
+        {/* Now Playing */}
         {(currentStation || localAudioUrl) && (
           <div className="study-now-playing" style={{ borderColor: currentStation ? currentStation.color + '40' : '#6a5cff' }}>
             <div className="study-now-playing-info">
@@ -223,13 +224,16 @@ const StudyMode = () => {
           </div>
         )}
 
+        {/* Volume */}
         <div className="study-volume-row">
           <span>🔈</span>
           <input type="range" min="0" max="100" value={volume} onChange={e => setVolume(e.target.value)} className="study-volume-slider" />
           <span>🔊</span>
         </div>
 
+        {/* Built-in Stations */}
         <div className="study-stations">
+          <div className="study-section-label">🎧 Recommended Stations</div>
           {stations.map(station => (
             <button
               key={station.id}
@@ -244,21 +248,55 @@ const StudyMode = () => {
               )}
             </button>
           ))}
+        </div>
 
-          <label className="study-station-btn" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
+        {/* Custom YouTube Input */}
+        <div className="study-custom-youtube">
+          <div className="study-section-label">📺 Custom YouTube</div>
+          <div className="study-youtube-input-group">
+            <input
+              type="text"
+              placeholder="Paste YouTube URL (e.g., https://youtu.be/...)"
+              value={customYoutubeUrl}
+              onChange={(e) => setCustomYoutubeUrl(e.target.value)}
+              className="study-youtube-input"
+            />
+            <button onClick={handleCustomYoutube} className="study-youtube-btn">
+              ➕ Use
+            </button>
+          </div>
+        </div>
+
+        {/* Upload Audio */}
+        <div className="study-upload-section">
+          <div className="study-section-label">📁 Your Music</div>
+          <label className="study-station-btn" style={{ cursor: uploading ? 'wait' : 'pointer', justifyContent: 'center' }}>
             <span className="study-station-emoji">📁</span>
             <span className="study-station-name">{uploading ? 'Uploading...' : 'Upload Audio'}</span>
             <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={handleFileUpload} disabled={uploading} />
           </label>
+          {localAudioUrl && (
+            <div className="study-local-file-info">
+              Currently playing: {localFileName}
+              <button onClick={() => {
+                setLocalAudioUrl(null);
+                setLocalFileName(null);
+                if (audioRef.current) audioRef.current.pause();
+                savePreference(null, null);
+              }} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer' }}>🗑</button>
+            </div>
+          )}
         </div>
 
         <p className="study-mode-credit">Powered by YouTube • Upload your own music</p>
       </div>
 
+      {/* YouTube iframe */}
       {currentStation && isPlaying && !localAudioUrl && (
         <iframe ref={iframeRef} src={getYouTubeUrl(currentStation)} style={{ display: 'none' }} allow="autoplay" title="Study Music" />
       )}
 
+      {/* Local audio element */}
       {localAudioUrl && (
         <audio ref={audioRef} src={localAudioUrl} autoPlay={isPlaying} loop style={{ display: 'none' }} />
       )}
