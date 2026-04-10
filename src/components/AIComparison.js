@@ -4,6 +4,8 @@ import AuthModal from './AuthModal';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
 
+const MOBILE_BREAKPOINT = 768;
+
 const AIComparison = () => {
   const [inputText, setInputText] = useState('');
   const [response, setResponse] = useState('');
@@ -493,10 +495,13 @@ Your mission: Make AI make sense to real people.`;
     const value = e.target.value;
     setInputText(value);
     setSummarizeDone(false);
-    
-    e.target.style.height = 'auto';
-    e.target.style.height = (e.target.scrollHeight) + 'px';
-    
+
+    // ✅ Only auto-resize on desktop to prevent mobile keyboard jump issues
+    if (window.innerWidth > MOBILE_BREAKPOINT) {
+      e.target.style.height = 'auto';
+      e.target.style.height = `${e.target.scrollHeight}px`;
+    }
+
     if (currentMode === 'summarize' && value.length > 500 && !extractYouTubeID(value)) {
       setIsTranscriptPasted(true);
     } else {

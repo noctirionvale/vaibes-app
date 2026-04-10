@@ -2054,6 +2054,27 @@ body.light-mode .chat-input-container:focus-within {
   box-shadow: 0 0 20px rgba(106, 92, 255, 0.15);
 }
 
+@media (max-width: 768px) {
+  #question-input {
+    height: 120px !important;
+    min-height: 120px !important;
+    max-height: 120px !important;
+    resize: none !important;
+    overflow-y: auto !important;
+  }
+
+  .chat-input-container {
+    position: relative;
+  }
+
+  /* Prevent auto-resize on mobile */
+  .sticky-chatbox {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+  }
+}
+
 body.light-mode .sticky-chatbox {
   background: rgba(240, 240, 250, 0.92);
   border-color: rgba(0, 0, 0, 0.08);
@@ -2966,37 +2987,40 @@ body.light-mode .mobile-icon-btn {
 /* Tabs */
 .settings-tabs {
   display: flex;
-  gap: 0.25rem;
-  padding: 1rem 1.5rem 0 1.5rem;
   border-bottom: 1px solid rgba(255,255,255,0.08);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-shrink: 0;
 }
+.settings-tabs::-webkit-scrollbar { display: none; }
 
 .settings-tab {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.6rem 1rem;
-  background: transparent;
+  padding: 0.75rem 1rem;
+  background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: var(--muted);
-  font-size: 0.85rem;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
+  white-space: nowrap; /* ✅ prevents wrapping */
+  flex-shrink: 0;      /* ✅ prevents squishing */
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
-  border-radius: 8px 8px 0 0;
 }
-
-.settings-tab:hover {
-  color: var(--text);
-  background: rgba(255,255,255,0.03);
-}
-
 .settings-tab.active {
-  color: var(--accent2);
-  border-bottom-color: var(--accent2);
-  background: rgba(0,229,255,0.05);
+  color: var(--accent, #ff4fd8);
+  border-bottom-color: var(--accent, #ff4fd8);
+}
+
+.settings-tab-content {
+  overflow-y: auto;
+  flex: 1;
+  padding: 1rem 1.25rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Tab content */
