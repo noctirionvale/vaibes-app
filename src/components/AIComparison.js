@@ -19,7 +19,7 @@ const AIComparison = () => {
   const [isTranscriptPasted, setIsTranscriptPasted] = useState(false);
   const [summarizeDone, setSummarizeDone] = useState(false);
   
-  // ✅ NEW: Image Analysis states
+  // Image Analysis states
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -30,10 +30,10 @@ const AIComparison = () => {
   const { isDark, toggleTheme } = useTheme();
   const [userTier, setUserTier] = useState('free');
 
-  // ✅ Rate limit constants
-  const DAILY_LIMIT_NEW = 5;      // first day welcome bonus
-  const DAILY_LIMIT_FREE = 2;     // standard free tier
-  const PRO_DAILY_LIMIT = 100;    // Pro tier daily limit
+  // Rate limit constants
+  const DAILY_LIMIT_NEW = 5;
+  const DAILY_LIMIT_FREE = 2;
+  const PRO_DAILY_LIMIT = 100;
 
   const extractYouTubeID = useCallback((url) => {
     if (!url) return null;
@@ -59,6 +59,7 @@ const AIComparison = () => {
     }
   }, [inputText, extractYouTubeID]);
 
+  // ✅ Fixed: stable dependency user?.id, and .maybeSingle()
   useEffect(() => {
     const fetchTier = async () => {
       if (!user?.id) return;
@@ -67,8 +68,8 @@ const AIComparison = () => {
           .from('profiles')
           .select('plan')
           .eq('id', user.id)
-          .single();
-        if (error) throw error
+          .maybeSingle();
+        if (error) throw error;
         if (data?.plan) setUserTier(data.plan);
       } catch (err) {
         console.error('Error fetching plan:', err);
@@ -76,7 +77,7 @@ const AIComparison = () => {
       }
     };
     fetchTier();
-  }, [user]);
+  }, [user?.id]);
 
   const activeVideoId = extractYouTubeID(inputText) || persistedVideoId;
 
@@ -115,7 +116,6 @@ Your mission: Make AI make sense to real people.`;
 
   const handleAudioPlayback = async (textToSpeak) => {
     setIsSpeaking(true);
-
     try {
       const response = await fetch('/api/tts', {
         method: 'POST',
@@ -221,14 +221,13 @@ Your mission: Make AI make sense to real people.`;
 
       setIsAnalyzing(false);
 
-      // ✅ FIX 1: Fetch Supabase Auth Token for the backend
       const { data: { session } } = await supabase.auth.getSession();
 
       const apiResponse = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}` // ✅ Added Auth Token
+          'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
           messages: [
@@ -255,6 +254,7 @@ Your mission: Make AI make sense to real people.`;
     }
   };
 
+  // ✅ FIXED: replaced .single() with .maybeSingle()
   const checkAndIncrementUsage = async () => {
     const today = new Date().toISOString().split('T')[0];
 
@@ -262,14 +262,14 @@ Your mission: Make AI make sense to real people.`;
       .from('profiles')
       .select('plan')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profile?.plan === 'pro') {
       const { data: usage } = await supabase
         .from('user_usage')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!usage) {
         await supabase.from('user_usage').insert({
@@ -308,7 +308,7 @@ Your mission: Make AI make sense to real people.`;
       .from('user_usage')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (!usage) {
       await supabase.from('user_usage').insert({
@@ -383,23 +383,21 @@ Your mission: Make AI make sense to real people.`;
     setIsSpeaking(false);
 
     try {
-      // ✅ FIX 2: Define the messages array BEFORE sending it
       const currentMessages = [
         { role: 'system', content: systemPrompts[currentMode] },
         { role: 'user', content: textToSend }
       ];
 
-      // ✅ FIX 3: Clean Token Fetch Logic
       const { data: { session } } = await supabase.auth.getSession();
 
-      const apiResponse = await fetch('/api/chat', { // using /api/chat
+      const apiResponse = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}` // Sends secure token
+          'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
-          messages: currentMessages // Uses the cleanly defined variable from above
+          messages: currentMessages
         })
       });
 
@@ -707,7 +705,6 @@ Your mission: Make AI make sense to real people.`;
                     onClick={() => {
                       setCurrentMode(modeKey);
                       setIsDropdownOpen(false);
-                      // Reset image state when switching modes
                       if (modeKey !== 'imageAnalysis') {
                         setUploadedImage(null);
                         setImagePreview(null);

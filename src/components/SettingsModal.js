@@ -9,6 +9,7 @@ const SettingsModal = ({ onClose }) => {
   const [userTier, setUserTier] = useState('free');
   const [upgrading, setUpgrading] = useState(false);
 
+  // ✅ Fixed: .maybeSingle() and stable dependency user?.id
   useEffect(() => {
     const fetchTier = async () => {
       if (!user?.id) return;
@@ -17,7 +18,7 @@ const SettingsModal = ({ onClose }) => {
           .from('profiles')
           .select('plan')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (error) throw error;
         if (data?.plan) setUserTier(data.plan);
@@ -27,7 +28,7 @@ const SettingsModal = ({ onClose }) => {
       }
     };
     fetchTier();
-  }, [user]);
+  }, [user?.id]);
 
   const handleSignOut = () => {
     signOut();
