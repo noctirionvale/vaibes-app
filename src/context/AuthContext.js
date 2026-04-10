@@ -1,5 +1,5 @@
 // src/context/AuthContext.jsx
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
@@ -9,8 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Profile fetcher with 10-second timeout – never throws, just logs
-  const fetchProfile = async (userId) => {
+  // ✅ Memoised fetchProfile to avoid recreating on every render
+  const fetchProfile = useCallback(async (userId) => {
     if (!userId) {
       setProfile(null);
       return null;
@@ -33,9 +33,9 @@ export const AuthProvider = ({ children }) => {
       return data;
     } catch (err) {
       console.error('fetchProfile error:', err.message);
-      return null; // Always resolve, never throw
+      return null;
     }
-  };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -46,10 +46,9 @@ export const AuthProvider = ({ children }) => {
         if (!isMounted) return;
 
         setUser(session?.user ?? null);
-        setLoading(false); // ✅ UI becomes interactive immediately
+        setLoading(false);
 
         if (session?.user) {
-          // Background fetch – do NOT await
           fetchProfile(session.user.id).catch(console.error);
         }
       } catch (err) {
@@ -79,28 +78,28 @@ export const AuthProvider = ({ children }) => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchProfile]);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: 'https://vaibes.pro/app' }
     });
-  };
+  }, []);
 
-  const signInWithTwitter = async () => {
+  const signInWithTwitter = useCallback(async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'twitter',
       options: { redirectTo: 'https://vaibes.pro/app' }
     });
-  };
+  }, []);
 
-  const signInWithEmail = async (email, password) => {
+  const signInWithEmail = useCallback(async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-  };
+  }, []);
 
-  const signUpWithEmail = async (email, password, displayName = 'New User') => {
+  const signUpWithEmail = useCallback(async (email, password, displayName = 'New User') => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -108,25 +107,28 @@ export const AuthProvider = ({ children }) => {
     });
     if (error) throw error;
     return data;
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setProfile(null);
-  };
+  }, []);
+
+  // ✅ Memoised context value to prevent unnecessary re‑renders of consumers
+  const contextValue = useMemo(() => ({
+    user,
+    profile,
+    loading,
+    signInWithGoogle,
+    signInWithTwitter,
+    signInWithEmail,
+    signUpWithEmail,
+    signOut,
+    fetchProfile: () => fetchProfile(user?.id)
+  }), [user, profile, loading, signInWithGoogle, signInWithTwitter, signInWithEmail, signUpWithEmail, signOut, fetchProfile]);
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      profile,
-      loading,
-      signInWithGoogle,
-      signInWithTwitter,
-      signInWithEmail,
-      signUpWithEmail,
-      signOut,
-      fetchProfile: () => fetchProfile(user?.id)
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

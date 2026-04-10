@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -30,40 +30,48 @@ const StudyMode = () => {
   const [uploading, setUploading] = useState(false);
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
 
-  const loadUserPreference = useCallback(async () => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .select('study_song_audio_url, study_song_type')
-      .eq('user_id', user.id)
-      .single();
-    if (error || !data) return;
-    if (data.study_song_type === 'local' && data.study_song_audio_url) {
-      setLocalAudioUrl(data.study_song_audio_url);
-      setLocalFileName('Saved Song');
-      setCurrentStation(null);
-      setIsPlaying(true);
-    } else if (data.study_song_type === 'youtube' && data.study_song_audio_url) {
-      const savedStation = stations.find(s => s.youtubeId === data.study_song_audio_url);
-      if (savedStation) {
-        setCurrentStation(savedStation);
-      } else {
-        // Custom YouTube video (not in built-in stations)
-        setCurrentStation({
-          id: 'custom',
-          name: 'Custom YouTube',
-          emoji: '📺',
-          color: '#6a5cff',
-          youtubeId: data.study_song_audio_url,
-        });
-      }
-      setIsPlaying(true);
-    }
-  }, [user]);
-
+  // ✅ Fixed: depends only on user?.id, no useCallback, no infinite loop
   useEffect(() => {
-    loadUserPreference();
-  }, [loadUserPreference]);
+    if (!user?.id) return;
+
+    const fetchPreference = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('study_song_audio_url, study_song_type')
+          .eq('user_id', user.id)
+          .maybeSingle();   // ✅ returns null instead of 406
+
+        if (error) throw error;
+        if (!data) return;  // no preferences saved yet
+
+        if (data.study_song_type === 'local' && data.study_song_audio_url) {
+          setLocalAudioUrl(data.study_song_audio_url);
+          setLocalFileName('Saved Song');
+          setCurrentStation(null);
+          setIsPlaying(true);
+        } else if (data.study_song_type === 'youtube' && data.study_song_audio_url) {
+          const savedStation = stations.find(s => s.youtubeId === data.study_song_audio_url);
+          if (savedStation) {
+            setCurrentStation(savedStation);
+          } else {
+            setCurrentStation({
+              id: 'custom',
+              name: 'Custom YouTube',
+              emoji: '📺',
+              color: '#6a5cff',
+              youtubeId: data.study_song_audio_url,
+            });
+          }
+          setIsPlaying(true);
+        }
+      } catch (err) {
+        console.error('Failed to load study preference:', err.message);
+      }
+    };
+
+    fetchPreference();
+  }, [user?.id]);   // ✅ only runs when the actual user ID changes
 
   const savePreference = async (audioUrl, type) => {
     if (!user) return;
@@ -202,7 +210,6 @@ const StudyMode = () => {
       </button>
 
       <div className="study-mode-panel" style={{ display: isOpen ? 'flex' : 'none' }}>
-        {/* Now Playing */}
         {(currentStation || localAudioUrl) && (
           <div className="study-now-playing" style={{ borderColor: currentStation ? currentStation.color + '40' : '#6a5cff' }}>
             <div className="study-now-playing-info">
@@ -224,14 +231,12 @@ const StudyMode = () => {
           </div>
         )}
 
-        {/* Volume */}
         <div className="study-volume-row">
           <span>🔈</span>
           <input type="range" min="0" max="100" value={volume} onChange={e => setVolume(e.target.value)} className="study-volume-slider" />
           <span>🔊</span>
         </div>
 
-        {/* Built-in Stations */}
         <div className="study-stations">
           <div className="study-section-label">🎧 Recommended Stations</div>
           {stations.map(station => (
@@ -250,7 +255,6 @@ const StudyMode = () => {
           ))}
         </div>
 
-        {/* Custom YouTube Input */}
         <div className="study-custom-youtube">
           <div className="study-section-label">📺 Custom YouTube</div>
           <div className="study-youtube-input-group">
@@ -267,7 +271,6 @@ const StudyMode = () => {
           </div>
         </div>
 
-        {/* Upload Audio */}
         <div className="study-upload-section">
           <div className="study-section-label">📁 Your Music</div>
           <label className="study-station-btn" style={{ cursor: uploading ? 'wait' : 'pointer', justifyContent: 'center' }}>
@@ -291,12 +294,10 @@ const StudyMode = () => {
         <p className="study-mode-credit">Powered by YouTube • Upload your own music</p>
       </div>
 
-      {/* YouTube iframe */}
       {currentStation && isPlaying && !localAudioUrl && (
         <iframe ref={iframeRef} src={getYouTubeUrl(currentStation)} style={{ display: 'none' }} allow="autoplay" title="Study Music" />
       )}
 
-      {/* Local audio element */}
       {localAudioUrl && (
         <audio ref={audioRef} src={localAudioUrl} autoPlay={isPlaying} loop style={{ display: 'none' }} />
       )}
