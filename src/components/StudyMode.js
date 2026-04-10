@@ -30,6 +30,38 @@ const StudyMode = () => {
   const [uploading, setUploading] = useState(false);
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
 
+  // ✅ Keep page audio active when switching apps (YouTube Hack)
+  useEffect(() => {
+    // Only activate for YouTube stations, not local files (local files handle their own state)
+    if (!isPlaying || !currentStation || localAudioUrl) return;
+
+    let audioCtx;
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) {
+        audioCtx = new AudioContext();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        // Nearly silent volume to keep context alive without annoying noise
+        gainNode.gain.value = 0.001; 
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+      }
+    } catch (e) {
+      // AudioContext not supported or failed
+      console.warn('AudioContext hack failed:', e);
+    }
+
+    return () => {
+      if (audioCtx) {
+        audioCtx.close();
+      }
+    };
+  }, [isPlaying, currentStation, localAudioUrl]);
+
   // ✅ Fixed: depends only on user?.id, no useCallback, no infinite loop
   useEffect(() => {
     if (!user?.id) return;
@@ -140,7 +172,10 @@ const StudyMode = () => {
         .from('user_audio')
         .upload(filePath, file);
       if (uploadError) throw uploadError;
+      
+      // ✅ FIXED: Corrected destructuring syntax
       const { data: { publicUrl } } = supabase.storage.from('user_audio').getPublicUrl(filePath);
+      
       setLocalAudioUrl(publicUrl);
       setLocalFileName(file.name);
       setCurrentStation(null);
@@ -155,16 +190,19 @@ const StudyMode = () => {
   };
 
   const handlePlayPause = () => {
+    // ✅ FIXED: Logic was toggling state twice, resulting in no change
+    const newState = !isPlaying;
+    
     if (localAudioUrl && audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
+      if (newState) {
         audioRef.current.play();
+      } else {
+        audioRef.current.pause();
       }
-    } else if (currentStation) {
-      setIsPlaying(!isPlaying);
-    }
-    setIsPlaying(!isPlaying);
+    } 
+    // For YouTube, we just toggle state; the iframe src handles autoplay via URL params
+    
+    setIsPlaying(newState);
   };
 
   const getYouTubeUrl = (station) => {

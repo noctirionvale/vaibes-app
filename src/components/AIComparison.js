@@ -24,6 +24,13 @@ const AIComparison = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef(null);
+
+  // ✅ FEEDBACK STATES
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackType, setFeedbackType] = useState('suggestion');
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [feedbackSending, setFeedbackSending] = useState(false);
   
   const dropdownRef = useRef(null);
   const { user } = useAuth();
@@ -497,6 +504,31 @@ Your mission: Make AI make sense to real people.`;
     }
   };
 
+  // ✅ FEEDBACK SUBMIT HANDLER
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim()) return;
+    setFeedbackSending(true);
+    try {
+      await supabase.from('feedback').insert({
+        user_id: user?.id || null,
+        type: feedbackType,
+        message: feedbackText,
+        created_at: new Date().toISOString()
+      });
+      setFeedbackSent(true);
+      setTimeout(() => {
+        setShowFeedback(false);
+        setFeedbackSent(false);
+        setFeedbackText('');
+        setFeedbackType('suggestion');
+      }, 2500);
+    } catch (err) {
+      console.error('Feedback error:', err);
+    } finally {
+      setFeedbackSending(false);
+    }
+  };
+
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
   let inputPlaceholder = `Enter text or data to ${currentMode}...`;
@@ -879,6 +911,78 @@ Your mission: Make AI make sense to real people.`;
             </div>
           </div>
           <div className="ai-response-text">{response}</div>
+        </div>
+      )}
+
+      {/* ✅ FEEDBACK BUTTON — below chatbox, non-intrusive */}
+      {!isLoading && !isAnalyzing && (
+        <div className="feedback-btn-wrap">
+          <button
+            className="feedback-btn"
+            onClick={() => setShowFeedback(true)}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Send Feedback
+          </button>
+        </div>
+      )}
+
+      {/* FEEDBACK MODAL */}
+      {showFeedback && (
+        <div className="feedback-modal-overlay" onClick={() => setShowFeedback(false)}>
+          <div className="feedback-modal" onClick={e => e.stopPropagation()}>
+            {feedbackSent ? (
+              <div className="feedback-success">
+                <div className="feedback-success-icon">🎉</div>
+                <div>Thanks for your feedback!</div>
+                <div style={{ fontSize: '0.78rem', opacity: 0.5, marginTop: '0.25rem' }}>
+                  We read every single one.
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="feedback-modal-header">
+                  <h4>Send Feedback</h4>
+                  <button className="feedback-close" onClick={() => setShowFeedback(false)}>✕</button>
+                </div>
+                <div className="feedback-types">
+                  {['suggestion', 'bug', 'compliment', 'other'].map(type => (
+                    <button
+                      key={type}
+                      className={`feedback-type-btn ${feedbackType === type ? 'active' : ''}`}
+                      onClick={() => setFeedbackType(type)}
+                    >
+                      {type === 'suggestion' && '💡 Suggestion'}
+                      {type === 'bug' && '🐛 Bug'}
+                      {type === 'compliment' && '❤️ Love it'}
+                      {type === 'other' && '💬 Other'}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  className="feedback-textarea"
+                  placeholder={
+                    feedbackType === 'bug' ? 'Describe what went wrong...' :
+                    feedbackType === 'suggestion' ? 'What would make vAIbes better?' :
+                    feedbackType === 'compliment' ? 'Tell us what you love! 😊' :
+                    'What\'s on your mind?'
+                  }
+                  value={feedbackText}
+                  onChange={e => setFeedbackText(e.target.value)}
+                  rows={4}
+                />
+                <button
+                  className="feedback-submit"
+                  onClick={handleFeedbackSubmit}
+                  disabled={!feedbackText.trim() || feedbackSending}
+                >
+                  {feedbackSending ? 'Sending...' : 'Send Feedback →'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
