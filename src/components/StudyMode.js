@@ -25,6 +25,24 @@ const StudyMode = () => {
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const [showStations, setShowStations] = useState(true);
   const iframeRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // Close panel when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isOpen]);
 
   // Load user preference on mount
   useEffect(() => {
@@ -39,7 +57,6 @@ const StudyMode = () => {
           .maybeSingle();
 
         if (error) {
-          // Non-fatal — 409 or missing row, just skip
           console.warn('Could not load study preference:', error.message);
           return;
         }
@@ -139,8 +156,11 @@ const StudyMode = () => {
   };
 
   return (
-    <div className="study-mode-container">
-
+    <div
+      ref={containerRef}
+      className="study-mode-container"
+      style={{ position: 'relative', width: '100%' }}
+    >
       {/* Main toggle button */}
       <button
         className={'study-mode-toggle ' + (isOpen ? 'active' : '')}
@@ -171,10 +191,19 @@ const StudyMode = () => {
         </svg>
       </button>
 
-      {/* Panel — only renders when open, no display:none tricks */}
+      {/* Panel */}
       {isOpen && (
-        <div className="study-mode-panel">
-
+        <div
+          className="study-mode-panel"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            marginTop: '4px',
+          }}
+        >
           {/* Now Playing */}
           {currentStation && (
             <div
@@ -211,7 +240,7 @@ const StudyMode = () => {
             <span>🔊</span>
           </div>
 
-          {/* Stations — collapsible to save space */}
+          {/* Stations */}
           <div className="study-stations">
             <button
               onClick={() => setShowStations(prev => !prev)}
