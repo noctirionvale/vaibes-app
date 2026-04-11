@@ -4560,3 +4560,85 @@ body.light-mode .image-preview {
   color: rgba(255,255,255,0.7);
 }
 .feedback-success-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+/* Study Mode - Custom YouTube Input (enhanced) */
+.study-custom-youtube {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.study-youtube-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 48px;
+  padding: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.study-youtube-input-group:focus-within {
+  border-color: #6a5cff;
+  box-shadow: 0 0 0 2px rgba(106, 92, 255, 0.2);
+}
+
+.study-youtube-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.7rem 1rem;
+  color: var(--text-primary, #fff);
+  font-size: 0.85rem;
+  outline: none;
+  border-radius: 48px;
+}
+
+.study-youtube-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+}
+
+.study-youtube-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #6a5cff, #a855f7);
+  border: none;
+  border-radius: 40px;
+  padding: 0.5rem 1.2rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.study-youtube-btn:hover {
+  transform: scale(0.97);
+  opacity: 0.9;
+  box-shadow: 0 2px 8px rgba(106, 92, 255, 0.4);
+}
+
+/* Background playback note styling */
+.study-mode-credit {
+  font-size: 0.7rem;
+  text-align: center;
+  margin-top: 1rem;
+  color: var(--text-secondary, #aaa);
+  line-height: 1.4;
+}
+
+/* Local file info styling */
+.study-local-file-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(106, 92, 255, 0.1);
+  border-radius: 30px;
+  font-size: 0.75rem;
+  color: #a78bfa;
+}
