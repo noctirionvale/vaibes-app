@@ -4620,34 +4620,56 @@ body.light-mode .image-preview {
   display: none;
 }
 
+/* ----- Mobile Study Mode (<= 768px) ----- */
 @media (max-width: 768px) {
+  /* Wrapper — visible only on mobile */
   .mobile-study-wrapper {
-    display: block;
+    display: block !important;
+    position: sticky;
+    top: 56px;                       /* below mobile topbar */
     width: 100%;
     z-index: 199;
+    padding: 0 1rem;
     background: rgba(10, 10, 20, 0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(106, 92, 255, 0.2);
-    overflow: visible;  /* KEY FIX — was hidden, which clipped the panel */
+    overflow: visible !important;    /* 🔥 CRITICAL — panel must not be clipped */
   }
 
+  /* The study panel itself */
   .study-mode-panel {
-    position: relative; /* ADD — takes it out of any fixed/absolute stacking */
+    position: relative;
+    z-index: 201;                    /* above wrapper and other sticky elements */
     max-height: 60vh;
     overflow-y: auto;
     scrollbar-width: none;
     width: 100%;
     box-sizing: border-box;
+    background: rgba(15, 15, 25, 0.98);
+    border: 1px solid rgba(106, 92, 255, 0.2);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    padding: 0.75rem;
+    display: flex !important;        /* override any hidden state */
+    opacity: 1 !important;
+    visibility: visible !important;
+    animation: none;                 /* prevent popDown from interfering */
   }
 
   .study-mode-panel::-webkit-scrollbar {
     display: none;
   }
-}
 
+  /* Remove any leftover display conflicts */
   .study-mode-container {
     width: 100%;
-    overflow: hidden;        /* ADD */
+  }
+}
+
+/* Ensure desktop wrapper stays hidden */
+@media (min-width: 769px) {
+  .mobile-study-wrapper {
+    display: none !important;
   }
 }
 
