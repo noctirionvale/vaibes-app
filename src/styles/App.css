@@ -4622,39 +4622,34 @@ body.light-mode .image-preview {
 
 /* ----- Mobile Study Mode (<= 768px) ----- */
 @media (max-width: 768px) {
-  /* Wrapper — visible only on mobile */
-  .mobile-study-wrapper {
-    display: block !important;
-    position: sticky;
-    top: 56px;                       /* below mobile topbar */
+  .sidebar-study-zone {
+    position: relative;
     width: 100%;
-    z-index: 199;
-    padding: 0 1rem;
-    background: rgba(10, 10, 20, 0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(106, 92, 255, 0.2);
-    overflow: visible !important;    /* 🔥 CRITICAL — panel must not be clipped */
+    left: auto;
+    transform: none;
+    bottom: auto;
+    z-index: auto;
+    margin: 0;
+    padding: 0;
   }
 
-  /* The study panel itself */
+  .study-mode-container {
+    width: 100%;
+  }
+
+  .study-mode-toggle {
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem;
+  }
+
   .study-mode-panel {
     position: relative;
-    z-index: 201;                    /* above wrapper and other sticky elements */
-    max-height: 60vh;
-    overflow-y: auto;
-    scrollbar-width: none;
-    width: 100%;
-    box-sizing: border-box;
-    background: rgba(15, 15, 25, 0.98);
-    border: 1px solid rgba(106, 92, 255, 0.2);
-    border-top: none;
+    max-height: 50vh;
+    box-shadow: none;
     border-radius: 0 0 12px 12px;
-    padding: 0.75rem;
-    display: flex !important;        /* override any hidden state */
-    opacity: 1 !important;
-    visibility: visible !important;
-    animation: none;                 /* prevent popDown from interfering */
+    z-index: auto;
   }
+}
 
   .study-mode-panel::-webkit-scrollbar {
     display: none;
@@ -4669,8 +4664,10 @@ body.light-mode .image-preview {
 /* Ensure desktop wrapper stays hidden */
 @media (min-width: 769px) {
   .mobile-study-wrapper {
-    display: none !important;
-  }
+  width: 100%;
+  padding: 0 1rem 0.5rem 1rem;
+  background: transparent;
+  border-bottom: none;
 }
 
 .brand-sidebar {
@@ -4738,16 +4735,3 @@ body.light-mode .image-preview {
   overflow: visible;      /* let it flow naturally inside scrollable zone */
 }
 
-@media (max-width: 768px) {
-  .mobile-study-wrapper {
-    display: block;
-    width: 100%;
-    z-index: 199;
-    background: rgba(10, 10, 20, 0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(106, 92, 255, 0.2);
-    overflow: visible;    /* KEY — was hidden, panel was getting clipped */
-    max-height: 65vh;
-    overflow-y: auto;
-  }
-}
