@@ -308,7 +308,7 @@ const StudyMode = () => {
           </div>
 
           <p className="study-mode-credit">
-            🎬 YouTube plays only while app is active.
+            🎬 Powered by YouTube • YouTube plays only while app is active.
           </p>
         </div>
       )}
