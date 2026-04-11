@@ -1,9 +1,10 @@
 /* ========== STUDY MODE ========== */
 
 .sidebar-study-zone {
+  position: relative; /* Anchors the floating panel */
   width: 100%;
   padding: 0 0.5rem;
-  margin-top: 1rem;
+  margin-top: auto; /* Pushes it to the bottom of the sidebar */
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -40,8 +41,7 @@
 .study-mode-toggle.active {
   background: rgba(106, 92, 255, 0.15);
   border-color: var(--accent1);
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
+  border-radius: 16px; /* Keeps rounded corners when active */
 }
 
 .study-mode-icon {
@@ -101,17 +101,22 @@
 }
 
 .study-mode-panel {
-  background: rgba(15, 15, 25, 0.8);
+  position: absolute;
+  bottom: calc(100% + 10px); /* Pops UP above the toggle button */
+  left: 0.5rem;
+  right: 0.5rem; /* Keeps it inside the padding */
+  background: rgba(15, 15, 25, 0.95);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(106, 92, 255, 0.2);
-  border-top: none;
-  border-radius: 0 0 16px 16px;
+  border: 1px solid rgba(106, 92, 255, 0.3);
+  border-radius: 16px; /* Rounded on all corners */
+  box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.6); /* Floating shadow */
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  max-height: 60vh;
+  max-height: 50vh;
   overflow-y: auto;
+  z-index: 100; /* Stays above profile info */
   scrollbar-width: thin;
   scrollbar-color: var(--accent1) transparent;
 }
@@ -130,11 +135,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .study-now-playing-info {
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 0;
   gap: 0.6rem;
 }
 
@@ -144,6 +153,10 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: #ffffff !important;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.3;
 }
 
 .study-now-playing-status {
@@ -253,7 +266,14 @@
 }
 
 .study-station-emoji { font-size: 1rem; }
-.study-station-name { flex: 1; font-size: 0.82rem; }
+.study-station-name { 
+  flex: 1; 
+  font-size: 0.82rem;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.3;
+}
 
 .study-station-playing {
   display: flex;
@@ -348,6 +368,14 @@
   border-radius: 30px;
   font-size: 0.75rem;
   color: #a78bfa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.study-local-file-info button {
+  flex-shrink: 0;
+  margin-left: 0.5rem;
 }
 
 .study-mode-credit {
@@ -358,39 +386,20 @@
   padding-top: 0.25rem;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
-  .sidebar-study-zone {
-    position: fixed;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-    max-width: 400px;
-    z-index: 1000;
-    margin: 0;
-    padding: 0;
-  }
-
-  .study-mode-panel {
-    max-height: 40vh;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
-  }
-}
-
 .mobile-study-wrapper {
   position: fixed;
   top: 60px;
   left: 0;
   width: 100%;
-  z-index: 199;
+  z-index: 201; /* Bumped above top bar */
   padding: 0 1rem;
   background: rgba(10, 10, 20, 0.95);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(106, 92, 255, 0.2);
 }
 
-/* Light mode */
+/* ========== LIGHT MODE SUPPORT ========== */
+
 body.light-mode .study-mode-toggle {
   background: rgba(106, 92, 255, 0.04);
   border-color: rgba(106, 92, 255, 0.12);
@@ -415,10 +424,6 @@ body.light-mode .study-station-btn:hover {
 body.light-mode .study-now-playing {
   background: rgba(0, 0, 0, 0.03);
   border-color: rgba(0, 0, 0, 0.08);
-}
-
-body.light-mode .study-now-playing-name {
-  color: #111 !important;
 }
 
 body.light-mode .study-volume-row {
@@ -450,99 +455,66 @@ body.light-mode .mobile-study-wrapper {
   background: rgba(240, 240, 252, 0.98);
 }
 
-/* ========== STUDY MODE LAYOUT FIXES ========== */
-
-/* 1. Prevent text overflow on file names */
-.study-now-playing-name,
-.study-local-file-info,
-.study-station-name {
-  word-break: break-word;
-  overflow-wrap: break-word;
-  white-space: normal;
-  line-height: 1.3;
+body.light-mode .study-now-playing-name,
+body.light-mode .study-station-name,
+body.light-mode .study-local-file-info {
+  color: #1a1a1a !important;
 }
 
-/* 2. Fix the "Now Playing" area – ensure text wraps properly */
-.study-now-playing {
-  flex-wrap: wrap;
-  gap: 0.5rem;
+body.light-mode .study-now-playing-status {
+  color: #666 !important;
 }
 
-.study-now-playing-info {
-  flex: 1;
-  min-width: 0; /* Allows shrinking */
-  gap: 0.5rem;
-}
+/* ========== CONSOLIDATED MOBILE / RESPONSIVE FIXES ========== */
 
-.study-now-playing-name {
-  font-size: 0.8rem;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .study-now-playing-name {
-    max-width: 140px;
-  }
-}
-
-/* 3. Fix local file info – truncate long names */
-.study-local-file-info {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.7rem;
-}
-
-.study-local-file-info button {
-  flex-shrink: 0;
-  margin-left: 0.5rem;
-}
-
-/* 4. Ensure the panel doesn't overflow on mobile */
 @media (max-width: 768px) {
   .sidebar-study-zone {
+    position: fixed;
     bottom: 70px; /* Give room above chat input */
+    left: 50%;
+    transform: translateX(-50%);
     width: 95%;
+    max-width: 400px;
+    z-index: 1000;
+    margin: 0;
+    padding: 0;
   }
-  
+
   .study-mode-panel {
     max-height: 45vh;
     padding: 0.75rem;
     gap: 0.8rem;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
   }
-  
+
   .study-station-btn {
     padding: 0.5rem 0.7rem;
   }
-  
+
   .study-station-name {
     font-size: 0.75rem;
   }
-  
+
   .study-youtube-input {
     font-size: 0.75rem;
     padding: 0.5rem 0.8rem;
   }
-  
+
   .study-youtube-btn {
     padding: 0.35rem 0.9rem;
     font-size: 0.75rem;
   }
-  
+
   .study-now-playing-emoji {
     font-size: 1.1rem;
   }
-  
+
   .study-now-playing-name {
     font-size: 0.75rem;
     max-width: 120px;
   }
 }
 
-/* 5. Improve YouTube input group on small screens */
 @media (max-width: 480px) {
   .study-youtube-input-group {
     flex-wrap: wrap;
@@ -554,15 +526,4 @@ body.light-mode .mobile-study-wrapper {
     justify-content: center;
     border-radius: 30px;
   }
-}
-
-/* 6. Light mode text contrast */
-body.light-mode .study-now-playing-name,
-body.light-mode .study-station-name,
-body.light-mode .study-local-file-info {
-  color: #1a1a1a !important;
-}
-
-body.light-mode .study-now-playing-status {
-  color: #666 !important;
 }
