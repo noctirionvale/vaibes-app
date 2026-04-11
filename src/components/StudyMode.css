@@ -449,3 +449,120 @@ body.light-mode .study-local-file-info {
 body.light-mode .mobile-study-wrapper {
   background: rgba(240, 240, 252, 0.98);
 }
+
+/* ========== STUDY MODE LAYOUT FIXES ========== */
+
+/* 1. Prevent text overflow on file names */
+.study-now-playing-name,
+.study-local-file-info,
+.study-station-name {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+/* 2. Fix the "Now Playing" area – ensure text wraps properly */
+.study-now-playing {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.study-now-playing-info {
+  flex: 1;
+  min-width: 0; /* Allows shrinking */
+  gap: 0.5rem;
+}
+
+.study-now-playing-name {
+  font-size: 0.8rem;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .study-now-playing-name {
+    max-width: 140px;
+  }
+}
+
+/* 3. Fix local file info – truncate long names */
+.study-local-file-info {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+}
+
+.study-local-file-info button {
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+/* 4. Ensure the panel doesn't overflow on mobile */
+@media (max-width: 768px) {
+  .sidebar-study-zone {
+    bottom: 70px; /* Give room above chat input */
+    width: 95%;
+  }
+  
+  .study-mode-panel {
+    max-height: 45vh;
+    padding: 0.75rem;
+    gap: 0.8rem;
+  }
+  
+  .study-station-btn {
+    padding: 0.5rem 0.7rem;
+  }
+  
+  .study-station-name {
+    font-size: 0.75rem;
+  }
+  
+  .study-youtube-input {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.8rem;
+  }
+  
+  .study-youtube-btn {
+    padding: 0.35rem 0.9rem;
+    font-size: 0.75rem;
+  }
+  
+  .study-now-playing-emoji {
+    font-size: 1.1rem;
+  }
+  
+  .study-now-playing-name {
+    font-size: 0.75rem;
+    max-width: 120px;
+  }
+}
+
+/* 5. Improve YouTube input group on small screens */
+@media (max-width: 480px) {
+  .study-youtube-input-group {
+    flex-wrap: wrap;
+    border-radius: 20px;
+  }
+  
+  .study-youtube-btn {
+    width: 100%;
+    justify-content: center;
+    border-radius: 30px;
+  }
+}
+
+/* 6. Light mode text contrast */
+body.light-mode .study-now-playing-name,
+body.light-mode .study-station-name,
+body.light-mode .study-local-file-info {
+  color: #1a1a1a !important;
+}
+
+body.light-mode .study-now-playing-status {
+  color: #666 !important;
+}
