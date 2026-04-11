@@ -4617,23 +4617,33 @@ body.light-mode .image-preview {
 
 @media (max-width: 768px) {
   .mobile-study-wrapper {
-    position: sticky;
-    top: 56px;
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-study-wrapper {
+    display: block;
     width: 100%;
     z-index: 199;
-    padding: 0;              /* CHANGE — remove side padding */
     background: rgba(10, 10, 20, 0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(106, 92, 255, 0.2);
-    overflow: hidden;        /* ADD — clips the panel inside */
+    overflow: visible;  /* KEY FIX — was hidden, which clipped the panel */
   }
 
   .study-mode-panel {
-    max-height: 60vh;        /* ADD — prevents full screen takeover */
+    position: relative; /* ADD — takes it out of any fixed/absolute stacking */
+    max-height: 60vh;
     overflow-y: auto;
     scrollbar-width: none;
-    border-radius: 0 0 12px 12px;
+    width: 100%;
+    box-sizing: border-box;
   }
+
+  .study-mode-panel::-webkit-scrollbar {
+    display: none;
+  }
+}
 
   .study-mode-container {
     width: 100%;
@@ -4642,7 +4652,33 @@ body.light-mode .image-preview {
 }
 
 .brand-sidebar {
-  overflow-x: hidden;       /* ADD this specifically */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  z-index: 50;
+  overflow: hidden;          /* keeps sidebar from growing */
+  overflow-x: hidden;
+}
+
+/* ADD this — makes only the study zone scroll, not the whole sidebar */
+.sidebar-study-zone {
+  flex: 1;                   /* takes remaining space */
+  min-height: 0;             /* KEY — allows flex child to shrink */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding: 0 0.5rem;
+}
+
+.sidebar-study-zone::-webkit-scrollbar {
+  display: none;
 }
 
 .study-mode-toggle {
@@ -4656,4 +4692,40 @@ body.light-mode .image-preview {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 130px;         /* ADD — long station names cause horizontal overflow */
+}
+
+.brand-sidebar {
+  will-change: transform;    /* ADD — GPU layer hint */
+  transform: translateZ(0);  /* ADD — forces GPU compositing */
+}
+
+.sidebar-study-zone {
+  flex: 1;
+  min-height: 0;          /* critical — allows flex child to shrink */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding: 0 0.5rem;
+  width: 100%;
+}
+.sidebar-study-zone::-webkit-scrollbar { display: none; }
+
+.study-mode-panel {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;      /* let it flow naturally inside scrollable zone */
+}
+
+@media (max-width: 768px) {
+  .mobile-study-wrapper {
+    display: block;
+    width: 100%;
+    z-index: 199;
+    background: rgba(10, 10, 20, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(106, 92, 255, 0.2);
+    overflow: visible;    /* KEY — was hidden, panel was getting clipped */
+    max-height: 65vh;
+    overflow-y: auto;
+  }
 }
