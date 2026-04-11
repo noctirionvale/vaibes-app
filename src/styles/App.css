@@ -4591,3 +4591,69 @@ body.light-mode .image-preview {
   color: rgba(255,255,255,0.7);
 }
 .feedback-success-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+.brand-sidebar {
+  overflow: hidden;        /* CHANGE from overflow-y: auto */
+  overflow-y: auto;        /* REMOVE this line entirely */
+  scrollbar-width: none;   /* ADD — hides Firefox scrollbar */
+}
+
+.brand-sidebar::-webkit-scrollbar {
+  display: none;           /* ADD — hides Chrome/Safari scrollbar */
+}
+
+.study-mode-panel {
+  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  max-height: calc(100vh - 280px); /* ADD — stops it blowing past sidebar */
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.study-mode-panel::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-study-wrapper {
+    position: sticky;
+    top: 56px;
+    width: 100%;
+    z-index: 199;
+    padding: 0;              /* CHANGE — remove side padding */
+    background: rgba(10, 10, 20, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(106, 92, 255, 0.2);
+    overflow: hidden;        /* ADD — clips the panel inside */
+  }
+
+  .study-mode-panel {
+    max-height: 60vh;        /* ADD — prevents full screen takeover */
+    overflow-y: auto;
+    scrollbar-width: none;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .study-mode-container {
+    width: 100%;
+    overflow: hidden;        /* ADD */
+  }
+}
+
+.brand-sidebar {
+  overflow-x: hidden;       /* ADD this specifically */
+}
+
+.study-mode-toggle {
+  width: 100%;
+  box-sizing: border-box;   /* ADD — prevents button from exceeding sidebar width */
+  overflow: hidden;
+}
+
+.study-mode-sublabel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;         /* ADD — long station names cause horizontal overflow */
+}
