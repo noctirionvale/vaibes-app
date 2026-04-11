@@ -23,14 +23,9 @@ const StudyMode = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50);
   const iframeRef = useRef(null);
-  const audioRef = useRef(null);
-
-  const [localAudioUrl, setLocalAudioUrl] = useState(null);
-  const [localFileName, setLocalFileName] = useState(null);
-  const [uploading, setUploading] = useState(false);
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
 
-  // ✅ Fixed: load user preference with .maybeSingle() and stable dependency
+  // Load user preference on mount
   useEffect(() => {
     if (!user?.id) return;
 
@@ -45,14 +40,7 @@ const StudyMode = () => {
         if (error) throw error;
         if (!data) return;
 
-        if (data.study_song_type === 'local' && data.study_song_audio_url) {
-          // Extract filename from URL for display
-          const fileName = decodeURIComponent(data.study_song_audio_url.split('/').pop()) || 'My Audio';
-          setLocalAudioUrl(data.study_song_audio_url);
-          setLocalFileName(fileName);
-          setCurrentStation(null);
-          setIsPlaying(true);
-        } else if (data.study_song_type === 'youtube' && data.study_song_audio_url) {
+        if (data.study_song_type === 'youtube' && data.study_song_audio_url) {
           const savedStation = stations.find(s => s.youtubeId === data.study_song_audio_url);
           if (savedStation) {
             setCurrentStation(savedStation);
@@ -75,57 +63,19 @@ const StudyMode = () => {
     fetchPreference();
   }, [user?.id]);
 
-  // ✅ Improved audio playback logic to avoid "interrupted by load request"
-  useEffect(() => {
-    if (!audioRef.current || !localAudioUrl) return;
-    const audio = audioRef.current;
-
-    // Wait for 'canplaythrough' before playing
-    const handleCanPlay = () => {
-      if (isPlaying) {
-        audio.play().catch(e => console.warn('Playback failed:', e));
-      }
-    };
-    
-    audio.addEventListener('canplaythrough', handleCanPlay);
-    
-    if (isPlaying) {
-      // If already ready, play immediately
-      if (audio.readyState >= 3) {
-        audio.play().catch(e => console.warn('Playback failed:', e));
-      }
-    } else {
-      audio.pause();
-    }
-    
-    return () => {
-      audio.removeEventListener('canplaythrough', handleCanPlay);
-    };
-  }, [isPlaying, localAudioUrl]);
-
-  // ✅ Volume control and audio load when source changes
-  useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.volume = volume / 100;
-    if (localAudioUrl) {
-      audioRef.current.load();
-    }
-  }, [volume, localAudioUrl]);
-
-  // ✅ Media Session API for lock screen controls
+  // Media Session API for lock screen controls
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
-    const title = localAudioUrl ? (localFileName || 'My Audio') : currentStation?.name;
-    if (title && isPlaying) {
+    if (currentStation && isPlaying) {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: title,
+        title: currentStation.name,
         artist: 'vAIbes Study Mode',
         album: 'Focus Music',
       });
       navigator.mediaSession.setActionHandler('play', () => setIsPlaying(true));
       navigator.mediaSession.setActionHandler('pause', () => setIsPlaying(false));
     }
-  }, [currentStation, localAudioUrl, localFileName, isPlaying]);
+  }, [currentStation, isPlaying]);
 
   const savePreference = async (audioUrl, type) => {
     if (!user) return;
@@ -142,11 +92,6 @@ const StudyMode = () => {
       setIsPlaying(false);
       return;
     }
-    if (localAudioUrl) {
-      setLocalAudioUrl(null);
-      setLocalFileName(null);
-      if (audioRef.current) audioRef.current.pause();
-    }
     setCurrentStation(station);
     setIsPlaying(true);
     savePreference(station.youtubeId, 'youtube');
@@ -157,11 +102,6 @@ const StudyMode = () => {
     if (!videoId) {
       alert('Invalid YouTube URL. Please check and try again.');
       return;
-    }
-    if (localAudioUrl) {
-      setLocalAudioUrl(null);
-      setLocalFileName(null);
-      if (audioRef.current) audioRef.current.pause();
     }
     const customStation = {
       id: 'custom',
@@ -176,40 +116,6 @@ const StudyMode = () => {
     setCustomYoutubeUrl('');
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('audio/')) {
-      alert('Please select an audio file (MP3, WAV, OGG, etc.)');
-      return;
-    }
-    if (file.size > 20 * 1024 * 1024) {
-      alert('File too large (max 20MB)');
-      return;
-    }
-    setUploading(true);
-    try {
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('user_audio')
-        .upload(filePath, file);
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from('user_audio').getPublicUrl(filePath);
-
-      setLocalAudioUrl(publicUrl);
-      setLocalFileName(file.name);
-      setCurrentStation(null);
-      setIsPlaying(true);
-      await savePreference(publicUrl, 'local');
-    } catch (err) {
-      console.error('Upload failed:', err);
-      alert('Upload failed: ' + err.message);
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
   };
@@ -218,15 +124,6 @@ const StudyMode = () => {
     if (!station || !isPlaying) return '';
     return `https://www.youtube-nocookie.com/embed/${station.youtubeId}?autoplay=1&loop=1&playlist=${station.youtubeId}&controls=0&modestbranding=1&rel=0&showinfo=0&mute=0&volume=${volume}`;
   };
-
-  // Cleanup blob URLs
-  useEffect(() => {
-    return () => {
-      if (localAudioUrl && localAudioUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(localAudioUrl);
-      }
-    };
-  }, [localAudioUrl]);
 
   return (
     <div className="study-mode-container">
@@ -238,7 +135,9 @@ const StudyMode = () => {
         <div className="study-mode-toggle-text">
           <span className="study-mode-label">Study Mode</span>
           <span className="study-mode-sublabel">
-            {isPlaying && (currentStation ? currentStation.emoji + ' ' + currentStation.name : (localFileName ? '📁 ' + localFileName : 'Paused'))}
+            {isPlaying && currentStation
+              ? currentStation.emoji + ' ' + currentStation.name
+              : isPlaying ? 'Playing' : ''}
           </span>
         </div>
         {isPlaying && (
@@ -246,29 +145,45 @@ const StudyMode = () => {
             <span /><span /><span /><span />
           </div>
         )}
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', flexShrink: 0 }}>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          style={{
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.3s ease',
+            flexShrink: 0,
+          }}
+        >
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
 
       <div className="study-mode-panel" style={{ display: isOpen ? 'flex' : 'none' }}>
+
         {/* Now Playing */}
-        {(currentStation || localAudioUrl) && (
-          <div className="study-now-playing" style={{ borderColor: currentStation ? currentStation.color + '40' : '#6a5cff' }}>
+        {currentStation && (
+          <div
+            className="study-now-playing"
+            style={{ borderColor: currentStation.color + '40' }}
+          >
             <div className="study-now-playing-info">
-              <span className="study-now-playing-emoji">
-                {localAudioUrl ? '📁' : currentStation?.emoji}
-              </span>
+              <span className="study-now-playing-emoji">{currentStation.emoji}</span>
               <div>
-                <div className="study-now-playing-name">
-                  {localAudioUrl ? localFileName : currentStation?.name}
-                </div>
+                <div className="study-now-playing-name">{currentStation.name}</div>
                 <div className="study-now-playing-status">
                   {isPlaying ? '▶ Playing' : '⏸ Paused'}
                 </div>
               </div>
             </div>
-            <button className="study-playpause-btn" onClick={handlePlayPause} style={{ background: currentStation ? currentStation.color : '#6a5cff' }}>
+            <button
+              className="study-playpause-btn"
+              onClick={handlePlayPause}
+              style={{ background: currentStation.color }}
+            >
               {isPlaying ? '⏸' : '▶'}
             </button>
           </div>
@@ -277,7 +192,14 @@ const StudyMode = () => {
         {/* Volume Slider */}
         <div className="study-volume-row">
           <span>🔈</span>
-          <input type="range" min="0" max="100" value={volume} onChange={e => setVolume(e.target.value)} className="study-volume-slider" />
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={e => setVolume(e.target.value)}
+            className="study-volume-slider"
+          />
           <span>🔊</span>
         </div>
 
@@ -289,18 +211,24 @@ const StudyMode = () => {
               key={station.id}
               className={"study-station-btn " + (currentStation?.id === station.id ? 'active' : '')}
               onClick={() => handleStationSelect(station)}
-              style={currentStation?.id === station.id ? { borderColor: station.color, background: station.color + '15' } : {}}
+              style={
+                currentStation?.id === station.id
+                  ? { borderColor: station.color, background: station.color + '15' }
+                  : {}
+              }
             >
               <span className="study-station-emoji">{station.emoji}</span>
               <span className="study-station-name">{station.name}</span>
               {currentStation?.id === station.id && isPlaying && (
-                <div className="study-station-playing"><span /><span /><span /></div>
+                <div className="study-station-playing">
+                  <span /><span /><span />
+                </div>
               )}
             </button>
           ))}
         </div>
 
-        {/* Custom YouTube Input - Enhanced Styling */}
+        {/* Custom YouTube Input */}
         <div className="study-custom-youtube">
           <div className="study-section-label">📺 Custom YouTube</div>
           <div className="study-youtube-input-group">
@@ -320,49 +248,19 @@ const StudyMode = () => {
           </div>
         </div>
 
-        {/* Upload Audio Section */}
-        <div className="study-upload-section">
-          <div className="study-section-label">📁 Your Music</div>
-          <label className="study-station-btn" style={{ cursor: uploading ? 'wait' : 'pointer', justifyContent: 'center' }}>
-            <span className="study-station-emoji">📁</span>
-            <span className="study-station-name">{uploading ? 'Uploading...' : 'Upload Audio'}</span>
-            <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={handleFileUpload} disabled={uploading} />
-          </label>
-          {localAudioUrl && (
-            <div className="study-local-file-info">
-              🎵 {localFileName}
-              <button onClick={() => {
-                setLocalAudioUrl(null);
-                setLocalFileName(null);
-                if (audioRef.current) audioRef.current.pause();
-                savePreference(null, null);
-              }} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer' }}>🗑</button>
-            </div>
-          )}
-        </div>
-
-        {/* Helpful note about background playback */}
         <p className="study-mode-credit">
-          📱 <strong>Uploaded music</strong> keeps playing when you switch apps or lock screen (Android).<br />
-          🎬 YouTube stations play only while app is active.
+          🎬 YouTube stations play only while the app is active.
         </p>
       </div>
 
       {/* YouTube iframe (hidden) */}
-      {currentStation && isPlaying && !localAudioUrl && (
-        <iframe ref={iframeRef} src={getYouTubeUrl(currentStation)} style={{ display: 'none' }} allow="autoplay" title="Study Music" />
-      )}
-
-      {/* Local audio element - no autoPlay, controlled by effect */}
-      {localAudioUrl && (
-        <audio
-          ref={audioRef}
-          src={localAudioUrl}
-          loop
-          playsInline
-          webkit-playsinline
-          preload="auto"
+      {currentStation && isPlaying && (
+        <iframe
+          ref={iframeRef}
+          src={getYouTubeUrl(currentStation)}
           style={{ display: 'none' }}
+          allow="autoplay"
+          title="Study Music"
         />
       )}
     </div>

@@ -1502,11 +1502,12 @@ body::after {
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
+  padding: 2rem 1.5rem;
   text-align: center;
   z-index: 50;
+  /* FIX: Clip anything that tries to escape */
+  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* ========== LEFT SIDEBAR ZONES ========== */
@@ -3947,7 +3948,7 @@ body.light-mode .gcash-qr-hint strong {
 .sidebar-study-zone {
   width: 100%;
   padding: 0 0.5rem;
-  margin: auto 0;
+  /* REMOVED: margin: auto 0 — this caused it to float mid-sidebar */
 }
 
 .study-mode-container {
@@ -3955,6 +3956,9 @@ body.light-mode .gcash-qr-hint strong {
   display: flex;
   flex-direction: column;
   gap: 0;
+  /* FIX: Ensure it never escapes the sidebar width */
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* Toggle Button */
@@ -4050,10 +4054,17 @@ body.light-mode .gcash-qr-hint strong {
   flex-direction: column;
   gap: 0.75rem;
   animation: popDown 0.2s ease-out forwards;
+  /* FIX: These were missing — panel was escaping its container */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* FIX: Cap height so it doesn't overflow sidebar vertically */
+  max-height: 55vh;
+  overflow-y: auto;
 }
 
 /* Now Playing */
-.study-now-playing {
+ .study-now-playing {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4061,12 +4072,19 @@ body.light-mode .gcash-qr-hint strong {
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
+  /* FIX: Clamp long filenames */
+  min-width: 0;
+  overflow: hidden;
 }
 
 .study-now-playing-info {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  /* FIX: Allow text truncation to work */
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .study-now-playing-emoji {
@@ -4077,6 +4095,11 @@ body.light-mode .gcash-qr-hint strong {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text);
+  /* FIX: Truncate long MP3 filenames like "20240414_Bee_Gees..." */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
 }
 
 .study-now-playing-status {
@@ -4232,15 +4255,23 @@ body.light-mode .study-volume-slider {
 }
 
 .mobile-study-wrapper {
-  position: fixed;
-  top: 60px;
-  left: 0;
-  width: 100%;
-  z-index: 199;
-  padding: 0 1rem;
-  background: rgba(10,10,20,0.95);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(106,92,255,0.2);
+  /* Only show on mobile, keep out of flow on desktop */
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-study-wrapper {
+    display: block;
+    position: sticky;
+    top: 56px; /* below your mobile topbar */
+    width: 100%;
+    z-index: 199;
+    padding: 0 1rem;
+    background: rgba(10, 10, 20, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(106, 92, 255, 0.2);
+    /* FIX: was `fixed` which overlaps chat on all screen sizes */
+  }
 }
 
 body.light-mode .mobile-study-wrapper {
