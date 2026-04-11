@@ -75,22 +75,32 @@ const StudyMode = () => {
     fetchPreference();
   }, [user?.id]);
 
-  // ✅ Explicitly control local audio playback (fixes no-sound issue)
+  // ✅ Improved audio playback logic to avoid "interrupted by load request"
   useEffect(() => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !localAudioUrl) return;
     const audio = audioRef.current;
 
-    if (isPlaying && localAudioUrl) {
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.warn('Playback failed:', error);
-          setIsPlaying(false);
-        });
+    // Wait for 'canplaythrough' before playing
+    const handleCanPlay = () => {
+      if (isPlaying) {
+        audio.play().catch(e => console.warn('Playback failed:', e));
       }
-    } else if (!isPlaying && localAudioUrl) {
+    };
+    
+    audio.addEventListener('canplaythrough', handleCanPlay);
+    
+    if (isPlaying) {
+      // If already ready, play immediately
+      if (audio.readyState >= 3) {
+        audio.play().catch(e => console.warn('Playback failed:', e));
+      }
+    } else {
       audio.pause();
     }
+    
+    return () => {
+      audio.removeEventListener('canplaythrough', handleCanPlay);
+    };
   }, [isPlaying, localAudioUrl]);
 
   // ✅ Volume control and audio load when source changes

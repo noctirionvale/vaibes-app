@@ -4642,3 +4642,84 @@ body.light-mode .image-preview {
   font-size: 0.75rem;
   color: #a78bfa;
 }
+
+/* Study Mode Panel - Better spacing */
+.study-mode-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;        /* Consistent spacing between sections */
+  padding: 1rem;
+  background: var(--bg-secondary, #1e1e2e);
+  border-radius: 20px;
+  margin-top: 0.75rem;
+}
+
+.study-section-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary, #aaa);
+  margin-bottom: 0.75rem;
+}
+
+.study-stations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;         /* Space between station buttons */
+}
+
+.study-station-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.2s;
+}
+
+/* Now playing card spacing */
+.study-now-playing {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  background: rgba(106,92,255,0.1);
+  margin-bottom: 0.25rem;
+}
+
+/* Volume row spacing */
+.study-volume-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+
+/* Custom YouTube input group */
+.study-youtube-input-group {
+  margin-top: 0.25rem;
+}
+
+/* Upload section spacing */
+.study-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.study-local-file-info {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+}
+
+/* Credit note spacing */
+.study-mode-credit {
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--text-secondary, #aaa);
+  line-height: 1.4;
+}
