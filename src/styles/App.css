@@ -140,7 +140,6 @@ body::after {
 /* ========== LAYOUT ========== */
 .main-wrapper {
   display: grid;
-  /* Increased from 180px to 280px to give the glass cards breathing room */
   grid-template-columns: 280px 1fr 280px; 
   min-height: 100vh;
   width: 100%;
@@ -149,7 +148,6 @@ body::after {
 
 .content-center { 
   position: relative;
-  /* This prevents the center column from expanding past its grid boundary */
   min-width: 0; 
   width: 100%;
 }
@@ -286,7 +284,7 @@ body::after {
 
 .login-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: var(--accent2); /* Neon cyan border on hover */
+  border-color: var(--accent2);
   color: var(--accent2);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 229, 255, 0.15);
@@ -299,10 +297,7 @@ body::after {
 
 /* ========== HERO SECTION ========== */
 .hero {
-  /* CHANGED: We are removing the min-height: 100vh and replacing it with specific padding. */
-  /* This lets the section shrink to fit the content tightly, while ensuring a clean buffer top and bottom. */
   padding: 8rem 4rem; 
-  
   display: flex;
   align-items: center;
   justify-content: center;
@@ -389,7 +384,6 @@ body::after {
 
 /* ========== HERO TEXT ========== */
 .site-title {
-  /* Reduced from 3.5rem to 2.5rem */
   font-size: 2.5rem; 
   font-weight: 800;
   margin-bottom: 0.5rem;
@@ -403,7 +397,6 @@ body::after {
 }
 
 .main-headline { 
-  /* Reduced from 4rem to 2.8rem */
   font-size: 2.8rem; 
   line-height: 1.1; 
   margin-bottom: 0.2rem; 
@@ -411,7 +404,6 @@ body::after {
 }
 
 .sub-headline { 
-  /* Reduced from 3.5rem to 2.4rem */
   font-size: 2.4rem; 
   font-weight: 700; 
   line-height: 1.1; 
@@ -434,7 +426,6 @@ body::after {
 }
 
 .hero-desc {
-  /* Reduced from 1.05rem, adjusted line-height */
   font-size: 0.95rem;
   color: var(--muted);
   max-width: 480px;
@@ -783,16 +774,6 @@ body::after {
   cursor: not-allowed;
 }
 
-#submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(106, 92, 255, 0.4);
-}
-
-#submit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .ai-error-box {
   max-width: 800px;
   margin: 0 auto 2rem auto;
@@ -817,24 +798,23 @@ body::after {
 
 /* Fix Tally form sizing */
 .ai-email-capture iframe {
-  height: 100px !important; /* Reduced from 150px */
+  height: 100px !important;
   min-height: 100px !important;
   max-height: 100px !important;
   margin-top: 1rem;
 }
 
-/* Make Tally form more compact */
 .ai-email-capture {
-  padding: 1.5rem !important; /* Reduced padding */
+  padding: 1.5rem !important;
 }
 
 .ai-email-capture h3 {
-  font-size: 1.1rem !important; /* Smaller heading */
+  font-size: 1.1rem !important;
   margin-bottom: 0.3rem !important;
 }
 
 .ai-email-capture p {
-  font-size: 0.85rem !important; /* Smaller text */
+  font-size: 0.85rem !important;
   margin-bottom: 0.5rem !important;
 }
 
@@ -1069,30 +1049,6 @@ body::after {
   .ai-responses-grid { grid-template-columns: 1fr; }
 }
 
-#submit-btn {
-  display: block;
-  width: 100%;
-  margin-top: 1rem;
-  background: linear-gradient(135deg, #6a5cff 0%, #00e5ff 100%);
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 50px;
-  color: #ffffff;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-#submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(106, 92, 255, 0.4);
-}
-
-#submit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Task Selector */
 .ai-task-selector {
   max-width: 800px;
@@ -1149,21 +1105,13 @@ body::after {
 }
 
 /* ========== AI UTILITY SECTION & CHATBOX ========== */
-/* ========== AI UTILITY SECTION & CHATBOX ========== */
 .ai-utility-section {
   max-width: 800px;
-  
-  /* 4rem margin at the bottom keeps it from hugging the absolute edge of your monitor */
   margin: 0 auto 4rem auto; 
-  
-  /* Adds space between the chatbox and our new border line */
   padding-bottom: 3rem;     
-  
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  
-  /* THE FIX: A sleek, semi-transparent line to cleanly end the section */
   border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
 }
 
@@ -1177,11 +1125,11 @@ body::after {
   border-radius: 24px;
   transition: all 0.3s ease;
   position: relative;
-  z-index: 20; /* Ensures the dropdown pops over other elements */
+  z-index: 20;
 }
 
 .chat-input-container:focus-within {
-  border-color: var(--accent2); /* Uses your neon blue */
+  border-color: var(--accent2);
   box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
   background: rgba(106, 92, 255, 0.08);
 }
@@ -1214,7 +1162,6 @@ body::after {
 /* The Glassmorphism Pop-Down Menu */
 .mode-dropdown-menu {
   position: absolute;
-  /* ✨ THE FIX: Changed from 'bottom' to 'top' so it opens downwards */
   top: calc(100% + 10px); 
   left: 0;
   width: 220px;
@@ -1228,7 +1175,6 @@ body::after {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  /* ✨ Updated animation name */
   animation: popDown 0.2s ease-out forwards; 
 }
 
@@ -1341,8 +1287,6 @@ body::after {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  
-  /* Smooth fade in */
   animation: fadeInOverlay 0.3s ease-out forwards;
 }
 
@@ -1360,8 +1304,6 @@ body::after {
   max-width: 500px;
   width: 100%;
   position: relative;
-  
-  /* Smooth slide up */
   animation: slideUpModal 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
@@ -1463,32 +1405,24 @@ body::after {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(106, 92, 255, 0.4);
 }
+
 /* ========== STICKY COMMAND PALETTE (TOP) ========== */
 .sticky-chatbox {
   position: sticky;
-  /* Locks the chatbox near the top of the screen when you scroll past it */
   top: 1.5rem; 
   z-index: 100;
-  
-  /* Glassmorphism blur so text scrolling underneath looks cool */
   background: rgba(15, 15, 20, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  
-  /* Shadow points DOWN over the text now */
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-  
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  
-  /* Smooth transition for the sticky effect */
   transition: box-shadow 0.3s ease;
 }
-/* ========== THE APP DASHBOARD LAYOUT ========== */
 
-/* Center Column Chatbox Spacing */
+/* ========== THE APP DASHBOARD LAYOUT ========== */
 .chatbox-wrapper {
-  padding-top: 6rem; /* Gives space at the top so it doesn't hit the ceiling */
+  padding-top: 6rem;
   width: 100%;
 }
 
@@ -1505,7 +1439,6 @@ body::after {
   padding: 2rem 1.5rem;
   text-align: center;
   z-index: 50;
-  /* FIX: Clip anything that tries to escape */
   overflow: hidden;
   overflow-y: auto;
 }
@@ -1518,49 +1451,40 @@ body::after {
   background: var(--sidebar-bg);
   backdrop-filter: blur(12px);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
-  
-  /* Changed from space-between to default flex layout */
   display: flex;
   flex-direction: column;
-  
   padding: 2rem 1.5rem;
   text-align: center;
   z-index: 50;
 }
 
-/* Forces the button to stretch full width in the sidebar */
 .sidebar-login-btn {
   width: 100%;
   justify-content: center;
 }
 
-/* This guarantees there is always a gap between the profile button and the logo 
-   for your future dropdown menu to open into */
 .sidebar-top-zone {
   width: 100%;
   min-height: 80px; 
 }
 
-/* ========== LEFT SIDEBAR ZONES ========== */
 .sidebar-middle-zone {
   display: flex;
-  flex-direction: row; /* ✨ THE FIX: Lays them out side-by-side */
-  align-items: center; /* Centers them vertically with each other */
+  flex-direction: row;
+  align-items: center;
   justify-content: flex-start;
-  gap: 1rem; /* Space between the logo and the text */
+  gap: 1rem;
   width: 100%;
   margin-top: auto; 
   margin-bottom: 2.5rem; 
 }
 
-/* Aligns the text to the left now that it's next to the logo */
 .brand-text-wrapper {
   text-align: left;
   display: flex;
   flex-direction: column;
 }
 
-/* Scaled down slightly to fit side-by-side in the sidebar */
 .sidebar-logo {
   width: 80px; 
   height: 80px;
@@ -1568,10 +1492,9 @@ body::after {
   box-shadow: 0 0 25px rgba(0, 229, 255, 0.2);
   object-fit: cover;
   animation: gentleFloat 10s ease-in-out infinite;
-  flex-shrink: 0; /* Prevents the logo from being squished */
+  flex-shrink: 0;
 }
 
-/* Adjusted font sizes to fit the horizontal layout */
 .sidebar-title { font-size: 1.5rem; margin-bottom: 0; }
 .sidebar-headline { font-size: 1.1rem; line-height: 1.2; }
 .sidebar-sub { font-size: 0.9rem; margin-bottom: 0; }
@@ -1591,16 +1514,14 @@ body::after {
   backdrop-filter: blur(12px);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
   padding: 2rem 1.5rem;
-  overflow-y: auto; /* Allows scrolling if monitor is small */
+  overflow-y: auto;
 }
 
 .drawer-header h3 {
-  /* Copying the gradient from the tagline */
   background: linear-gradient(135deg, var(--accent2) 0%, var(--text) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -1628,7 +1549,7 @@ body::after {
   font-weight: 500;
   transition: all 0.2s ease;
   text-align: center;
-  border-left-width: 3px; /* Ensure your tool colors show! */
+  border-left-width: 3px;
 }
 
 .drawer-item:hover {
@@ -1656,11 +1577,10 @@ body::after {
 
 .mic-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
-  color: var(--accent3); /* Pink highlight on hover */
+  color: var(--accent3);
   border-color: rgba(255, 79, 216, 0.3);
 }
 
-/* The glowing pulse when actively listening */
 .listening-pulse {
   background: rgba(255, 79, 216, 0.2);
   color: var(--accent3);
@@ -1815,7 +1735,7 @@ body::after {
 .sign-out-btn {
   background: rgba(8, 152, 248, 0.926);
   border: 1px solid #0bfb07;
-  color: #c0c0d0;;
+  color: #c0c0d0;
   padding: 0.4rem 1rem;
   border-radius: 50px;
   font-size: 0.8rem;
@@ -1984,7 +1904,6 @@ body::after {
 }
 
 /* ========== DARK / LIGHT MODE ========== */
-
 body.light-mode {
   --bg: #f5f5fa;
   --text: #111111;
@@ -1994,7 +1913,6 @@ body.light-mode {
   color: #111111;
 }
 
-/* Kill the dark background gradients */
 body.light-mode::before {
   background: 
     radial-gradient(circle at 20% 80%, rgba(106, 92, 255, 0.08) 0%, transparent 50%),
@@ -2003,7 +1921,6 @@ body.light-mode::before {
     linear-gradient(135deg, rgba(245, 245, 250, 0.98) 0%, rgba(240, 240, 248, 0.95) 100%);
 }
 
-/* Kill the dark grid */
 body.light-mode::after {
   background-image:
     linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
@@ -2011,7 +1928,6 @@ body.light-mode::after {
   opacity: 0.5;
 }
 
-/* ---- SIDEBARS ---- */
 body.light-mode .brand-sidebar,
 body.light-mode .drawer-sidebar {
   background: linear-gradient(
@@ -2042,7 +1958,6 @@ body.light-mode .drawer-item:hover {
   color: #111111;
 }
 
-/* ---- CHATBOX ---- */
 body.light-mode .chat-input-container {
   background: rgba(255, 255, 255, 0.85);
   border-color: rgba(0, 0, 0, 0.12);
@@ -2068,7 +1983,6 @@ body.light-mode .chat-input-container:focus-within {
     position: relative;
   }
 
-  /* Prevent auto-resize on mobile */
   .sticky-chatbox {
     position: sticky;
     bottom: 0;
@@ -2090,7 +2004,6 @@ body.light-mode #question-input::placeholder {
   color: rgba(0, 0, 0, 0.3);
 }
 
-/* ---- DROPDOWN ---- */
 body.light-mode .mode-dropdown-menu {
   background: rgba(248, 248, 255, 0.99);
   border-color: rgba(0, 0, 0, 0.1);
@@ -2112,7 +2025,6 @@ body.light-mode .dropdown-item.active {
   border-left-color: var(--accent1);
 }
 
-/* ---- RESPONSE CARD ---- */
 body.light-mode .ai-response-card {
   background: rgba(255, 255, 255, 0.95);
   border-color: rgba(0, 0, 0, 0.08);
@@ -2129,7 +2041,6 @@ body.light-mode .current-mode-badge {
   color: var(--accent1);
 }
 
-/* ---- BUTTONS ---- */
 body.light-mode .plus-icon-btn {
   background: rgba(0, 0, 0, 0.05);
   color: #555555;
@@ -2152,7 +2063,6 @@ body.light-mode .mic-btn:hover {
   border-color: rgba(255, 79, 216, 0.3);
 }
 
-/* ---- SIDEBAR BRAND TEXT ---- */
 body.light-mode .sidebar-sub .sub-headline-line2 {
   color: rgba(0, 0, 0, 0.35);
 }
@@ -2170,7 +2080,6 @@ body.light-mode .sign-out-btn {
   border-color: rgba(255, 75, 75, 0.2);
 }
 
-/* ---- MODAL ---- */
 body.light-mode .modal-content,
 body.light-mode .auth-modal-content {
   background: linear-gradient(145deg, rgba(245, 245, 255, 0.99) 0%, rgba(240, 240, 252, 0.99) 100%);
@@ -2233,7 +2142,6 @@ body.light-mode .auth-toggle {
   color: #666666;
 }
 
-/* ---- PROFILE PANEL ---- */
 body.light-mode .profile-panel-wrapper {
   background: linear-gradient(145deg, rgba(240, 240, 252, 0.99) 0%, rgba(235, 235, 250, 1) 100%);
   border-color: rgba(106, 92, 255, 0.15);
@@ -2248,7 +2156,6 @@ body.light-mode .profile-avatar-hint {
   color: #888888;
 }
 
-/* ---- THEME TOGGLE BUTTON ---- */
 .theme-toggle-btn {
   display: flex;
   align-items: center;
@@ -2290,7 +2197,6 @@ body.light-mode .theme-toggle-btn:hover {
   margin-bottom: 0.5rem;
 }
 
-/* ---- FOOTER ---- */
 body.light-mode .footer-section {
   background: rgba(220, 220, 235, 0.9);
   border-top-color: rgba(0, 0, 0, 0.08);
@@ -2308,7 +2214,6 @@ body.light-mode .footer-text {
   color: #666666;
 }
 
-/* Stronger text contrast in light mode */
 body.light-mode {
   --bg: #f0f0f7;
   --text: #0d0d0d;
@@ -2318,7 +2223,6 @@ body.light-mode {
   color: #0d0d0d;
 }
 
-/* Darker chatbox border */
 body.light-mode .chat-input-container {
   background: rgba(255, 255, 255, 0.9);
   border-color: rgba(0, 0, 0, 0.2);
@@ -2331,12 +2235,10 @@ body.light-mode .sticky-chatbox {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
-/* Darker placeholder */
 body.light-mode #question-input::placeholder {
   color: rgba(0, 0, 0, 0.4);
 }
 
-/* Theme toggle button — more visible */
 body.light-mode .theme-toggle-btn {
   border-color: rgba(0, 0, 0, 0.25);
   color: #333333;
@@ -2350,7 +2252,6 @@ body.light-mode .theme-toggle-btn:hover {
   box-shadow: 0 0 12px rgba(106, 92, 255, 0.15);
 }
 
-/* Tagline text — darker */
 body.light-mode .main-headline {
   color: #0d0d0d;
   text-shadow: none;
@@ -2360,7 +2261,6 @@ body.light-mode .sub-headline-line2 {
   color: rgba(0, 0, 0, 0.45) !important;
 }
 
-/* Right sidebar header */
 body.light-mode .drawer-header h3 {
   background: linear-gradient(135deg, var(--accent1) 0%, #1a1a2e 100%);
   -webkit-background-clip: text;
@@ -2369,7 +2269,6 @@ body.light-mode .drawer-header h3 {
   border-bottom-color: rgba(0, 0, 0, 0.12);
 }
 
-/* Right sidebar tool buttons */
 body.light-mode .drawer-item {
   color: #1a1a1a;
   background: rgba(255, 255, 255, 0.75);
@@ -2384,13 +2283,11 @@ body.light-mode .drawer-item:hover {
   transform: translateX(-3px);
 }
 
-/* Sidebar brand text */
 body.light-mode .user-display-name {
   color: #333333;
   font-weight: 500;
 }
 
-/* Plus and mic buttons */
 body.light-mode .plus-icon-btn {
   background: rgba(0, 0, 0, 0.07);
   color: #444444;
@@ -2409,7 +2306,6 @@ body.light-mode .mic-btn {
   color: #444444;
 }
 
-/* Response card */
 body.light-mode .ai-response-card {
   background: rgba(255, 255, 255, 0.97);
   border-color: rgba(0, 0, 0, 0.12);
@@ -2429,7 +2325,6 @@ body.light-mode .ai-response-text {
   gap: 0.6rem;
 }
 
-/* Top row: thumbnail + button only */
 .youtube-thumb-row {
   display: flex;
   align-items: center;
@@ -2500,7 +2395,6 @@ body.light-mode .ai-response-text {
   box-shadow: 0 4px 15px rgba(106, 92, 255, 0.4);
 }
 
-/* Instructions — clean numbered list */
 .transcript-instructions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2540,7 +2434,6 @@ body.light-mode .ai-response-text {
   margin-top: 1px;
 }
 
-/* Collapsible player */
 .youtube-player-wrapper {
   width: 100%;
   border-radius: 10px;
@@ -2548,7 +2441,6 @@ body.light-mode .ai-response-text {
   animation: popDown 0.2s ease-out forwards;
 }
 
-/* Light mode */
 body.light-mode .youtube-thumb-row {
   background: rgba(255, 0, 0, 0.03);
   border-color: rgba(255, 0, 0, 0.12);
@@ -2640,7 +2532,6 @@ body.light-mode .transcript-step strong {
   opacity: 0.8;
 }
 
-/* Light mode */
 body.light-mode .transcript-paste-box {
   border-color: rgba(106, 92, 255, 0.25);
   background: rgba(106, 92, 255, 0.03);
@@ -2662,26 +2553,13 @@ body.light-mode .transcript-paste-content {
   color: #444444;
 }
 
-.ai-utility-section {
-  max-width: 800px;
-  margin: 0 auto 4rem auto;
-  padding-bottom: 3rem; /* ✅ Ensures space for response card */
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 /* ========== MOBILE RESPONSIVE ========== */
 @media (max-width: 768px) {
-
-  /* Hide both sidebars */
   .brand-sidebar,
   .drawer-sidebar {
     display: none !important;
   }
 
-  /* Full width center */
   .main-wrapper {
     grid-template-columns: 1fr !important;
   }
@@ -2697,7 +2575,6 @@ body.light-mode .transcript-paste-content {
     padding-right: 1rem;
   }
 
-  /* Mobile top bar — shows brand + sign in */
   .mobile-topbar {
     display: flex !important;
     align-items: center;
@@ -2762,13 +2639,11 @@ body.light-mode .transcript-paste-content {
     border: 2px solid var(--accent2);
   }
 
-  /* AI utility section */
   .ai-utility-section {
     margin: 0 auto 2rem auto;
     padding-bottom: 2rem;
   }
 
-  /* Chatbox */
   .chat-input-container {
     border-radius: 16px;
   }
@@ -2777,13 +2652,11 @@ body.light-mode .transcript-paste-content {
     top: 0.5rem;
   }
 
-  /* Theme toggle */
   .theme-toggle-wrapper {
     padding: 0;
     margin-bottom: 0.4rem;
   }
 
-  /* YouTube preview */
   .youtube-thumb-row {
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -2799,13 +2672,11 @@ body.light-mode .transcript-paste-content {
     grid-template-columns: 1fr;
   }
 
-  /* Response card */
   .ai-response-card {
     margin-top: 1rem;
     padding: 1.25rem;
   }
 
-  /* Auth modal */
   .modal-content,
   .auth-modal-content {
     padding: 1.5rem 1.25rem;
@@ -2818,7 +2689,6 @@ body.light-mode .transcript-paste-content {
     font-size: 1.4rem;
   }
 
-  /* Profile panel — full screen on mobile */
   .profile-panel-wrapper {
     position: fixed !important;
     top: 0 !important;
@@ -2830,24 +2700,20 @@ body.light-mode .transcript-paste-content {
     overflow-y: auto;
   }
 
-  /* Dropdown menu */
   .mode-dropdown-menu {
     width: 200px;
   }
 
-  /* Transcript paste box */
   .transcript-paste-box {
     max-height: 100px;
   }
 
-  /* Light mode mobile topbar */
   body.light-mode .mobile-topbar {
     background: rgba(228, 228, 242, 0.97);
     border-bottom-color: rgba(0,0,0,0.08);
   }
 }
 
-/* Hide mobile topbar on desktop */
 .mobile-topbar {
   display: none;
 }
@@ -2943,7 +2809,6 @@ body.light-mode .transcript-paste-content {
   gap: 0.5rem;
 }
 
-/* Light mode drawer */
 body.light-mode .mobile-drawer-right {
   background: linear-gradient(180deg, rgba(235,235,248,0.99) 0%, rgba(228,228,242,0.99) 100%);
   border-left-color: rgba(0,0,0,0.08);
@@ -2985,7 +2850,6 @@ body.light-mode .mobile-icon-btn {
   font-weight: 700;
 }
 
-/* Tabs */
 .settings-tabs {
   display: flex;
   border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -3008,8 +2872,8 @@ body.light-mode .mobile-icon-btn {
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  white-space: nowrap; /* ✅ prevents wrapping */
-  flex-shrink: 0;      /* ✅ prevents squishing */
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 }
 .settings-tab.active {
@@ -3024,14 +2888,12 @@ body.light-mode .mobile-icon-btn {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Tab content */
 .settings-tab-content {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
 }
 
-/* Footer */
 .settings-footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -3047,7 +2909,6 @@ body.light-mode .mobile-icon-btn {
   font-size: 0.9rem;
 }
 
-/* Embedded profile panel */
 .profile-panel-embedded {
   padding: 0;
 }
@@ -3202,7 +3063,6 @@ body.light-mode .mobile-icon-btn {
   box-shadow: 0 8px 20px rgba(106,92,255,0.4);
 }
 
-/* How To panel inside settings */
 .howto-panel {
   padding: 0;
 }
@@ -3242,7 +3102,6 @@ body.light-mode .mobile-icon-btn {
   color: var(--muted);
 }
 
-/* Updated sidebar bottom zone */
 .brand-sidebar .sidebar-bottom-zone {
   margin-top: auto;
   padding-bottom: 0.5rem;
@@ -3264,7 +3123,6 @@ body.light-mode .mobile-icon-btn {
 .brand-sidebar .sidebar-headline { font-size: 0.95rem; }
 .brand-sidebar .sidebar-sub { font-size: 0.8rem; }
 
-/* Light mode settings */
 body.light-mode .settings-modal {
   background: linear-gradient(145deg, rgba(245,245,255,0.99) 0%, rgba(240,240,252,0.99) 100%);
   border-color: rgba(106,92,255,0.2);
@@ -3312,7 +3170,6 @@ body.light-mode .settings-footer {
   border-top-color: rgba(0,0,0,0.08);
 }
 
-/* Mobile settings */
 @media (max-width: 768px) {
   .settings-modal {
     max-width: 100%;
@@ -3423,7 +3280,6 @@ body.light-mode .gcash-qr-hint strong {
   background: var(--bg);
 }
 
-/* Massive background logo */
 .landing-bg-logo {
   position: fixed;
   top: 50%;
@@ -3442,7 +3298,6 @@ body.light-mode .gcash-qr-hint strong {
   animation: gentleFloat 15s ease-in-out infinite;
 }
 
-/* Navbar */
 .landing-nav {
   position: fixed;
   top: 0;
@@ -3521,7 +3376,6 @@ body.light-mode .gcash-qr-hint strong {
   box-shadow: 0 8px 20px rgba(106,92,255,0.4);
 }
 
-/* Hero */
 .landing-hero {
   position: relative;
   z-index: 1;
@@ -3627,7 +3481,6 @@ body.light-mode .gcash-qr-hint strong {
   color: rgba(255,255,255,0.3);
 }
 
-/* Video */
 .landing-video-wrapper {
   position: relative;
 }
@@ -3700,7 +3553,6 @@ body.light-mode .gcash-qr-hint strong {
   font-size: 0.9rem;
 }
 
-/* Features */
 .landing-features {
   position: relative;
   z-index: 1;
@@ -3773,7 +3625,6 @@ body.light-mode .gcash-qr-hint strong {
   line-height: 1.6;
 }
 
-/* Pricing */
 .landing-pricing {
   position: relative;
   z-index: 1;
@@ -3858,7 +3709,6 @@ body.light-mode .gcash-qr-hint strong {
   color: var(--muted);
 }
 
-/* Footer */
 .landing-footer {
   position: relative;
   z-index: 1;
@@ -3890,7 +3740,6 @@ body.light-mode .gcash-qr-hint strong {
   color: rgba(255,255,255,0.2);
 }
 
-/* Mobile landing */
 @media (max-width: 768px) {
   .landing-nav {
     padding: 1rem 1.5rem;
@@ -3948,7 +3797,6 @@ body.light-mode .gcash-qr-hint strong {
 .sidebar-study-zone {
   width: 100%;
   padding: 0 0.5rem;
-  /* REMOVED: margin: auto 0 — this caused it to float mid-sidebar */
 }
 
 .study-mode-container {
@@ -3956,12 +3804,10 @@ body.light-mode .gcash-qr-hint strong {
   display: flex;
   flex-direction: column;
   gap: 0;
-  /* FIX: Ensure it never escapes the sidebar width */
   max-width: 100%;
   overflow: hidden;
 }
 
-/* Toggle Button */
 .study-mode-toggle {
   width: 100%;
   display: flex;
@@ -4017,7 +3863,6 @@ body.light-mode .gcash-qr-hint strong {
   text-overflow: ellipsis;
 }
 
-/* Equalizer animation */
 .study-mode-equalizer {
   display: flex;
   align-items: flex-end;
@@ -4043,7 +3888,6 @@ body.light-mode .gcash-qr-hint strong {
   50% { transform: scaleY(1); }
 }
 
-/* Panel */
 .study-mode-panel {
   background: rgba(10, 10, 20, 0.95);
   border: 1px solid rgba(106, 92, 255, 0.2);
@@ -4054,17 +3898,14 @@ body.light-mode .gcash-qr-hint strong {
   flex-direction: column;
   gap: 0.75rem;
   animation: popDown 0.2s ease-out forwards;
-  /* FIX: These were missing — panel was escaping its container */
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  /* FIX: Cap height so it doesn't overflow sidebar vertically */
   max-height: 55vh;
   overflow-y: auto;
 }
 
-/* Now Playing */
- .study-now-playing {
+.study-now-playing {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4072,7 +3913,6 @@ body.light-mode .gcash-qr-hint strong {
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
-  /* FIX: Clamp long filenames */
   min-width: 0;
   overflow: hidden;
 }
@@ -4081,7 +3921,6 @@ body.light-mode .gcash-qr-hint strong {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  /* FIX: Allow text truncation to work */
   min-width: 0;
   flex: 1;
   overflow: hidden;
@@ -4095,7 +3934,6 @@ body.light-mode .gcash-qr-hint strong {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text);
-  /* FIX: Truncate long MP3 filenames like "20240414_Bee_Gees..." */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4126,7 +3964,6 @@ body.light-mode .gcash-qr-hint strong {
   transform: scale(1.1);
 }
 
-/* Volume */
 .study-volume-row {
   display: flex;
   align-items: center;
@@ -4153,7 +3990,6 @@ body.light-mode .gcash-qr-hint strong {
   cursor: pointer;
 }
 
-/* Stations */
 .study-stations {
   display: flex;
   flex-direction: column;
@@ -4195,7 +4031,6 @@ body.light-mode .gcash-qr-hint strong {
   flex: 1;
 }
 
-/* Station playing indicator */
 .study-station-playing {
   display: flex;
   align-items: flex-end;
@@ -4220,7 +4055,6 @@ body.light-mode .gcash-qr-hint strong {
   text-align: center;
 }
 
-/* Light mode */
 body.light-mode .study-mode-toggle {
   background: rgba(106,92,255,0.04);
   border-color: rgba(106,92,255,0.12);
@@ -4255,7 +4089,6 @@ body.light-mode .study-volume-slider {
 }
 
 .mobile-study-wrapper {
-  /* Only show on mobile, keep out of flow on desktop */
   display: none;
 }
 
@@ -4263,14 +4096,13 @@ body.light-mode .study-volume-slider {
   .mobile-study-wrapper {
     display: block;
     position: sticky;
-    top: 56px; /* below your mobile topbar */
+    top: 56px;
     width: 100%;
     z-index: 199;
     padding: 0 1rem;
     background: rgba(10, 10, 20, 0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(106, 92, 255, 0.2);
-    /* FIX: was `fixed` which overlaps chat on all screen sizes */
   }
 }
 
@@ -4351,7 +4183,6 @@ body.light-mode .mobile-study-wrapper {
   background: #ff4444;
 }
 
-/* Pro badge in dropdown */
 .dropdown-pro-badge {
   font-size: 0.6rem;
   font-weight: 700;
@@ -4371,7 +4202,6 @@ body.light-mode .mobile-study-wrapper {
   color: var(--accent1) !important;
 }
 
-/* Light mode */
 body.light-mode .image-drop-area {
   border-color: rgba(106,92,255,0.2);
   background: rgba(106,92,255,0.02);
@@ -4593,20 +4423,20 @@ body.light-mode .image-preview {
 .feedback-success-icon { font-size: 2rem; margin-bottom: 0.5rem; }
 
 .brand-sidebar {
-  overflow: hidden;        /* CHANGE from overflow-y: auto */
-  overflow-y: auto;        /* REMOVE this line entirely */
-  scrollbar-width: none;   /* ADD — hides Firefox scrollbar */
+  overflow: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
 
 .brand-sidebar::-webkit-scrollbar {
-  display: none;           /* ADD — hides Chrome/Safari scrollbar */
+  display: none;
 }
 
 .study-mode-panel {
   max-width: 100%;
   box-sizing: border-box;
   width: 100%;
-  max-height: calc(100vh - 280px); /* ADD — stops it blowing past sidebar */
+  max-height: calc(100vh - 280px);
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -4617,11 +4447,9 @@ body.light-mode .image-preview {
 
 @media (max-width: 768px) {
   .mobile-study-wrapper {
-  display: none;
-}
+    display: none;
+  }
 
-/* ----- Mobile Study Mode (<= 768px) ----- */
-@media (max-width: 768px) {
   .sidebar-study-zone {
     position: relative;
     width: 100%;
@@ -4649,89 +4477,82 @@ body.light-mode .image-preview {
     border-radius: 0 0 12px 12px;
     z-index: auto;
   }
-}
 
   .study-mode-panel::-webkit-scrollbar {
     display: none;
   }
 
-  /* Remove any leftover display conflicts */
   .study-mode-container {
     width: 100%;
   }
 }
 
-/* Ensure desktop wrapper stays hidden */
 @media (min-width: 769px) {
   .mobile-study-wrapper {
-  width: 100%;
-  padding: 0 1rem 0.5rem 1rem;
-  background: transparent;
-  border-bottom: none;
-}
+    display: none;
+  }
 
-.brand-sidebar {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  background: var(--sidebar-bg);
-  backdrop-filter: blur(12px);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  padding: 2rem 1.5rem;
-  text-align: center;
-  z-index: 50;
-  overflow: hidden;          /* keeps sidebar from growing */
-  overflow-x: hidden;
-}
+  .brand-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    z-index: 50;
+    overflow: hidden;
+    overflow-x: hidden;
+  }
 
-/* ADD this — makes only the study zone scroll, not the whole sidebar */
-.sidebar-study-zone {
-  flex: 1;                   /* takes remaining space */
-  min-height: 0;             /* KEY — allows flex child to shrink */
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  padding: 0 0.5rem;
-}
+  .sidebar-study-zone {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    padding: 0 0.5rem;
+  }
 
-.sidebar-study-zone::-webkit-scrollbar {
-  display: none;
-}
+  .sidebar-study-zone::-webkit-scrollbar {
+    display: none;
+  }
 
-.study-mode-toggle {
-  width: 100%;
-  box-sizing: border-box;   /* ADD — prevents button from exceeding sidebar width */
-  overflow: hidden;
-}
+  .study-mode-toggle {
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
 
-.study-mode-sublabel {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 130px;         /* ADD — long station names cause horizontal overflow */
-}
+  .study-mode-sublabel {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+  }
 
-.brand-sidebar {
-  will-change: transform;    /* ADD — GPU layer hint */
-  transform: translateZ(0);  /* ADD — forces GPU compositing */
-}
+  .brand-sidebar {
+    will-change: transform;
+    transform: translateZ(0);
+  }
 
-.sidebar-study-zone {
-  flex: 1;
-  min-height: 0;          /* critical — allows flex child to shrink */
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  padding: 0 0.5rem;
-  width: 100%;
-}
-.sidebar-study-zone::-webkit-scrollbar { display: none; }
+  .sidebar-study-zone {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    padding: 0 0.5rem;
+    width: 100%;
+  }
+  .sidebar-study-zone::-webkit-scrollbar { display: none; }
 
-.study-mode-panel {
-  width: 100%;
-  box-sizing: border-box;
-  overflow: visible;      /* let it flow naturally inside scrollable zone */
+  .study-mode-panel {
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+  }
 }
-
