@@ -11,7 +11,6 @@ const MobileTopbar = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSettings,  setShowSettings]  = useState(false);
   const [showModels,    setShowModels]    = useState(false);
-  const [showStudy,     setShowStudy]     = useState(false);
 
   const avatarUrl   = user?.user_metadata?.avatar_url;
   const displayName = user?.user_metadata?.full_name
@@ -66,17 +65,7 @@ const MobileTopbar = () => {
             )}
           </button>
 
-          {/* Study Mode toggle */}
-          <button
-            className={`mobile-icon-btn${showStudy ? ' active' : ''}`}
-            onClick={() => setShowStudy(prev => !prev)}
-            title="Study Mode"
-            style={showStudy ? { borderColor: 'rgba(106,92,255,0.6)', color: '#6a5cff' } : {}}
-          >
-            🎼
-          </button>
-
-          {/* AI Models */}
+          {/* AI Models button */}
           <button className="mobile-icon-btn" onClick={() => setShowModels(true)} title="AI Models">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="2" y="3" width="20" height="14" rx="2"/>
@@ -104,23 +93,20 @@ const MobileTopbar = () => {
         </div>
       </div>
 
-      {/* ═══════════ STUDY MODE — lives OUTSIDE the topbar ═══════════
-          position:sticky so it sticks below the topbar and the
-          StudyMode panel opens downward via position:absolute inside it */}
-      {showStudy && (
-        <div style={{
-          position: 'sticky',
-          top: '56px',
-          zIndex: 199,
-          padding: '0.5rem 1rem',
-          background: 'rgba(10, 10, 20, 0.97)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(106, 92, 255, 0.2)',
-        }}>
-          <StudyMode />
-        </div>
-      )}
+      {/* ═══════════ STUDY MODE — ALWAYS MOUNTED (never unmounts) ═══════════
+          Music continues playing even when the internal panel is closed. */}
+      <div style={{
+        position: 'sticky',
+        top: '56px',
+        zIndex: 199,
+        padding: '0.5rem 1rem',
+        background: 'rgba(10, 10, 20, 0.97)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(106, 92, 255, 0.2)',
+      }}>
+        <StudyMode />
+      </div>
 
       {/* ═══════════ AI MODELS DRAWER ═══════════ */}
       {showModels && (

@@ -60,8 +60,7 @@ const StudyMode = () => {
           if (saved) {
             setCurrentStation(saved);
             setIsPlaying(true);
-          } else if (data.study_song_audio_url) {
-            // Custom YouTube saved
+          } else {
             setCurrentStation({
               id: 'custom',
               name: 'Custom YouTube',
@@ -127,7 +126,7 @@ const StudyMode = () => {
 
   return (
     <div className="study-mode-container">
-      {/* Toggle button - simple, no track name when closed */}
+      {/* Only button – no extra labels */}
       <button
         className={`study-mode-toggle ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
@@ -144,9 +143,8 @@ const StudyMode = () => {
         </svg>
       </button>
 
-      {/* Expanded panel */}
+      {/* Panel – only visible when open, but iframe always mounted */}
       <div className="study-mode-panel" style={{ display: isOpen ? 'flex' : 'none' }}>
-        {/* Current station row (only if a station is selected) */}
         {currentStation && (
           <div className="study-current-row">
             <span className="study-current-emoji">{currentStation.emoji}</span>
@@ -157,14 +155,12 @@ const StudyMode = () => {
           </div>
         )}
 
-        {/* Volume control */}
         <div className="study-volume-row">
           <span>🔈</span>
           <input type="range" min="0" max="100" value={volume} onChange={e => setVolume(e.target.value)} className="study-volume-slider" />
           <span>🔊</span>
         </div>
 
-        {/* Preset stations */}
         <div className="study-stations">
           {stations.map(station => (
             <button
@@ -182,7 +178,6 @@ const StudyMode = () => {
           ))}
         </div>
 
-        {/* Custom YouTube input */}
         <div className="study-custom-youtube">
           <div className="study-section-label">📺 Custom YouTube</div>
           <div className="study-youtube-input-group">
@@ -202,7 +197,7 @@ const StudyMode = () => {
         <p className="study-mode-credit">Powered by YouTube</p>
       </div>
 
-      {/* Hidden YouTube iframe */}
+      {/* Hidden iframe – always present when playing, never unmounted */}
       {currentStation && isPlaying && (
         <iframe ref={iframeRef} src={getYouTubeUrl(currentStation)} style={{ display: 'none' }} allow="autoplay" title="Study Music" />
       )}
