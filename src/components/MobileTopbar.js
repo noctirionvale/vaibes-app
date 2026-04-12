@@ -19,7 +19,6 @@ const MobileTopbar = () => {
     || user?.email?.split('@')[0];
 
   const allTools = [
-    // ✅ FIX: Trimmed trailing spaces from URLs
     { name: 'Grok', url: 'https://grok.com', color: 'grok' },
     { name: 'ChatGPT', url: 'https://chat.openai.com', color: 'chatgpt' },
     { name: 'Gemini', url: 'https://gemini.google.com', color: 'gemini' },
@@ -34,21 +33,14 @@ const MobileTopbar = () => {
 
   return (
     <>
+      {/* ===== TOPBAR ===== */}
       <div className="mobile-topbar">
+
         {/* Left: Brand */}
         <div className="mobile-brand">
           <img src="hero.ai.png" alt="vAIbes" className="mobile-brand-logo" />
           <span className="mobile-brand-name">vAIbes</span>
         </div>
-
-        {/* Study Mode Panel — display:none keeps music playing */}
-<div 
-  className="mobile-study-wrapper" 
-  style={{ display: showStudy ? 'block' : 'none' }}
->
-  <StudyMode />
-</div>
-
 
         {/* Right: Actions */}
         <div className="mobile-topbar-right">
@@ -75,13 +67,13 @@ const MobileTopbar = () => {
           </button>
 
           {/* Study Mode Button */}
-<button 
-  className="mobile-icon-btn" 
-  onClick={() => setShowStudy(!showStudy)} 
-  title="Study Mode"
->
-  🎼
-</button>
+          <button
+            className={`mobile-icon-btn${showStudy ? ' active' : ''}`}
+            onClick={() => setShowStudy(prev => !prev)}
+            title="Study Mode"
+          >
+            🎼
+          </button>
 
           {/* AI Models button */}
           <button className="mobile-icon-btn" onClick={() => setShowModels(true)} title="AI Models">
@@ -112,6 +104,21 @@ const MobileTopbar = () => {
         </div>
       </div>
 
+      {/* ===== STUDY MODE — outside topbar so it doesn't break layout ===== */}
+      {showStudy && (
+        <div style={{
+          position: 'sticky',
+          top: '56px',         /* height of your topbar */
+          zIndex: 199,
+          padding: '0.5rem 1rem',
+          background: 'rgba(10, 10, 20, 0.97)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(106, 92, 255, 0.2)',
+        }}>
+          <StudyMode />
+        </div>
+      )}
+
       {/* ===== MODELS SLIDE-IN (from right) ===== */}
       {showModels && (
         <>
@@ -122,7 +129,6 @@ const MobileTopbar = () => {
               <button className="mobile-drawer-close" onClick={() => setShowModels(false)}>✕</button>
             </div>
             <div className="mobile-drawer-content">
-              {/* ✅ FIX: Added missing opening <a> tag + moved key to correct position */}
               {allTools.map((tool, i) => (
                 <a
                   key={i}
@@ -140,18 +146,17 @@ const MobileTopbar = () => {
         </>
       )}
 
-
-      {/* Profile Panel */}
+      {/* ===== PROFILE / SETTINGS ===== */}
       {showSettings && (
         <>
           <div className="profile-overlay" onClick={() => setShowSettings(false)} />
           <div className="profile-panel-wrapper">
-           <SettingsModal onClose={() => setShowSettings(false)} />
+            <SettingsModal onClose={() => setShowSettings(false)} />
           </div>
         </>
       )}
 
-      {/* Auth Modal */}
+      {/* ===== AUTH MODAL ===== */}
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
