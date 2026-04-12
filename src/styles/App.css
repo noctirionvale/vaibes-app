@@ -4558,3 +4558,30 @@ body.light-mode .image-preview {
   display: none;
 }
 }
+
+.study-current-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+}
+.study-current-emoji { font-size: 1.4rem; }
+.study-current-name { flex: 1; font-size: 0.9rem; font-weight: 600; }
+.study-playpause-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}

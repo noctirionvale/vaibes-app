@@ -25,10 +25,9 @@ const StudyMode = () => {
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const iframeRef = useRef(null);
 
-  // Keep audio context alive for background playback (YouTube hack)
+  // Keep audio context alive (YouTube hack)
   useEffect(() => {
     if (!isPlaying || !currentStation) return;
-
     let audioCtx;
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -41,85 +40,67 @@ const StudyMode = () => {
         gainNode.connect(audioCtx.destination);
         oscillator.start();
       }
-    } catch (e) {
-      console.warn('AudioContext hack failed:', e);
-    }
-
-    return () => {
-      if (audioCtx) audioCtx.close();
-    };
+    } catch (e) {}
+    return () => audioCtx?.close();
   }, [isPlaying, currentStation]);
 
-  // Load saved preference
+  // Load saved station
   useEffect(() => {
     if (!user?.id) return;
-
     const fetchPreference = async () => {
       try {
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('study_song_audio_url, study_song_type')
+          .select('study_song_audio_url')
           .eq('user_id', user.id)
           .maybeSingle();
-
         if (error) throw error;
-        if (!data || data.study_song_type !== 'youtube') return;
-
-        const savedStation = stations.find(s => s.youtubeId === data.study_song_audio_url);
-        if (savedStation) {
-          setCurrentStation(savedStation);
-          setIsPlaying(true);
-        } else if (data.study_song_audio_url) {
-          setCurrentStation({
-            id: 'custom',
-            name: 'Custom YouTube',
-            emoji: '📺',
-            color: '#6a5cff',
-            youtubeId: data.study_song_audio_url,
-          });
-          setIsPlaying(true);
+        if (data?.study_song_audio_url) {
+          const saved = stations.find(s => s.youtubeId === data.study_song_audio_url);
+          if (saved) {
+            setCurrentStation(saved);
+            setIsPlaying(true);
+          } else if (data.study_song_audio_url) {
+            // Custom YouTube saved
+            setCurrentStation({
+              id: 'custom',
+              name: 'Custom YouTube',
+              emoji: '📺',
+              color: '#6a5cff',
+              youtubeId: data.study_song_audio_url,
+            });
+            setIsPlaying(true);
+          }
         }
-      } catch (err) {
-        console.warn('Could not load study preference:', err.message);
-      }
+      } catch (err) {}
     };
-
     fetchPreference();
   }, [user?.id]);
 
-  // ✅ FIX 409: Use onConflict to handle upsert correctly
   const savePreference = async (youtubeId) => {
     if (!user) return;
     try {
-      const { error } = await supabase.from('user_preferences').upsert(
-        {
-          user_id: user.id,
-          study_song_audio_url: youtubeId,
-          study_song_type: 'youtube',
-          updated_at: new Date(),
-        },
-        { onConflict: 'user_id' }  // 👈 This prevents 409
+      await supabase.from('user_preferences').upsert(
+        { user_id: user.id, study_song_audio_url: youtubeId, study_song_type: 'youtube', updated_at: new Date() },
+        { onConflict: 'user_id' }
       );
-      if (error) throw error;
-    } catch (err) {
-      console.warn('Failed to save study preference (ignored):', err.message);
-    }
+    } catch (err) {}
   };
 
   const handleStationSelect = (station) => {
     if (currentStation?.id === station.id && isPlaying) {
       setIsPlaying(false);
-      return;
+    } else {
+      setCurrentStation(station);
+      setIsPlaying(true);
+      savePreference(station.youtubeId);
     }
-    setCurrentStation(station);
-    setIsPlaying(true);
-    savePreference(station.youtubeId);
   };
 
-  const handleCustomYoutube = async () => {
+  const handleCustomYoutube = () => {
     const videoId = extractYoutubeId(customYoutubeUrl);
     if (!videoId) {
-      alert('Invalid YouTube URL. Please check and try again.');
+      alert('Invalid YouTube URL');
       return;
     }
     const customStation = {
@@ -131,7 +112,7 @@ const StudyMode = () => {
     };
     setCurrentStation(customStation);
     setIsPlaying(true);
-    await savePreference(videoId);
+    savePreference(videoId);
     setCustomYoutubeUrl('');
   };
 
@@ -146,58 +127,31 @@ const StudyMode = () => {
 
   return (
     <div className="study-mode-container">
-      {/* ===== MAIN TOGGLE BUTTON (always visible) ===== */}
+      {/* Toggle button - simple, no track name when closed */}
       <button
         className={`study-mode-toggle ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="study-mode-icon">{isPlaying ? '🎵' : '🎓'}</span>
-        <div className="study-mode-toggle-text">
-          <span className="study-mode-label">Study Mode</span>
-          {/* Compact "Now Playing" label – visible even when closed */}
-          <span className="study-mode-sublabel">
-            {isPlaying && currentStation
-              ? `${currentStation.emoji} ${currentStation.name}`
-              : 'Paused'}
-          </span>
-        </div>
+        <span className="study-mode-label">Study Mode</span>
         {isPlaying && (
           <div className="study-mode-equalizer">
             <span /><span /><span /><span />
           </div>
         )}
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', flexShrink: 0 }}
-        >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
 
-      {/* ===== EXPANDED PANEL (full controls) ===== */}
+      {/* Expanded panel */}
       <div className="study-mode-panel" style={{ display: isOpen ? 'flex' : 'none' }}>
-        {/* Now Playing card (with play/pause) */}
+        {/* Current station row (only if a station is selected) */}
         {currentStation && (
-          <div className="study-now-playing" style={{ borderColor: `${currentStation.color}40` }}>
-            <div className="study-now-playing-info">
-              <span className="study-now-playing-emoji">{currentStation.emoji}</span>
-              <div>
-                <div className="study-now-playing-name">{currentStation.name}</div>
-                <div className="study-now-playing-status">
-                  {isPlaying ? '▶ Playing' : '⏸ Paused'}
-                </div>
-              </div>
-            </div>
-            <button
-              className="study-playpause-btn"
-              onClick={handlePlayPause}
-              style={{ background: currentStation.color }}
-            >
+          <div className="study-current-row">
+            <span className="study-current-emoji">{currentStation.emoji}</span>
+            <span className="study-current-name">{currentStation.name}</span>
+            <button className="study-playpause-btn" onClick={handlePlayPause} style={{ background: currentStation.color }}>
               {isPlaying ? '⏸' : '▶'}
             </button>
           </div>
@@ -206,20 +160,12 @@ const StudyMode = () => {
         {/* Volume control */}
         <div className="study-volume-row">
           <span>🔈</span>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={volume}
-            onChange={e => setVolume(e.target.value)}
-            className="study-volume-slider"
-          />
+          <input type="range" min="0" max="100" value={volume} onChange={e => setVolume(e.target.value)} className="study-volume-slider" />
           <span>🔊</span>
         </div>
 
-        {/* Station list */}
+        {/* Preset stations */}
         <div className="study-stations">
-          <div className="study-section-label">🎧 Recommended Stations</div>
           {stations.map(station => (
             <button
               key={station.id}
@@ -236,13 +182,13 @@ const StudyMode = () => {
           ))}
         </div>
 
-        {/* Custom YouTube */}
+        {/* Custom YouTube input */}
         <div className="study-custom-youtube">
           <div className="study-section-label">📺 Custom YouTube</div>
           <div className="study-youtube-input-group">
             <input
               type="text"
-              placeholder="Paste YouTube URL (e.g., https://youtu.be/...)"
+              placeholder="Paste YouTube URL"
               value={customYoutubeUrl}
               onChange={(e) => setCustomYoutubeUrl(e.target.value)}
               className="study-youtube-input"
@@ -253,18 +199,12 @@ const StudyMode = () => {
           </div>
         </div>
 
-        <p className="study-mode-credit">Powered by YouTube • Pick a station or paste your own link</p>
+        <p className="study-mode-credit">Powered by YouTube</p>
       </div>
 
-      {/* Hidden YouTube iframe – always present when playing, independent of panel state */}
+      {/* Hidden YouTube iframe */}
       {currentStation && isPlaying && (
-        <iframe
-          ref={iframeRef}
-          src={getYouTubeUrl(currentStation)}
-          style={{ display: 'none' }}
-          allow="autoplay"
-          title="Study Music"
-        />
+        <iframe ref={iframeRef} src={getYouTubeUrl(currentStation)} style={{ display: 'none' }} allow="autoplay" title="Study Music" />
       )}
     </div>
   );
