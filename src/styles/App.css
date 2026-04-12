@@ -4481,8 +4481,10 @@ body.light-mode .image-preview {
 }
 
 @media (min-width: 769px) {
-  .mobile-study-wrapper {
-    display: none;
+  .study-mode-panel {
+    width: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;    /* ← fixed */
   }
 
   .brand-sidebar {
@@ -4544,8 +4546,15 @@ body.light-mode .image-preview {
   .sidebar-study-zone::-webkit-scrollbar { display: none; }
 
   .study-mode-panel {
-    width: 100%;
-    box-sizing: border-box;
-    overflow: visible;
-  }
+  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 60vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.study-mode-panel::-webkit-scrollbar {
+  display: none;
+}
 }
