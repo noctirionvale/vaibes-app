@@ -121,7 +121,8 @@ const StudyMode = () => {
 
   const getYouTubeUrl = (station) => {
     if (!station || !isPlaying) return '';
-    return `https://www.youtube-nocookie.com/embed/${station.youtubeId}?autoplay=1&loop=1&playlist=${station.youtubeId}&controls=0&modestbranding=1&rel=0&showinfo=0&mute=0&volume=${volume}`;
+    // Removed autoplay=1 – user must click play button
+    return `https://www.youtube-nocookie.com/embed/${station.youtubeId}?loop=1&playlist=${station.youtubeId}&controls=0&modestbranding=1&rel=0&showinfo=0&mute=0&volume=${volume}`;
   };
 
   return (
