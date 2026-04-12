@@ -25,7 +25,7 @@ const StudyMode = () => {
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const iframeRef = useRef(null);
 
-  // Keep page audio active when switching tabs (YouTube hack)
+  // Keep audio context alive for background playback (YouTube hack)
   useEffect(() => {
     if (!isPlaying || !currentStation) return;
 
@@ -36,7 +36,7 @@ const StudyMode = () => {
         audioCtx = new AudioContext();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
-        gainNode.gain.value = 0.001; // silent
+        gainNode.gain.value = 0.001;
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         oscillator.start();
@@ -50,7 +50,7 @@ const StudyMode = () => {
     };
   }, [isPlaying, currentStation]);
 
-  // Load saved preference from DB
+  // Load saved preference (ignore errors)
   useEffect(() => {
     if (!user?.id) return;
 
@@ -80,21 +80,26 @@ const StudyMode = () => {
           setIsPlaying(true);
         }
       } catch (err) {
-        console.error('Failed to load study preference:', err.message);
+        console.warn('Could not load study preference:', err.message);
       }
     };
 
     fetchPreference();
   }, [user?.id]);
 
+  // Save preference (silent fail – 409 ignored)
   const savePreference = async (youtubeId) => {
     if (!user) return;
-    await supabase.from('user_preferences').upsert({
-      user_id: user.id,
-      study_song_audio_url: youtubeId,
-      study_song_type: 'youtube',
-      updated_at: new Date(),
-    });
+    try {
+      await supabase.from('user_preferences').upsert({
+        user_id: user.id,
+        study_song_audio_url: youtubeId,
+        study_song_type: 'youtube',
+        updated_at: new Date(),
+      });
+    } catch (err) {
+      console.warn('Failed to save study preference (ignored):', err.message);
+    }
   };
 
   const handleStationSelect = (station) => {
@@ -231,8 +236,9 @@ const StudyMode = () => {
               onChange={(e) => setCustomYoutubeUrl(e.target.value)}
               className="study-youtube-input"
             />
+            {/* ✅ Button text changed from "Use" to "Play" */}
             <button onClick={handleCustomYoutube} className="study-youtube-btn">
-              ➕ Use
+              🎵 Play
             </button>
           </div>
         </div>
