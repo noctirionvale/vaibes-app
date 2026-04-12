@@ -50,7 +50,7 @@ const StudyMode = () => {
     };
   }, [isPlaying, currentStation]);
 
-  // Load saved preference (ignore errors)
+  // Load saved preference
   useEffect(() => {
     if (!user?.id) return;
 
@@ -87,16 +87,20 @@ const StudyMode = () => {
     fetchPreference();
   }, [user?.id]);
 
-  // Save preference (silent fail – 409 ignored)
+  // ✅ FIX 409: Use onConflict to handle upsert correctly
   const savePreference = async (youtubeId) => {
     if (!user) return;
     try {
-      await supabase.from('user_preferences').upsert({
-        user_id: user.id,
-        study_song_audio_url: youtubeId,
-        study_song_type: 'youtube',
-        updated_at: new Date(),
-      });
+      const { error } = await supabase.from('user_preferences').upsert(
+        {
+          user_id: user.id,
+          study_song_audio_url: youtubeId,
+          study_song_type: 'youtube',
+          updated_at: new Date(),
+        },
+        { onConflict: 'user_id' }  // 👈 This prevents 409
+      );
+      if (error) throw error;
     } catch (err) {
       console.warn('Failed to save study preference (ignored):', err.message);
     }
@@ -142,6 +146,7 @@ const StudyMode = () => {
 
   return (
     <div className="study-mode-container">
+      {/* ===== MAIN TOGGLE BUTTON (always visible) ===== */}
       <button
         className={`study-mode-toggle ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
@@ -149,6 +154,7 @@ const StudyMode = () => {
         <span className="study-mode-icon">{isPlaying ? '🎵' : '🎓'}</span>
         <div className="study-mode-toggle-text">
           <span className="study-mode-label">Study Mode</span>
+          {/* Compact "Now Playing" label – visible even when closed */}
           <span className="study-mode-sublabel">
             {isPlaying && currentStation
               ? `${currentStation.emoji} ${currentStation.name}`
@@ -173,7 +179,9 @@ const StudyMode = () => {
         </svg>
       </button>
 
+      {/* ===== EXPANDED PANEL (full controls) ===== */}
       <div className="study-mode-panel" style={{ display: isOpen ? 'flex' : 'none' }}>
+        {/* Now Playing card (with play/pause) */}
         {currentStation && (
           <div className="study-now-playing" style={{ borderColor: `${currentStation.color}40` }}>
             <div className="study-now-playing-info">
@@ -195,6 +203,7 @@ const StudyMode = () => {
           </div>
         )}
 
+        {/* Volume control */}
         <div className="study-volume-row">
           <span>🔈</span>
           <input
@@ -208,6 +217,7 @@ const StudyMode = () => {
           <span>🔊</span>
         </div>
 
+        {/* Station list */}
         <div className="study-stations">
           <div className="study-section-label">🎧 Recommended Stations</div>
           {stations.map(station => (
@@ -226,6 +236,7 @@ const StudyMode = () => {
           ))}
         </div>
 
+        {/* Custom YouTube */}
         <div className="study-custom-youtube">
           <div className="study-section-label">📺 Custom YouTube</div>
           <div className="study-youtube-input-group">
@@ -236,7 +247,6 @@ const StudyMode = () => {
               onChange={(e) => setCustomYoutubeUrl(e.target.value)}
               className="study-youtube-input"
             />
-            {/* ✅ Button text changed from "Use" to "Play" */}
             <button onClick={handleCustomYoutube} className="study-youtube-btn">
               🎵 Play
             </button>
@@ -246,6 +256,7 @@ const StudyMode = () => {
         <p className="study-mode-credit">Powered by YouTube • Pick a station or paste your own link</p>
       </div>
 
+      {/* Hidden YouTube iframe – always present when playing, independent of panel state */}
       {currentStation && isPlaying && (
         <iframe
           ref={iframeRef}
