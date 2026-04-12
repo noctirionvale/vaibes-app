@@ -25,25 +25,6 @@ const StudyMode = () => {
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const iframeRef = useRef(null);
 
-  // Keep audio context alive (YouTube hack)
-  useEffect(() => {
-    if (!isPlaying || !currentStation) return;
-    let audioCtx;
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (AudioContext) {
-        audioCtx = new AudioContext();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        gainNode.gain.value = 0.001;
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.start();
-      }
-    } catch (e) {}
-    return () => audioCtx?.close();
-  }, [isPlaying, currentStation]);
-
   // Load saved station
   useEffect(() => {
     if (!user?.id) return;
@@ -54,12 +35,14 @@ const StudyMode = () => {
           .select('study_song_audio_url')
           .eq('user_id', user.id)
           .maybeSingle();
+          
         if (error) throw error;
+        
         if (data?.study_song_audio_url) {
           const saved = stations.find(s => s.youtubeId === data.study_song_audio_url);
           if (saved) {
             setCurrentStation(saved);
-            setIsPlaying(true);
+            // Removed setIsPlaying(true) to prevent autoplay on load
           } else {
             setCurrentStation({
               id: 'custom',
@@ -68,10 +51,12 @@ const StudyMode = () => {
               color: '#6a5cff',
               youtubeId: data.study_song_audio_url,
             });
-            setIsPlaying(true);
+            // Removed setIsPlaying(true) to prevent autoplay on load
           }
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error("Failed to load preferences", err);
+      }
     };
     fetchPreference();
   }, [user?.id]);
@@ -83,7 +68,9 @@ const StudyMode = () => {
         { user_id: user.id, study_song_audio_url: youtubeId, study_song_type: 'youtube', updated_at: new Date() },
         { onConflict: 'user_id' }
       );
-    } catch (err) {}
+    } catch (err) {
+      console.error("Failed to save preference", err);
+    }
   };
 
   const handleStationSelect = (station) => {
@@ -121,8 +108,7 @@ const StudyMode = () => {
 
   const getYouTubeUrl = (station) => {
     if (!station || !isPlaying) return '';
-    // Removed autoplay=1 – user must click play button
-    return `https://www.youtube-nocookie.com/embed/${station.youtubeId}?loop=1&playlist=${station.youtubeId}&controls=0&modestbranding=1&rel=0&showinfo=0&mute=0&volume=${volume}`;
+    return `https://www.youtube-nocookie.com/embed/${station.youtubeId}?autoplay=1&loop=1&playlist=${station.youtubeId}&controls=0&modestbranding=1&rel=0&showinfo=0&mute=0&volume=${volume}`;
   };
 
   return (
