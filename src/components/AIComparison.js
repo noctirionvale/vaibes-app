@@ -10,7 +10,6 @@ const AIComparison = () => {
   const [inputText, setInputText] = useState('');
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [currentMode, setCurrentMode] = useState('explain');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -21,7 +20,7 @@ const AIComparison = () => {
   const [isTranscriptPasted, setIsTranscriptPasted] = useState(false);
   const [summarizeDone, setSummarizeDone] = useState(false);
   
-  // NEW AUDIO STATES
+  // AUDIO STATES
   const [copied, setCopied] = useState(false);
   const [audioBlobUrl, setAudioBlobUrl] = useState(null);
   const [fallbackText, setFallbackText] = useState(null);
@@ -33,7 +32,7 @@ const AIComparison = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef(null);
 
-  // ✅ FEEDBACK STATES
+  // FEEDBACK STATES
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackType, setFeedbackType] = useState('suggestion');
   const [feedbackText, setFeedbackText] = useState('');
@@ -135,7 +134,7 @@ Your mission: Make AI make sense to real people.`;
     imageAnalysis: "Image Analysis 🔒"
   };
 
-  // NEW: Generate and store audio (no auto-play)
+  // Generate and store audio (no auto-play)
   const handleAudioPlayback = async (textToSpeak) => {
     // Clean up previous audio
     if (audioBlobUrl) {
@@ -178,16 +177,9 @@ Your mission: Make AI make sense to real people.`;
   const speakFallback = (text) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.onstart = () => setIsAudioPlaying(true);
-    utterance.onend = () => {
-      setIsAudioPlaying(false);
-      setIsSpeaking(false);
-    };
-    utterance.onerror = () => {
-      setIsAudioPlaying(false);
-      setIsSpeaking(false);
-    };
+    utterance.onend = () => setIsAudioPlaying(false);
+    utterance.onerror = () => setIsAudioPlaying(false);
     window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
   };
 
   const handleManualPlay = () => {
@@ -195,13 +187,9 @@ Your mission: Make AI make sense to real people.`;
     if (audioBlobUrl) {
       const audio = new Audio(audioBlobUrl);
       audio.onplay = () => setIsAudioPlaying(true);
-      audio.onended = () => {
-        setIsAudioPlaying(false);
-        setIsSpeaking(false);
-      };
+      audio.onended = () => setIsAudioPlaying(false);
       audio.onerror = () => {
         setIsAudioPlaying(false);
-        setIsSpeaking(false);
         if (fallbackText) speakFallback(fallbackText);
       };
       audio.play().catch(err => {
@@ -450,7 +438,6 @@ Your mission: Make AI make sense to real people.`;
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
-    setIsSpeaking(false);
     // Clear any previous audio when starting new generation
     if (audioBlobUrl) {
       URL.revokeObjectURL(audioBlobUrl);
@@ -616,7 +603,7 @@ Your mission: Make AI make sense to real people.`;
   return (
     <div className="ai-utility-section">
 
-      {/* 🔆 LAMP TOGGLE */}
+      {/* THEME TOGGLE */}
       <div className="theme-toggle-wrapper">
         <button className="theme-toggle-btn" onClick={toggleTheme}>
           {isDark ? (
@@ -910,7 +897,7 @@ Your mission: Make AI make sense to real people.`;
             </svg>
           </button>
 
-          {/* Send button triggers image analysis when in that mode */}
+          {/* Send button */}
           <button
             id="submit-btn"
             onClick={currentMode === 'imageAnalysis' ? handleImageAnalysis : handleSend}
@@ -996,7 +983,6 @@ Your mission: Make AI make sense to real people.`;
                   setFallbackText(null);
                   setIsAudioPlaying(false);
                   window.speechSynthesis.cancel();
-                  setIsSpeaking(false);
                 }}
                 style={{
                   background: 'transparent',
@@ -1022,7 +1008,7 @@ Your mission: Make AI make sense to real people.`;
             </div>
           </div>
 
-          {/* ✅ BEAUTIFUL MANUAL PLAY BUTTON (works on mobile) */}
+          {/* BEAUTIFUL MANUAL PLAY BUTTON (works on mobile) */}
           {currentMode === 'generateAudio' && (audioBlobUrl || fallbackText) && (
             <div className="audio-player-wrapper">
               <button
@@ -1053,7 +1039,7 @@ Your mission: Make AI make sense to real people.`;
         </div>
       )}
 
-      {/* ✅ FEEDBACK BUTTON — below chatbox, non-intrusive */}
+      {/* FEEDBACK BUTTON */}
       {!isLoading && !isAnalyzing && (
         <div className="feedback-btn-wrap">
           <button
