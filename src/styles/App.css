@@ -4585,3 +4585,59 @@ body.light-mode .image-preview {
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
+
+.audio-player-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0 0.5rem;
+}
+
+.audio-play-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, #6a5cff, #00e5ff);
+  border: none;
+  border-radius: 60px;
+  color: white;
+  padding: 0.7rem 1.8rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(106, 92, 255, 0.35);
+  transition: transform 0.1s ease, box-shadow 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.audio-play-btn:active {
+  transform: scale(0.97);
+}
+
+.audio-play-btn.playing {
+  background: linear-gradient(135deg, #4a3ecc, #00b8d4);
+  cursor: default;
+  opacity: 0.9;
+}
+
+.waveform {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.waveform span {
+  width: 3px;
+  height: 12px;
+  background-color: white;
+  border-radius: 2px;
+  animation: wave 0.8s ease-in-out infinite;
+}
+
+.waveform span:nth-child(2) { animation-delay: 0.1s; height: 18px; }
+.waveform span:nth-child(3) { animation-delay: 0.2s; height: 14px; }
+.waveform span:nth-child(4) { animation-delay: 0.3s; height: 10px; }
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.5); }
+  50% { transform: scaleY(1.2); }
+}
