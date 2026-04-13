@@ -25,7 +25,7 @@ const AIComparison = () => {
   const [audioBlobUrl, setAudioBlobUrl] = useState(null);
   const [fallbackText, setFallbackText] = useState(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [apiFailed, setApiFailed] = useState(false); // show warning
+  const [apiFailed, setApiFailed] = useState(false);
 
   // Image Analysis states
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -182,7 +182,9 @@ Your mission: Make AI make sense to real people.`;
     }
   };
 
+  // Direct, mobile-friendly fallback TTS
   const speakFallback = (text) => {
+    if (!text) return;
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
