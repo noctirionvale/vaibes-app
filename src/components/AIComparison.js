@@ -182,39 +182,64 @@ Your mission: Make AI make sense to real people.`;
     }
   };
 
-  // Direct, mobile-friendly fallback TTS
-  const speakFallback = (text) => {
-    if (!text) return;
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.onstart = () => setIsAudioPlaying(true);
-    utterance.onend = () => setIsAudioPlaying(false);
-    utterance.onerror = () => {
-      setIsAudioPlaying(false);
-      console.error('Fallback TTS failed');
-    };
-    window.speechSynthesis.speak(utterance);
-  };
 
-  const handleManualPlay = () => {
-    if (isAudioPlaying) return;
-    if (audioBlobUrl) {
-      const audio = new Audio(audioBlobUrl);
-      audio.onplay = () => setIsAudioPlaying(true);
-      audio.onended = () => setIsAudioPlaying(false);
-      audio.onerror = () => {
-        setIsAudioPlaying(false);
-        if (fallbackText) speakFallback(fallbackText);
-      };
-      audio.play().catch(err => {
-        console.warn('Audio play failed, using fallback', err);
-        if (fallbackText) speakFallback(fallbackText);
-      });
-    } else if (fallbackText) {
-      speakFallback(fallbackText);
+
+  const speakFallback = (text) => {
+  if (!text) return
+  window.speechSynthesis.cancel()
+
+  const trySpeak = () => {
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'en-US'
+    utterance.rate = 0.95
+    utterance.volume = 1
+
+    // Pick English voice if available
+    const voices = window.speechSynthesis.getVoices()
+    const englishVoice = voices.find(v => v.lang.startsWith('en'))
+    if (englishVoice) utterance.voice = englishVoice
+
+    utterance.onstart = () => setIsAudioPlaying(true)
+    utterance.onend = () => setIsAudioPlaying(false)
+    utterance.onerror = () => setIsAudioPlaying(false)
+
+    window.speechSynthesis.speak(utterance)
+  }
+
+  // ✅ Android Chrome needs voices to load first
+  if (window.speechSynthesis.getVoices().length === 0) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null
+      trySpeak()
     }
-  };
+  } else {
+    trySpeak()
+  }
+}
+
+const handleManualPlay = () => {
+  if (isAudioPlaying) return
+
+  if (audioBlobUrl) {
+    const audio = new Audio(audioBlobUrl)
+    audio.onplay = () => setIsAudioPlaying(true)
+    audio.onended = () => setIsAudioPlaying(false)
+    audio.onerror = () => {
+      setIsAudioPlaying(false)
+      speakFallback(fallbackText || response)
+    }
+    const playPromise = audio.play()
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => setIsAudioPlaying(true))
+        .catch(() => {
+          speakFallback(fallbackText || response)
+        })
+    }
+  } else {
+    speakFallback(fallbackText || response)
+  }
+}
 
   const handleCopy = async () => {
     try {
