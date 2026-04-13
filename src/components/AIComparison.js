@@ -21,6 +21,11 @@ const AIComparison = () => {
   const [isTranscriptPasted, setIsTranscriptPasted] = useState(false);
   const [summarizeDone, setSummarizeDone] = useState(false);
   
+  // NEW STATES
+  const [copied, setCopied] = useState(false);
+  const [pendingAudioUrl, setPendingAudioUrl] = useState(null);
+  const [pendingAudioText, setPendingAudioText] = useState(null);
+
   // Image Analysis states
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -68,7 +73,6 @@ const AIComparison = () => {
     }
   }, [inputText, extractYouTubeID]);
 
-  // ✅ Fixed: stable dependency user?.id, and .maybeSingle()
   useEffect(() => {
     const fetchTier = async () => {
       if (!user?.id) return;
@@ -124,7 +128,7 @@ Your mission: Make AI make sense to real people.`;
   };
 
   const handleAudioPlayback = async (textToSpeak) => {
-    setIsSpeaking(true);
+    setIsSpeaking(true)
     try {
       const response = await fetch('/api/tts', {
         method: 'POST',
@@ -133,43 +137,90 @@ Your mission: Make AI make sense to real people.`;
           text: textToSpeak,
           isPro: userTier === 'pro'
         })
-      });
-
-      const data = await response.json();
-
+      })
+      const data = await response.json()
       if (data.audioContent) {
-        const audioBytes = atob(data.audioContent);
-        const arrayBuffer = new ArrayBuffer(audioBytes.length);
-        const view = new Uint8Array(arrayBuffer);
+        const audioBytes = atob(data.audioContent)
+        const arrayBuffer = new ArrayBuffer(audioBytes.length)
+        const view = new Uint8Array(arrayBuffer)
         for (let i = 0; i < audioBytes.length; i++) {
-          view[i] = audioBytes.charCodeAt(i);
+          view[i] = audioBytes.charCodeAt(i)
         }
-        const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
+        const blob = new Blob([arrayBuffer], { type: 'audio/mp3' })
+        const url = URL.createObjectURL(blob)
+        // ✅ Mobile browsers block auto-play — show tap-to-play button instead
+        if (window.innerWidth <= MOBILE_BREAKPOINT) {
+          setPendingAudioUrl(url)
+          setPendingAudioText(textToSpeak)
+          setIsSpeaking(false)
+          return
+        }
+        // Desktop — auto play works fine
+        const audio = new Audio(url)
         audio.onended = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(url);
-        };
+          setIsSpeaking(false)
+          URL.revokeObjectURL(url)
+        }
         audio.onerror = () => {
-          setIsSpeaking(false);
-          fallbackTTS(textToSpeak);
-        };
-        audio.play();
+          setIsSpeaking(false)
+          fallbackTTS(textToSpeak)
+        }
+        audio.play()
       } else {
-        fallbackTTS(textToSpeak);
+        fallbackTTS(textToSpeak)
       }
     } catch (error) {
-      console.error('TTS error:', error);
-      fallbackTTS(textToSpeak);
+      console.error('TTS error:', error)
+      fallbackTTS(textToSpeak)
+      setIsSpeaking(false)
     }
-  };
+  }
 
   const fallbackTTS = (text) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.onend = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
   };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(response)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      // Fallback for older mobile browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = response
+      textArea.style.position = 'fixed'
+      textArea.style.opacity = '0'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const handleMobileTTSPlay = () => {
+    if (!pendingAudioUrl) return
+    const audio = new Audio(pendingAudioUrl)
+    audio.onended = () => {
+      setIsSpeaking(false)
+      URL.revokeObjectURL(pendingAudioUrl)
+      setPendingAudioUrl(null)
+      setPendingAudioText(null)
+    }
+    audio.onerror = () => {
+      setIsSpeaking(false)
+      fallbackTTS(pendingAudioText)
+      setPendingAudioUrl(null)
+      setPendingAudioText(null)
+    }
+    audio.play()
+    setIsSpeaking(true)
+  }
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -263,7 +314,6 @@ Your mission: Make AI make sense to real people.`;
     }
   };
 
-  // ✅ FIXED: replaced .single() with .maybeSingle()
   const checkAndIncrementUsage = async () => {
     const today = new Date().toISOString().split('T')[0];
 
@@ -496,7 +546,6 @@ Your mission: Make AI make sense to real people.`;
     setInputText(value);
     setSummarizeDone(false);
 
-    // ✅ Only auto-resize on desktop to prevent mobile keyboard jump issues
     if (window.innerWidth > MOBILE_BREAKPOINT) {
       e.target.style.height = 'auto';
       e.target.style.height = `${e.target.scrollHeight}px`;
@@ -509,7 +558,6 @@ Your mission: Make AI make sense to real people.`;
     }
   };
 
-  // ✅ FEEDBACK SUBMIT HANDLER
   const handleFeedbackSubmit = async () => {
     if (!feedbackText.trim()) return;
     setFeedbackSending(true);
@@ -869,28 +917,70 @@ Your mission: Make AI make sense to real people.`;
 
       {/* Response Card */}
       {response && (
-        <div 
-          className="ai-response-card" 
+        <div
+          className="ai-response-card"
           style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}
         >
           <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="current-mode-badge">{modeLabels[currentMode]}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {/* ✅ COPY BUTTON — always visible */}
+              <button
+                onClick={handleCopy}
+                title="Copy response"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)',
+                  border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                  color: copied ? '#10b981' : 'rgba(255,255,255,0.5)',
+                  padding: '0.3rem 0.65rem',
+                  borderRadius: '20px',
+                  fontSize: '0.72rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontFamily: 'Inter, sans-serif',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {copied ? (
+                  <>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy
+                  </>
+                )}
+              </button>
+              {/* Audio playing indicator — desktop */}
               {currentMode === 'generateAudio' && isSpeaking && (
                 <span className="audio-playing-indicator">
-                  <span className="playing-dot"></span> Playing Audio...
+                  <span className="playing-dot"></span> Playing...
                 </span>
               )}
+              {/* Close button */}
               <button
                 onClick={() => {
-                  setResponse('');
-                  setSummarizeDone(false);
-                  setIsTranscriptPasted(false);
-                  setPersistedVideoId(null);
-                  setShowVideoPreview(false);
-                  setInputText('');
-                  window.speechSynthesis.cancel();
-                  setIsSpeaking(false);
+                  setResponse('')
+                  setSummarizeDone(false)
+                  setIsTranscriptPasted(false)
+                  setPersistedVideoId(null)
+                  setShowVideoPreview(false)
+                  setInputText('')
+                  setPendingAudioUrl(null)
+                  setPendingAudioText(null)
+                  window.speechSynthesis.cancel()
+                  setIsSpeaking(false)
                 }}
                 style={{
                   background: 'transparent',
@@ -915,6 +1005,39 @@ Your mission: Make AI make sense to real people.`;
               </button>
             </div>
           </div>
+          {/* ✅ MOBILE TAP-TO-PLAY BUTTON */}
+          {currentMode === 'generateAudio' && pendingAudioUrl && (
+            <div style={{
+              margin: '0.75rem 0',
+              display: 'flex',
+              justifyContent: 'center',
+            }}>
+              <button
+                onClick={handleMobileTTSPlay}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  background: 'linear-gradient(135deg, #6a5cff, #00e5ff)',
+                  border: 'none',
+                  borderRadius: '50px',
+                  color: 'white',
+                  padding: '0.75rem 1.75rem',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 6px 20px rgba(106,92,255,0.4)',
+                  fontFamily: 'Inter, sans-serif',
+                  animation: 'pulseGlow 2s infinite',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Tap to Play Audio
+              </button>
+            </div>
+          )}
           <div className="ai-response-text">{response}</div>
         </div>
       )}
