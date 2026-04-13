@@ -25,6 +25,7 @@ const AIComparison = () => {
   const [audioBlobUrl, setAudioBlobUrl] = useState(null);
   const [fallbackText, setFallbackText] = useState(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [apiFailed, setApiFailed] = useState(false); // show warning
 
   // Image Analysis states
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -134,7 +135,7 @@ Your mission: Make AI make sense to real people.`;
     imageAnalysis: "Image Analysis 🔒"
   };
 
-  // Generate and store audio (no auto-play)
+  // Generate and store audio (no auto-play) – with robust fallback
   const handleAudioPlayback = async (textToSpeak) => {
     // Clean up previous audio
     if (audioBlobUrl) {
@@ -143,6 +144,7 @@ Your mission: Make AI make sense to real people.`;
     }
     setFallbackText(null);
     setIsAudioPlaying(false);
+    setApiFailed(false);
 
     try {
       const response = await fetch('/api/tts', {
@@ -153,6 +155,11 @@ Your mission: Make AI make sense to real people.`;
           isPro: userTier === 'pro'
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`TTS API returned ${response.status}`);
+      }
+
       const data = await response.json();
       if (data.audioContent) {
         const audioBytes = atob(data.audioContent);
@@ -165,20 +172,26 @@ Your mission: Make AI make sense to real people.`;
         const url = URL.createObjectURL(blob);
         setAudioBlobUrl(url);
       } else {
-        // Fallback: store text for manual speech synthesis
-        setFallbackText(textToSpeak);
+        throw new Error('No audio content in response');
       }
     } catch (error) {
       console.error('TTS error:', error);
+      setApiFailed(true);
+      // Fallback: store text for manual speech synthesis
       setFallbackText(textToSpeak);
     }
   };
 
   const speakFallback = (text) => {
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.onstart = () => setIsAudioPlaying(true);
     utterance.onend = () => setIsAudioPlaying(false);
-    utterance.onerror = () => setIsAudioPlaying(false);
+    utterance.onerror = () => {
+      setIsAudioPlaying(false);
+      console.error('Fallback TTS failed');
+    };
     window.speechSynthesis.speak(utterance);
   };
 
@@ -445,6 +458,7 @@ Your mission: Make AI make sense to real people.`;
     }
     setFallbackText(null);
     setIsAudioPlaying(false);
+    setApiFailed(false);
 
     try {
       const currentMessages = [
@@ -982,6 +996,7 @@ Your mission: Make AI make sense to real people.`;
                   }
                   setFallbackText(null);
                   setIsAudioPlaying(false);
+                  setApiFailed(false);
                   window.speechSynthesis.cancel();
                 }}
                 style={{
@@ -1008,9 +1023,14 @@ Your mission: Make AI make sense to real people.`;
             </div>
           </div>
 
-          {/* BEAUTIFUL MANUAL PLAY BUTTON (works on mobile) */}
-          {currentMode === 'generateAudio' && (audioBlobUrl || fallbackText) && (
+          {/* BEAUTIFUL MANUAL PLAY BUTTON – always shown for generateAudio mode */}
+          {currentMode === 'generateAudio' && response && (
             <div className="audio-player-wrapper">
+              {apiFailed && (
+                <div style={{ fontSize: '0.7rem', color: '#ffaa44', textAlign: 'center', marginBottom: '0.5rem' }}>
+                  ⚠️ TTS server error – using browser speech instead
+                </div>
+              )}
               <button
                 onClick={handleManualPlay}
                 className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`}
