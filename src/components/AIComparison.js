@@ -135,9 +135,8 @@ Your mission: Make AI make sense to real people.`;
     imageAnalysis: "Image Analysis 🔒"
   };
 
-  // Generate and store audio (no auto-play) – with robust fallback
+  // Generate and store audio (no auto-play)
   const handleAudioPlayback = async (textToSpeak) => {
-    // Clean up previous audio
     if (audioBlobUrl) {
       URL.revokeObjectURL(audioBlobUrl);
       setAudioBlobUrl(null);
@@ -156,10 +155,7 @@ Your mission: Make AI make sense to real people.`;
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`TTS API returned ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`TTS API returned ${response.status}`);
       const data = await response.json();
       if (data.audioContent) {
         const audioBytes = atob(data.audioContent);
@@ -177,69 +173,38 @@ Your mission: Make AI make sense to real people.`;
     } catch (error) {
       console.error('TTS error:', error);
       setApiFailed(true);
-      // Fallback: store text for manual speech synthesis
       setFallbackText(textToSpeak);
     }
   };
 
-
-
   const speakFallback = (text) => {
-  if (!text) return
-  window.speechSynthesis.cancel()
-
-  const trySpeak = () => {
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'en-US'
-    utterance.rate = 0.95
-    utterance.volume = 1
-
-    // Pick English voice if available
-    const voices = window.speechSynthesis.getVoices()
-    const englishVoice = voices.find(v => v.lang.startsWith('en'))
-    if (englishVoice) utterance.voice = englishVoice
-
-    utterance.onstart = () => setIsAudioPlaying(true)
-    utterance.onend = () => setIsAudioPlaying(false)
-    utterance.onerror = () => setIsAudioPlaying(false)
-
-    window.speechSynthesis.speak(utterance)
-  }
-
-  // ✅ Android Chrome needs voices to load first
-  if (window.speechSynthesis.getVoices().length === 0) {
-    window.speechSynthesis.onvoiceschanged = () => {
-      window.speechSynthesis.onvoiceschanged = null
-      trySpeak()
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
     }
-  } else {
-    trySpeak()
-  }
-}
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onstart = () => setIsAudioPlaying(true);
+    utterance.onend = () => setIsAudioPlaying(false);
+    utterance.onerror = () => setIsAudioPlaying(false);
+    window.speechSynthesis.speak(utterance);
+  };
 
-const handleManualPlay = () => {
-  if (isAudioPlaying) return
+  const handleManualPlay = () => {
+    if (isAudioPlaying) return;
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-  if (audioBlobUrl) {
-    const audio = new Audio(audioBlobUrl)
-    audio.onplay = () => setIsAudioPlaying(true)
-    audio.onended = () => setIsAudioPlaying(false)
-    audio.onerror = () => {
-      setIsAudioPlaying(false)
-      speakFallback(fallbackText || response)
+    if (audioBlobUrl && !apiFailed) {
+      const audio = new Audio(audioBlobUrl);
+      audio.onplay = () => setIsAudioPlaying(true);
+      audio.onended = () => setIsAudioPlaying(false);
+      audio.onerror = () => {
+        setIsAudioPlaying(false);
+        speakFallback(response);
+      };
+      audio.play().catch(() => speakFallback(response));
+    } else {
+      speakFallback(response);
     }
-    const playPromise = audio.play()
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => setIsAudioPlaying(true))
-        .catch(() => {
-          speakFallback(fallbackText || response)
-        })
-    }
-  } else {
-    speakFallback(fallbackText || response)
-  }
-}
+  };
 
   const handleCopy = async () => {
     try {
@@ -475,10 +440,7 @@ const handleManualPlay = () => {
     setResponse('');
     setIsDropdownOpen(false);
     
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    // Clear any previous audio when starting new generation
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (audioBlobUrl) {
       URL.revokeObjectURL(audioBlobUrl);
       setAudioBlobUrl(null);
@@ -643,8 +605,6 @@ const handleManualPlay = () => {
 
   return (
     <div className="ai-utility-section">
-
-      {/* THEME TOGGLE */}
       <div className="theme-toggle-wrapper">
         <button className="theme-toggle-btn" onClick={toggleTheme}>
           {isDark ? (
@@ -674,8 +634,6 @@ const handleManualPlay = () => {
       </div>
 
       <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-
-        {/* Requests remaining counter */}
         {user && requestsRemaining !== null && (
           <div style={{
             textAlign: 'right',
@@ -693,243 +651,82 @@ const handleManualPlay = () => {
           </div>
         )}
 
-        {/* Image Upload Zone */}
         {currentMode === 'imageAnalysis' && (
           <div className="image-upload-zone">
             {imagePreview ? (
               <div className="image-preview-wrapper">
-                <img
-                  src={imagePreview}
-                  alt="Uploaded"
-                  className="image-preview"
-                />
-                <button
-                  className="image-remove-btn"
-                  onClick={() => {
-                    setUploadedImage(null);
-                    setImagePreview(null);
-                  }}
-                >
-                  ✕ Remove
-                </button>
+                <img src={imagePreview} alt="Uploaded" className="image-preview" />
+                <button className="image-remove-btn" onClick={() => { setUploadedImage(null); setImagePreview(null); }}>✕ Remove</button>
               </div>
             ) : (
-              <div
-                className="image-drop-area"
-                onClick={() => userTier === 'pro'
-                  ? fileInputRef.current.click()
-                  : setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to unlock!')
-                }
-              >
+              <div className="image-drop-area" onClick={() => userTier === 'pro' ? fileInputRef.current.click() : setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to unlock!')}>
                 <span className="image-drop-icon">🖼️</span>
-                <span className="image-drop-text">
-                  {userTier === 'pro'
-                    ? 'Click to upload image'
-                    : 'Pro feature — Upgrade to upload images'
-                  }
-                </span>
+                <span className="image-drop-text">{userTier === 'pro' ? 'Click to upload image' : 'Pro feature — Upgrade to upload images'}</span>
                 <span className="image-drop-hint">JPG, PNG, GIF under 4MB</span>
               </div>
             )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handleImageUpload}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
           </div>
         )}
 
-        {/* YouTube Preview Section */}
         {activeVideoId && currentMode === 'summarize' && !summarizeDone && (
           <div className="youtube-preview-section">
             <div className="youtube-thumb-row">
-              <img
-                src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`}
-                alt="Video thumbnail"
-                className="youtube-thumb"
-                onClick={() => setShowVideoPreview(!showVideoPreview)}
-              />
-              <div 
-                className="youtube-thumb-info"
-                onClick={() => setShowVideoPreview(!showVideoPreview)}
-              >
+              <img src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`} alt="Video thumbnail" className="youtube-thumb" onClick={() => setShowVideoPreview(!showVideoPreview)} />
+              <div className="youtube-thumb-info" onClick={() => setShowVideoPreview(!showVideoPreview)}>
                 <span className="youtube-thumb-label">YouTube Video Detected</span>
-                <span className="youtube-thumb-hint">
-                  {showVideoPreview ? '▲ Hide player' : '▼ Click thumbnail to preview'}
-                </span>
+                <span className="youtube-thumb-hint">{showVideoPreview ? '▲ Hide player' : '▼ Click thumbnail to preview'}</span>
               </div>
-              
-              <a
-                href={`https://www.youtube.com/watch?v=${activeVideoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="fetch-transcript-btn"
-                onClick={(e) => e.stopPropagation()}
-              >
-                📋 Get Transcript
-              </a>
+              <a href={`https://www.youtube.com/watch?v=${activeVideoId}`} target="_blank" rel="noopener noreferrer" className="fetch-transcript-btn" onClick={(e) => e.stopPropagation()}>📋 Get Transcript</a>
             </div>
-
             {showVideoPreview && (
               <div className="youtube-player-wrapper">
-                <iframe
-                  width="100%"
-                  height="220"
-                  src={`https://www.youtube-nocookie.com/embed/${activeVideoId}`}
-                  title="YouTube video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={{ borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', display: 'block' }}
-                />
+                <iframe width="100%" height="220" src={`https://www.youtube-nocookie.com/embed/${activeVideoId}`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', display: 'block' }} />
               </div>
             )}
-
             <div className="transcript-instructions">
-              <div className="transcript-step">
-                <span className="transcript-step-num">1</span>
-                <span>Click <strong>Get Transcript</strong> → opens video on YouTube</span>
-              </div>
-              <div className="transcript-step">
-                <span className="transcript-step-num">2</span>
-                <span>Below the video → click <strong>(...) More</strong> → <strong>Show Transcript</strong></span>
-              </div>
-              <div className="transcript-step">
-                <span className="transcript-step-num">3</span>
-                <span>Select all transcript text → <strong>Ctrl+A</strong> → <strong>Copy</strong></span>
-              </div>
-              <div className="transcript-step">
-                <span className="transcript-step-num">4</span>
-                <span>Come back here → <strong>clear this box</strong> → paste transcript → hit Send</span>
-              </div>
+              <div className="transcript-step"><span className="transcript-step-num">1</span><span>Click <strong>Get Transcript</strong> → opens video on YouTube</span></div>
+              <div className="transcript-step"><span className="transcript-step-num">2</span><span>Below the video → click <strong>(...) More</strong> → <strong>Show Transcript</strong></span></div>
+              <div className="transcript-step"><span className="transcript-step-num">3</span><span>Select all transcript text → <strong>Ctrl+A</strong> → <strong>Copy</strong></span></div>
+              <div className="transcript-step"><span className="transcript-step-num">4</span><span>Come back here → <strong>clear this box</strong> → paste transcript → hit Send</span></div>
             </div>
           </div>
         )}
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', width: '100%' }}>
-
-          {/* DROPDOWN */}
           <div className="mode-selector-wrapper" ref={dropdownRef}>
-            <button
-              className="plus-icon-btn"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              title="Switch Mode"
-            >
+            <button className="plus-icon-btn" onClick={() => setIsDropdownOpen(!isDropdownOpen)} title="Switch Mode">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
             </button>
-
             {isDropdownOpen && (
               <div className="mode-dropdown-menu">
                 {Object.keys(modeLabels).map((modeKey) => (
-                  <div
-                    key={modeKey}
-                    className={
-                      "dropdown-item " +
-                      (currentMode === modeKey ? 'active' : '') +
-                      (modeKey === 'imageAnalysis' && userTier !== 'pro' ? ' locked-item' : '')
-                    }
-                    onClick={() => {
-                      setCurrentMode(modeKey);
-                      setIsDropdownOpen(false);
-                      if (modeKey !== 'imageAnalysis') {
-                        setUploadedImage(null);
-                        setImagePreview(null);
-                      }
-                    }}
-                  >
+                  <div key={modeKey} className={"dropdown-item " + (currentMode === modeKey ? 'active' : '') + (modeKey === 'imageAnalysis' && userTier !== 'pro' ? ' locked-item' : '')} onClick={() => { setCurrentMode(modeKey); setIsDropdownOpen(false); if (modeKey !== 'imageAnalysis') { setUploadedImage(null); setImagePreview(null); } }}>
                     {modeLabels[modeKey]}
-                    {modeKey === 'imageAnalysis' && userTier !== 'pro' && (
-                      <span className="dropdown-pro-badge">PRO</span>
-                    )}
+                    {modeKey === 'imageAnalysis' && userTier !== 'pro' && <span className="dropdown-pro-badge">PRO</span>}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Transcript paste box or textarea */}
           {isTranscriptPasted && currentMode === 'summarize' ? (
-            <div className="transcript-paste-box" style={{
-              flex: 1,
-              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-              borderRadius: '12px',
-              padding: '0.75rem 1rem',
-              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`
-            }}>
+            <div className="transcript-paste-box" style={{ flex: 1, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: '12px', padding: '0.75rem 1rem', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>📄 Transcript Ready</span>
-                <button 
-                  className="transcript-clear-btn"
-                  onClick={() => {
-                    setInputText('');
-                    setIsTranscriptPasted(false);
-                    setSummarizeDone(false);
-                    setPersistedVideoId(null);
-                    setShowVideoPreview(false);
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
-                    cursor: 'pointer',
-                    fontSize: '0.75rem',
-                    padding: '2px 6px',
-                    borderRadius: '4px'
-                  }}
-                >
-                  ✕ Clear
-                </button>
+                <button className="transcript-clear-btn" onClick={() => { setInputText(''); setIsTranscriptPasted(false); setSummarizeDone(false); setPersistedVideoId(null); setShowVideoPreview(false); }} style={{ background: 'transparent', border: 'none', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', cursor: 'pointer', fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px' }}>✕ Clear</button>
               </div>
-              <div style={{
-                fontSize: '0.875rem',
-                color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
-                maxHeight: '100px',
-                overflow: 'auto',
-                lineHeight: 1.4
-              }}>
-                {inputText}
-              </div>
-              <div style={{ 
-                fontSize: '0.75rem', 
-                color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
-                marginTop: '0.5rem'
-              }}>
-                {inputText.split(/\s+/).filter(w => w).length.toLocaleString()} words · Hit Send to summarize
-              </div>
+              <div style={{ fontSize: '0.875rem', color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)', maxHeight: '100px', overflow: 'auto', lineHeight: 1.4 }}>{inputText}</div>
+              <div style={{ fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', marginTop: '0.5rem' }}>{inputText.split(/\s+/).filter(w => w).length.toLocaleString()} words · Hit Send to summarize</div>
             </div>
           ) : (
-            <textarea
-              id="question-input"
-              placeholder={isListening ? "Listening... Speak now!" : inputPlaceholder}
-              value={inputText}
-              onChange={handleTextareaChange}
-              rows="1"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (currentMode === 'imageAnalysis') {
-                    handleImageAnalysis();
-                  } else {
-                    handleSend();
-                  }
-                }
-              }}
-              style={{ flex: 1 }}
-            />
+            <textarea id="question-input" placeholder={isListening ? "Listening... Speak now!" : inputPlaceholder} value={inputText} onChange={handleTextareaChange} rows="1" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (currentMode === 'imageAnalysis') handleImageAnalysis(); else handleSend(); } }} style={{ flex: 1 }} />
           )}
 
-          {/* MIC */}
-          <button
-            className={`mic-btn ${isListening ? 'listening-pulse' : ''}`}
-            onClick={startListening}
-            disabled={isLoading}
-            title="Use Voice Input"
-          >
+          <button className={`mic-btn ${isListening ? 'listening-pulse' : ''}`} onClick={startListening} disabled={isLoading} title="Use Voice Input">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -938,143 +735,43 @@ const handleManualPlay = () => {
             </svg>
           </button>
 
-          {/* Send button */}
-          <button
-            id="submit-btn"
-            onClick={currentMode === 'imageAnalysis' ? handleImageAnalysis : handleSend}
-            disabled={
-              isLoading ||
-              (currentMode === 'imageAnalysis' ? !uploadedImage : !inputText.trim())
-            }
-            title={currentMode === 'imageAnalysis' ? 'Analyze Image' : 'Send'}
-          >
-            {isLoading || isAnalyzing ? (
-              <span className="loading-dots">...</span>
-            ) : (
+          <button id="submit-btn" onClick={currentMode === 'imageAnalysis' ? handleImageAnalysis : handleSend} disabled={isLoading || (currentMode === 'imageAnalysis' ? !uploadedImage : !inputText.trim())} title={currentMode === 'imageAnalysis' ? 'Analyze Image' : 'Send'}>
+            {isLoading || isAnalyzing ? <span className="loading-dots">...</span> : (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"></line>
                 <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
               </svg>
             )}
           </button>
-
         </div>
       </div>
 
-      {/* Response Card */}
       {response && (
-        <div
-          className="ai-response-card"
-          style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}
-        >
+        <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
           <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="current-mode-badge">{modeLabels[currentMode]}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {/* COPY BUTTON */}
-              <button
-                onClick={handleCopy}
-                title="Copy response"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)',
-                  border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                  color: copied ? '#10b981' : 'rgba(255,255,255,0.5)',
-                  padding: '0.3rem 0.65rem',
-                  borderRadius: '20px',
-                  fontSize: '0.72rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontFamily: 'Inter, sans-serif',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {copied ? (
-                  <>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                    Copy
-                  </>
-                )}
+              <button onClick={handleCopy} title="Copy response" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'}`, color: copied ? '#10b981' : 'rgba(255,255,255,0.5)', padding: '0.3rem 0.65rem', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                {copied ? (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>Copied!</>) : (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>Copy</>)}
               </button>
-              {/* Close button */}
-              <button
-                onClick={() => {
-                  setResponse('');
-                  setSummarizeDone(false);
-                  setIsTranscriptPasted(false);
-                  setPersistedVideoId(null);
-                  setShowVideoPreview(false);
-                  setInputText('');
-                  if (audioBlobUrl) {
-                    URL.revokeObjectURL(audioBlobUrl);
-                    setAudioBlobUrl(null);
-                  }
-                  setFallbackText(null);
-                  setIsAudioPlaying(false);
-                  setApiFailed(false);
-                  window.speechSynthesis.cancel();
-                }}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'rgba(255,255,255,0.4)',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '50%',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={e => e.currentTarget.style.color = '#ff4fd8'}
-                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
-                title="Close response"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+              <button onClick={() => { setResponse(''); setSummarizeDone(false); setIsTranscriptPasted(false); setPersistedVideoId(null); setShowVideoPreview(false); setInputText(''); if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); } setFallbackText(null); setIsAudioPlaying(false); setApiFailed(false); window.speechSynthesis.cancel(); }} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', transition: 'all 0.2s ease' }} onMouseEnter={e => e.currentTarget.style.color = '#ff4fd8'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'} title="Close response">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
           </div>
 
-          {/* BEAUTIFUL MANUAL PLAY BUTTON – always shown for generateAudio mode */}
           {currentMode === 'generateAudio' && response && (
             <div className="audio-player-wrapper">
-              {apiFailed && (
-                <div style={{ fontSize: '0.7rem', color: '#ffaa44', textAlign: 'center', marginBottom: '0.5rem' }}>
-                  ⚠️ TTS server error – using browser speech instead
-                </div>
-              )}
-              <button
-                onClick={handleManualPlay}
-                className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`}
-                disabled={isAudioPlaying}
-              >
+              {apiFailed && <div style={{ fontSize: '0.7rem', color: '#ffaa44', textAlign: 'center', marginBottom: '0.5rem' }}>⚠️ TTS server error – using browser speech instead</div>}
+              <button onClick={handleManualPlay} className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`} disabled={isAudioPlaying}>
                 {isAudioPlaying ? (
                   <>
-                    <span className="waveform">
-                      <span></span><span></span><span></span><span></span>
-                    </span>
+                    <span className="waveform"><span></span><span></span><span></span><span></span></span>
                     <span>Playing...</span>
                   </>
                 ) : (
                   <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
                     <span>Play Audio</span>
                   </>
                 )}
@@ -1086,83 +783,39 @@ const handleManualPlay = () => {
         </div>
       )}
 
-      {/* FEEDBACK BUTTON */}
       {!isLoading && !isAnalyzing && (
         <div className="feedback-btn-wrap">
-          <button
-            className="feedback-btn"
-            onClick={() => setShowFeedback(true)}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
+          <button className="feedback-btn" onClick={() => setShowFeedback(true)}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
             Send Feedback
           </button>
         </div>
       )}
 
-      {/* FEEDBACK MODAL */}
       {showFeedback && (
         <div className="feedback-modal-overlay" onClick={() => setShowFeedback(false)}>
           <div className="feedback-modal" onClick={e => e.stopPropagation()}>
             {feedbackSent ? (
-              <div className="feedback-success">
-                <div className="feedback-success-icon">🎉</div>
-                <div>Thanks for your feedback!</div>
-                <div style={{ fontSize: '0.78rem', opacity: 0.5, marginTop: '0.25rem' }}>
-                  We read every single one.
-                </div>
-              </div>
+              <div className="feedback-success"><div className="feedback-success-icon">🎉</div><div>Thanks for your feedback!</div><div style={{ fontSize: '0.78rem', opacity: 0.5, marginTop: '0.25rem' }}>We read every single one.</div></div>
             ) : (
               <>
-                <div className="feedback-modal-header">
-                  <h4>Send Feedback</h4>
-                  <button className="feedback-close" onClick={() => setShowFeedback(false)}>✕</button>
-                </div>
+                <div className="feedback-modal-header"><h4>Send Feedback</h4><button className="feedback-close" onClick={() => setShowFeedback(false)}>✕</button></div>
                 <div className="feedback-types">
                   {['suggestion', 'bug', 'compliment', 'other'].map(type => (
-                    <button
-                      key={type}
-                      className={`feedback-type-btn ${feedbackType === type ? 'active' : ''}`}
-                      onClick={() => setFeedbackType(type)}
-                    >
-                      {type === 'suggestion' && '💡 Suggestion'}
-                      {type === 'bug' && '🐛 Bug'}
-                      {type === 'compliment' && '❤️ Love it'}
-                      {type === 'other' && '💬 Other'}
+                    <button key={type} className={`feedback-type-btn ${feedbackType === type ? 'active' : ''}`} onClick={() => setFeedbackType(type)}>
+                      {type === 'suggestion' && '💡 Suggestion'}{type === 'bug' && '🐛 Bug'}{type === 'compliment' && '❤️ Love it'}{type === 'other' && '💬 Other'}
                     </button>
                   ))}
                 </div>
-                <textarea
-                  className="feedback-textarea"
-                  placeholder={
-                    feedbackType === 'bug' ? 'Describe what went wrong...' :
-                    feedbackType === 'suggestion' ? 'What would make vAIbes better?' :
-                    feedbackType === 'compliment' ? 'Tell us what you love! 😊' :
-                    'What\'s on your mind?'
-                  }
-                  value={feedbackText}
-                  onChange={e => setFeedbackText(e.target.value)}
-                  rows={4}
-                />
-                <button
-                  className="feedback-submit"
-                  onClick={handleFeedbackSubmit}
-                  disabled={!feedbackText.trim() || feedbackSending}
-                >
-                  {feedbackSending ? 'Sending...' : 'Send Feedback →'}
-                </button>
+                <textarea className="feedback-textarea" placeholder={feedbackType === 'bug' ? 'Describe what went wrong...' : feedbackType === 'suggestion' ? 'What would make vAIbes better?' : feedbackType === 'compliment' ? 'Tell us what you love! 😊' : 'What\'s on your mind?'} value={feedbackText} onChange={e => setFeedbackText(e.target.value)} rows={4} />
+                <button className="feedback-submit" onClick={handleFeedbackSubmit} disabled={!feedbackText.trim() || feedbackSending}>{feedbackSending ? 'Sending...' : 'Send Feedback →'}</button>
               </>
             )}
           </div>
         </div>
       )}
 
-      {/* AUTH MODAL */}
-      {showAuthModal && (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
-      )}
-
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </div>
   );
 };

@@ -11,10 +11,19 @@ const stations = [
 ];
 
 const extractYoutubeId = (url) => {
-  const regex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
-  const match = url.match(regex);
-  return match ? match[1] : null;
-};
+  if (!url) return null
+  // Handle all YouTube URL formats including mobile share links
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/watch\?.*&v=([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/ // Raw video ID
+  ]
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) return match[1]
+  }
+  return null
+}
 
 const StudyMode = () => {
   const { user } = useAuth();
