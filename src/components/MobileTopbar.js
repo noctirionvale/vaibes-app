@@ -9,26 +9,26 @@ const MobileTopbar = () => {
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showSettings,  setShowSettings]  = useState(false);
-  const [showModels,    setShowModels]    = useState(false);
-  const [showStudy,     setShowStudy]     = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showModels, setShowModels] = useState(false);
+  const [showStudy, setShowStudy] = useState(false);
 
-  const avatarUrl   = user?.user_metadata?.avatar_url;
+  const avatarUrl = user?.user_metadata?.avatar_url;
   const displayName = user?.user_metadata?.full_name
     || user?.user_metadata?.name
     || user?.email?.split('@')[0];
 
   const allTools = [
-    { name: 'Grok',       url: 'https://grok.com',                color: 'grok' },
-    { name: 'ChatGPT',    url: 'https://chat.openai.com',         color: 'chatgpt' },
-    { name: 'Gemini',     url: 'https://gemini.google.com',       color: 'gemini' },
-    { name: 'DeepSeek',   url: 'https://chat.deepseek.com',       color: 'deepseek' },
-    { name: 'Claude',     url: 'https://claude.ai',               color: 'claude' },
-    { name: 'Qwen',       url: 'https://chat.qwen.ai',            color: 'qwen' },
-    { name: 'Kimi',       url: 'https://kimi.moonshot.cn',        color: 'kimi' },
-    { name: 'Perplexity', url: 'https://www.perplexity.ai',       color: 'perplexity' },
-    { name: 'Google',     url: 'https://www.google.com',          color: 'google' },
-    { name: 'Wikipedia',  url: 'https://www.wikipedia.org',       color: 'wiki' },
+    { name: 'Grok', url: 'https://grok.com', color: 'grok' },
+    { name: 'ChatGPT', url: 'https://chat.openai.com', color: 'chatgpt' },
+    { name: 'Gemini', url: 'https://gemini.google.com', color: 'gemini' },
+    { name: 'DeepSeek', url: 'https://chat.deepseek.com', color: 'deepseek' },
+    { name: 'Claude', url: 'https://claude.ai', color: 'claude' },
+    { name: 'Qwen', url: 'https://chat.qwen.ai', color: 'qwen' },
+    { name: 'Kimi', url: 'https://kimi.moonshot.cn', color: 'kimi' },
+    { name: 'Perplexity', url: 'https://www.perplexity.ai', color: 'perplexity' },
+    { name: 'Google', url: 'https://www.google.com', color: 'google' },
+    { name: 'Wikipedia', url: 'https://www.wikipedia.org', color: 'wiki' },
   ];
 
   return (
@@ -49,39 +49,41 @@ const MobileTopbar = () => {
           <button className="mobile-icon-btn" onClick={toggleTheme} title="Toggle theme">
             {isDark ? (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="5"/>
-                <line x1="12" y1="1"  x2="12" y2="3"/>
-                <line x1="12" y1="21" x2="12" y2="23"/>
-                <line x1="4.22"  y1="4.22"  x2="5.64"  y2="5.64"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="1"  y1="12" x2="3"  y2="12"/>
-                <line x1="21" y1="12" x2="23" y2="12"/>
-                <line x1="4.22"  y1="19.78" x2="5.64"  y2="18.36"/>
-                <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
               </svg>
             ) : (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
             )}
           </button>
 
-          {/* Study Mode toggle */}
-          <button
-            className={`mobile-icon-btn${showStudy ? ' active' : ''}`}
-            onClick={() => setShowStudy(prev => !prev)}
-            title="Study Mode"
-            style={showStudy ? { borderColor: 'rgba(106,92,255,0.6)', color: '#6a5cff' } : {}}
-          >
-            🎼
-          </button>
+          {/* Study Mode toggle - Logic added here to hide on desktop */}
+          {window.innerWidth <= 768 && (
+            <button
+              className={`mobile-icon-btn${showStudy ? ' active' : ''}`}
+              onClick={() => setShowStudy(prev => !prev)}
+              title="Study Mode"
+              style={showStudy ? { borderColor: 'rgba(106,92,255,0.6)', color: '#6a5cff' } : {}}
+            >
+              🎼
+            </button>
+          )}
 
           {/* AI Models */}
           <button className="mobile-icon-btn" onClick={() => setShowModels(true)} title="AI Models">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="2" y="3" width="20" height="14" rx="2"/>
-              <line x1="8"  y1="21" x2="16" y2="21"/>
-              <line x1="12" y1="17" x2="12" y2="21"/>
+              <rect x="2" y="3" width="20" height="14" rx="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="17" x2="12" y2="21" />
             </svg>
           </button>
 
@@ -91,8 +93,8 @@ const MobileTopbar = () => {
               {avatarUrl
                 ? <img src={avatarUrl} alt="avatar" className="mobile-avatar" />
                 : <div className="mobile-avatar-placeholder">
-                    {displayName?.charAt(0).toUpperCase()}
-                  </div>
+                  {displayName?.charAt(0).toUpperCase()}
+                </div>
               }
             </div>
           ) : (
@@ -104,9 +106,7 @@ const MobileTopbar = () => {
         </div>
       </div>
 
-      {/* ═══════════ STUDY MODE — lives OUTSIDE the topbar ═══════════
-          position:sticky so it sticks below the topbar and the
-          StudyMode panel opens downward via position:absolute inside it */}
+      {/* ═══════════ STUDY MODE — lives OUTSIDE the topbar ═══════════ */}
       {showStudy && (
         <div style={{
           position: 'sticky',
@@ -117,6 +117,7 @@ const MobileTopbar = () => {
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           borderBottom: '1px solid rgba(106, 92, 255, 0.2)',
+          display: window.innerWidth <= 768 ? 'block' : 'none',
         }}>
           <StudyMode />
         </div>
