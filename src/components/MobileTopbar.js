@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import AuthModal from './AuthModal';
 import SettingsModal from './SettingsModal';
-import StudyMode from './StudyMode';
 
 const MobileTopbar = () => {
   const { user } = useAuth();
@@ -11,8 +10,7 @@ const MobileTopbar = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showModels, setShowModels] = useState(false);
-  const [showStudy, setShowStudy] = useState(false);
-
+  
   const avatarUrl = user?.user_metadata?.avatar_url;
   const displayName = user?.user_metadata?.full_name
     || user?.user_metadata?.name
@@ -66,17 +64,6 @@ const MobileTopbar = () => {
             )}
           </button>
 
-          {/* Study Mode toggle - Logic added here to hide on desktop */}
-          {window.innerWidth <= 768 && (
-            <button
-              className={`mobile-icon-btn${showStudy ? ' active' : ''}`}
-              onClick={() => setShowStudy(prev => !prev)}
-              title="Study Mode"
-              style={showStudy ? { borderColor: 'rgba(106,92,255,0.6)', color: '#6a5cff' } : {}}
-            >
-              🎼
-            </button>
-          )}
 
           {/* AI Models */}
           <button className="mobile-icon-btn" onClick={() => setShowModels(true)} title="AI Models">
@@ -106,22 +93,7 @@ const MobileTopbar = () => {
         </div>
       </div>
 
-      {/* ═══════════ STUDY MODE — lives OUTSIDE the topbar ═══════════ */}
-      {showStudy && (
-        <div style={{
-          position: 'sticky',
-          top: '56px',
-          zIndex: 199,
-          padding: '0.5rem 1rem',
-          background: 'rgba(10, 10, 20, 0.97)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(106, 92, 255, 0.2)',
-          display: window.innerWidth <= 768 ? 'block' : 'none',
-        }}>
-          <StudyMode />
-        </div>
-      )}
+
 
       {/* ═══════════ AI MODELS DRAWER ═══════════ */}
       {showModels && (
