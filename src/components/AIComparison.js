@@ -23,7 +23,6 @@ const AIComparison = () => {
   // AUDIO STATES
   const [copied, setCopied] = useState(false);
   const [audioBlobUrl, setAudioBlobUrl] = useState(null);
-  const [fallbackText, setFallbackText] = useState(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [apiFailed, setApiFailed] = useState(false);
 
@@ -141,7 +140,6 @@ Your mission: Make AI make sense to real people.`;
       URL.revokeObjectURL(audioBlobUrl);
       setAudioBlobUrl(null);
     }
-    setFallbackText(null);
     setIsAudioPlaying(false);
     setApiFailed(false);
 
@@ -173,7 +171,6 @@ Your mission: Make AI make sense to real people.`;
     } catch (error) {
       console.error('TTS error:', error);
       setApiFailed(true);
-      setFallbackText(textToSpeak);
     }
   };
 
@@ -445,7 +442,6 @@ Your mission: Make AI make sense to real people.`;
       URL.revokeObjectURL(audioBlobUrl);
       setAudioBlobUrl(null);
     }
-    setFallbackText(null);
     setIsAudioPlaying(false);
     setApiFailed(false);
 
@@ -754,7 +750,7 @@ Your mission: Make AI make sense to real people.`;
               <button onClick={handleCopy} title="Copy response" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'}`, color: copied ? '#10b981' : 'rgba(255,255,255,0.5)', padding: '0.3rem 0.65rem', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
                 {copied ? (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>Copied!</>) : (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>Copy</>)}
               </button>
-              <button onClick={() => { setResponse(''); setSummarizeDone(false); setIsTranscriptPasted(false); setPersistedVideoId(null); setShowVideoPreview(false); setInputText(''); if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); } setFallbackText(null); setIsAudioPlaying(false); setApiFailed(false); window.speechSynthesis.cancel(); }} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', transition: 'all 0.2s ease' }} onMouseEnter={e => e.currentTarget.style.color = '#ff4fd8'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'} title="Close response">
+              <button onClick={() => { setResponse(''); setSummarizeDone(false); setIsTranscriptPasted(false); setPersistedVideoId(null); setShowVideoPreview(false); setInputText(''); if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); } setIsAudioPlaying(false); setApiFailed(false); window.speechSynthesis.cancel(); }} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', transition: 'all 0.2s ease' }} onMouseEnter={e => e.currentTarget.style.color = '#ff4fd8'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'} title="Close response">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
