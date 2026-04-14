@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import AuthModal from './AuthModal';
 import SettingsModal from './SettingsModal';
+import MobileStudyMode from './MobileStudyMode';
 
 const MobileTopbar = () => {
   const { user } = useAuth();
@@ -10,6 +11,7 @@ const MobileTopbar = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showModels, setShowModels] = useState(false);
+  const [showStudy, setShowStudy] = useState(false);
   
   const avatarUrl = user?.user_metadata?.avatar_url;
   const displayName = user?.user_metadata?.full_name
@@ -33,7 +35,6 @@ const MobileTopbar = () => {
     <>
       {/* ═══════════ TOPBAR ═══════════ */}
       <div className="mobile-topbar">
-
         {/* Left: Brand */}
         <div className="mobile-brand">
           <img src="hero.ai.png" alt="vAIbes" className="mobile-brand-logo" />
@@ -42,20 +43,16 @@ const MobileTopbar = () => {
 
         {/* Right: Actions */}
         <div className="mobile-topbar-right">
+          {/* Study Mode Trigger */}
+          <button className="mobile-icon-btn" onClick={() => setShowStudy(true)} title="Study Mode">
+            <span style={{ fontSize: '1.2rem' }}>🎓</span>
+          </button>
 
           {/* Theme toggle */}
           <button className="mobile-icon-btn" onClick={toggleTheme} title="Toggle theme">
             {isDark ? (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="5" />
-                <line x1="12" y1="1" x2="12" y2="3" />
-                <line x1="12" y1="21" x2="12" y2="23" />
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                <line x1="1" y1="12" x2="3" y2="12" />
-                <line x1="21" y1="12" x2="23" y2="12" />
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
               </svg>
             ) : (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -64,38 +61,34 @@ const MobileTopbar = () => {
             )}
           </button>
 
-
           {/* AI Models */}
           <button className="mobile-icon-btn" onClick={() => setShowModels(true)} title="AI Models">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="2" y="3" width="20" height="14" rx="2" />
-              <line x1="8" y1="21" x2="16" y2="21" />
-              <line x1="12" y1="17" x2="12" y2="21" />
+              <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
             </svg>
           </button>
 
-          {/* Auth */}
+          {/* Auth/Profile */}
           {user ? (
             <div onClick={() => setShowSettings(true)} style={{ cursor: 'pointer' }}>
               {avatarUrl
                 ? <img src={avatarUrl} alt="avatar" className="mobile-avatar" />
-                : <div className="mobile-avatar-placeholder">
-                  {displayName?.charAt(0).toUpperCase()}
-                </div>
+                : <div className="mobile-avatar-placeholder">{displayName?.charAt(0).toUpperCase()}</div>
               }
             </div>
           ) : (
-            <button className="login-btn" onClick={() => setShowAuthModal(true)}
-              style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}>
+            <button className="login-btn" onClick={() => setShowAuthModal(true)} style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}>
               Sign In
             </button>
           )}
         </div>
       </div>
 
+      {/* ═══════════ MODALS & DRAWERS ═══════════ */}
+      {/* Study Mode Drawer */}
+      <MobileStudyMode isOpen={showStudy} onClose={() => setShowStudy(false)} />
 
-
-      {/* ═══════════ AI MODELS DRAWER ═══════════ */}
+      {/* AI Models Drawer */}
       {showModels && (
         <>
           <div className="mobile-drawer-overlay" onClick={() => setShowModels(false)} />
@@ -106,9 +99,7 @@ const MobileTopbar = () => {
             </div>
             <div className="mobile-drawer-content">
               {allTools.map((tool, i) => (
-                <a key={i} href={tool.url} target="_blank" rel="noopener noreferrer"
-                  className={`drawer-item tool-${tool.color}`}
-                  onClick={() => setShowModels(false)}>
+                <a key={i} href={tool.url} target="_blank" rel="noopener noreferrer" className={`drawer-item tool-${tool.color}`}>
                   {tool.name}
                 </a>
               ))}
@@ -117,20 +108,15 @@ const MobileTopbar = () => {
         </>
       )}
 
-      {/* ═══════════ SETTINGS ═══════════ */}
+      {/* Settings/Auth Modals */}
       {showSettings && (
         <>
           <div className="profile-overlay" onClick={() => setShowSettings(false)} />
-          <div className="profile-panel-wrapper">
-            <SettingsModal onClose={() => setShowSettings(false)} />
-          </div>
+          <div className="profile-panel-wrapper"><SettingsModal onClose={() => setShowSettings(false)} /></div>
         </>
       )}
 
-      {/* ═══════════ AUTH ═══════════ */}
-      {showAuthModal && (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
-      )}
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </>
   );
 };
