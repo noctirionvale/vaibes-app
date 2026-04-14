@@ -104,12 +104,13 @@ const MobileStudyMode = ({ isOpen, onClose }) => {
         {/* The Audio Engine (Hidden) */}
         {currentStation && isPlaying && (
           <iframe
-            ref={iframeRef}
-            src={`https://www.youtube-nocookie.com/embed/${currentStation.youtubeId}?autoplay=1&loop=1&playlist=${currentStation.youtubeId}&controls=0&mute=0`}
-            style={{ display: 'none' }}
-            allow="autoplay"
-          />
-        )}
+    ref={iframeRef}
+    title={`Study Music: ${currentStation.name}`} // <--- Add this line
+    src={`https://www.youtube-nocookie.com/embed/${currentStation.youtubeId}?autoplay=1&loop=1&playlist=${currentStation.youtubeId}&controls=0&mute=0`}
+    style={{ display: 'none' }}
+    allow="autoplay"
+  />
+)}
       </div>
     </>
   );
