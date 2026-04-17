@@ -185,7 +185,6 @@ const LandingPage = () => {
               <h3>Free</h3>
               <div className="landing-price">$0 <span>/month</span></div>
               <ul>
-                <li>✅ 5 requests on day 1</li>
                 <li>✅ 2 requests/day reset</li>
                 <li>✅ Study Mode with music</li>
                 <li>✅ WaveNet voice</li>
@@ -198,13 +197,13 @@ const LandingPage = () => {
             <div className="landing-pricing-card pro">
               <div className="landing-pro-badge">BEST VALUE</div>
               <h3>Pro</h3>
-              <div className="landing-price">$3.34 <span>/month</span></div>
+              <div className="landing-price">$2.7 <span>/month</span></div>
               <ul>
-                <li>✅ 100 requests per day (resets at midnight)</li>
-                <li>✅ All 7 AI modes</li>
+                <li>✅ 50 requests per day (resets at midnight)</li>
+                <li>✅ All 5 AI modes</li>
                 <li>✅ Study Mode with music</li>
-                <li>✅ Image Analysis</li>
-                <li>✅ Neural2 premium voice</li>
+                <li>✅ Image Analysis(COMING SOON)</li>
+                <li>✅ Neural2 premium voice(COMING SOON)</li>
                 <li>✅ Priority responses</li>
                 <li>✅ Early access to features</li>
               </ul>

@@ -173,7 +173,6 @@ const SettingsModal = ({ onClose }) => {
                       <span className="tier-price">$0 <small>/month</small></span>
                     </div>
                     <ul className="tier-features">
-                      <li>✅ 5 requests on signup day</li>
                       <li>✅ 2 requests/day after</li>
                       <li>✅ Study Mode with music</li>
                       <li>✅ WaveNet voice</li>
@@ -190,11 +189,11 @@ const SettingsModal = ({ onClose }) => {
                       <span className="tier-price">$3.34 <small>/month</small></span>
                     </div>
                     <ul className="tier-features">
-                      <li>✅ 100 requests per day</li>
-                      <li>✅ All 7 AI modes</li>
+                      <li>✅ 50 requests per day</li>
+                      <li>✅ All 5 AI modes</li>
                       <li>✅ Study Mode with music</li>
-                      <li>✅ Image Analysis (Google Vision)</li>
-                      <li>✅ Neural2 voice (premium quality)</li>
+                      <li>✅ Image Analysis (COMING SOON)</li>
+                      <li>✅ Neural2 voice (COMING SOON)</li>
                       <li>✅ Priority responses</li>
                       <li>✅ Early access to new features</li>
                     </ul>
