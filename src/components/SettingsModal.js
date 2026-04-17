@@ -186,7 +186,7 @@ const SettingsModal = ({ onClose }) => {
                     <div className="tier-badge-pro">BEST VALUE</div>
                     <div className="tier-header">
                       <span className="tier-name">Pro</span>
-                      <span className="tier-price">$3.34 <small>/month</small></span>
+                      <span className="tier-price">$2.7 <small>/month</small></span>
                     </div>
                     <ul className="tier-features">
                       <li>✅ 50 requests per day</li>
@@ -221,7 +221,7 @@ const SettingsModal = ({ onClose }) => {
                     )}
                     {userTier === 'pro' && (
                       <div className="tier-current-label" style={{ color: 'var(--accent2)' }}>
-                        ✅ You are on Pro — 100 requests per day!
+                        ✅ You are on Pro
                       </div>
                     )}
                   </div>
