@@ -19,7 +19,7 @@ const AIComparison = () => {
   const [persistedVideoId, setPersistedVideoId] = useState(null);
   const [isTranscriptPasted, setIsTranscriptPasted] = useState(false);
   const [summarizeDone, setSummarizeDone] = useState(false);
-  
+
   // AUDIO STATES
   const [copied, setCopied] = useState(false);
   const [audioBlobUrl, setAudioBlobUrl] = useState(null);
@@ -38,16 +38,16 @@ const AIComparison = () => {
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackSending, setFeedbackSending] = useState(false);
-  
+
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [userTier, setUserTier] = useState('free');
 
   // Rate limit constants
-  const DAILY_LIMIT_NEW = 5;
+  const DAILY_LIMIT_NEW = 2;
   const DAILY_LIMIT_FREE = 2;
-  const PRO_DAILY_LIMIT = 100;
+  const PRO_DAILY_LIMIT = 50;
 
   const extractYouTubeID = useCallback((url) => {
     if (!url) return null;
@@ -68,9 +68,7 @@ const AIComparison = () => {
 
   useEffect(() => {
     const detected = extractYouTubeID(inputText);
-    if (detected) {
-      setPersistedVideoId(detected);
-    }
+    if (detected) setPersistedVideoId(detected);
   }, [inputText, extractYouTubeID]);
 
   useEffect(() => {
@@ -92,7 +90,6 @@ const AIComparison = () => {
     fetchTier();
   }, [user?.id]);
 
-  // Cleanup blob URL on unmount
   useEffect(() => {
     return () => {
       if (audioBlobUrl) URL.revokeObjectURL(audioBlobUrl);
@@ -125,14 +122,16 @@ Your mission: Make AI make sense to real people.`;
   };
 
   const modeLabels = {
-    explain: "Explain Concept",
-    summarize: "Summarize Text/Video",
-    describe: "Describe Concept",
-    analyze: "Analyze Data",
-    generateDesc: "Generate Description",
-    generateAudio: "Generate Audio (TTS)",
-    imageAnalysis: "Image Analysis 🔒"
+    explain: 'Explain Concept',
+    summarize: 'Summarize Text/Video',
+    describe: 'Describe Concept',
+    analyze: 'Analyze Data',
+    generateDesc: 'Generate Description',
+    generateAudio: 'Audio Generation — Coming Soon',
+    imageAnalysis: 'Image Analysis — Coming Soon'
   };
+
+  const COMING_SOON_MODES = ['generateAudio', 'imageAnalysis'];
 
   // Generate and store audio (no auto-play)
   const handleAudioPlayback = async (textToSpeak) => {
@@ -144,27 +143,20 @@ Your mission: Make AI make sense to real people.`;
     setApiFailed(false);
 
     try {
-      const response = await fetch('/api/tts', {
+      const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: textToSpeak,
-          isPro: userTier === 'pro'
-        })
+        body: JSON.stringify({ text: textToSpeak, isPro: userTier === 'pro' })
       });
-
-      if (!response.ok) throw new Error(`TTS API returned ${response.status}`);
-      const data = await response.json();
+      if (!res.ok) throw new Error(`TTS API returned ${res.status}`);
+      const data = await res.json();
       if (data.audioContent) {
         const audioBytes = atob(data.audioContent);
         const arrayBuffer = new ArrayBuffer(audioBytes.length);
         const view = new Uint8Array(arrayBuffer);
-        for (let i = 0; i < audioBytes.length; i++) {
-          view[i] = audioBytes.charCodeAt(i);
-        }
+        for (let i = 0; i < audioBytes.length; i++) view[i] = audioBytes.charCodeAt(i);
         const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
-        const url = URL.createObjectURL(blob);
-        setAudioBlobUrl(url);
+        setAudioBlobUrl(URL.createObjectURL(blob));
       } else {
         throw new Error('No audio content in response');
       }
@@ -175,9 +167,7 @@ Your mission: Make AI make sense to real people.`;
   };
 
   const speakFallback = (text) => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.onstart = () => setIsAudioPlaying(true);
     utterance.onend = () => setIsAudioPlaying(false);
@@ -188,15 +178,11 @@ Your mission: Make AI make sense to real people.`;
   const handleManualPlay = () => {
     if (isAudioPlaying) return;
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-
     if (audioBlobUrl && !apiFailed) {
       const audio = new Audio(audioBlobUrl);
       audio.onplay = () => setIsAudioPlaying(true);
       audio.onended = () => setIsAudioPlaying(false);
-      audio.onerror = () => {
-        setIsAudioPlaying(false);
-        speakFallback(response);
-      };
+      audio.onerror = () => { setIsAudioPlaying(false); speakFallback(response); };
       audio.play().catch(() => speakFallback(response));
     } else {
       speakFallback(response);
@@ -208,16 +194,15 @@ Your mission: Make AI make sense to real people.`;
       await navigator.clipboard.writeText(response);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      const textArea = document.createElement('textarea');
-      textArea.value = response;
-      textArea.style.position = 'fixed';
-      textArea.style.opacity = '0';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = response;
+      ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
       document.execCommand('copy');
-      document.body.removeChild(textArea);
+      document.body.removeChild(ta);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -226,37 +211,22 @@ Your mission: Make AI make sense to real people.`;
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setResponse('Please upload an image file.');
-      return;
-    }
-    
-    if (file.size > 4 * 1024 * 1024) {
-      setResponse('Image must be under 4MB.');
-      return;
-    }
-
+    if (!file.type.startsWith('image/')) { setResponse('Please upload an image file.'); return; }
+    if (file.size > 4 * 1024 * 1024) { setResponse('Image must be under 4MB.'); return; }
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
-      const base64 = reader.result.split(',')[1];
-      setUploadedImage(base64);
+      setUploadedImage(reader.result.split(',')[1]);
     };
     reader.readAsDataURL(file);
   };
 
   const handleImageAnalysis = async () => {
-    if (!user) { 
-      setShowAuthModal(true); 
-      return; 
-    }
-    
+    if (!user) { setShowAuthModal(true); return; }
     if (userTier !== 'pro') {
-      setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to Pro for ₱199/month to unlock it!');
+      setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to Pro to unlock it.');
       return;
     }
-    
     if (!uploadedImage) return;
 
     setIsAnalyzing(true);
@@ -267,45 +237,27 @@ Your mission: Make AI make sense to real people.`;
       const visionRes = await fetch('/api/vision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64: uploadedImage,
-          mimeType: 'image/jpeg'
-        })
+        body: JSON.stringify({ imageBase64: uploadedImage, mimeType: 'image/jpeg' })
       });
-
       const visionData = await visionRes.json();
-
       if (!visionRes.ok || visionData.error) {
         setResponse('⚠️ ' + (visionData.error || 'Could not analyze image.'));
         return;
       }
-
       setIsAnalyzing(false);
-
       const { data: { session } } = await supabase.auth.getSession();
-
       const apiResponse = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({
           messages: [
             { role: 'system', content: systemPrompts.imageAnalysis },
-            {
-              role: 'user',
-              content: `Here is what Google Vision detected in the image:\n\n${visionData.summary}\n\n${inputText ? 'User also says: ' + inputText : 'Please explain what you see in this image.'}`
-            }
+            { role: 'user', content: `Here is what Google Vision detected in the image:\n\n${visionData.summary}\n\n${inputText ? 'User also says: ' + inputText : 'Please explain what you see in this image.'}` }
           ]
         })
       });
-
       const data = await apiResponse.json();
-      if (data.choices?.[0]) {
-        setResponse(data.choices[0].message.content);
-      }
-
+      if (data.choices?.[0]) setResponse(data.choices[0].message.content);
     } catch (error) {
       console.error('Image analysis error:', error);
       setResponse('Failed to analyze image. Please try again.');
@@ -332,38 +284,21 @@ Your mission: Make AI make sense to real people.`;
         .maybeSingle();
 
       if (!usage) {
-        await supabase.from('user_usage').insert({
-          user_id: user.id,
-          request_count: 1,
-          last_reset: today,
-          is_first_day: true
-        });
+        await supabase.from('user_usage').insert({ user_id: user.id, request_count: 1, last_reset: today, is_first_day: true });
         return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true };
       }
-
       if (usage.last_reset !== today) {
-        await supabase.from('user_usage').update({
-          request_count: 1,
-          last_reset: today
-        }).eq('user_id', user.id);
+        await supabase.from('user_usage').update({ request_count: 1, last_reset: today }).eq('user_id', user.id);
         return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true };
       }
-
       if (usage.request_count >= PRO_DAILY_LIMIT) {
         return { allowed: false, remaining: 0, isPro: true, hitProLimit: true };
       }
-
-      await supabase.from('user_usage').update({
-        request_count: usage.request_count + 1
-      }).eq('user_id', user.id);
-
-      return {
-        allowed: true,
-        remaining: PRO_DAILY_LIMIT - (usage.request_count + 1),
-        isPro: true
-      };
+      await supabase.from('user_usage').update({ request_count: usage.request_count + 1 }).eq('user_id', user.id);
+      return { allowed: true, remaining: PRO_DAILY_LIMIT - (usage.request_count + 1), isPro: true };
     }
 
+    // Free user
     const { data: usage } = await supabase
       .from('user_usage')
       .select('*')
@@ -371,60 +306,32 @@ Your mission: Make AI make sense to real people.`;
       .maybeSingle();
 
     if (!usage) {
-      await supabase.from('user_usage').insert({
-        user_id: user.id,
-        request_count: 1,
-        last_reset: today,
-        is_first_day: true
-      });
-      return { allowed: true, remaining: DAILY_LIMIT_NEW - 1, isNewUser: true };
+      await supabase.from('user_usage').insert({ user_id: user.id, request_count: 1, last_reset: today, is_first_day: true });
+      return { allowed: true, remaining: DAILY_LIMIT_NEW - 1 };
     }
-
     if (usage.last_reset !== today) {
-      await supabase.from('user_usage').update({
-        request_count: 1,
-        last_reset: today,
-        is_first_day: false
-      }).eq('user_id', user.id);
-      return { 
-        allowed: true, 
-        remaining: DAILY_LIMIT_FREE - 1,
-        isNewUser: false 
-      };
+      await supabase.from('user_usage').update({ request_count: 1, last_reset: today, is_first_day: false }).eq('user_id', user.id);
+      return { allowed: true, remaining: DAILY_LIMIT_FREE - 1 };
     }
 
-    const limit = usage.is_first_day ? DAILY_LIMIT_NEW : DAILY_LIMIT_FREE;
-
+    const limit = DAILY_LIMIT_FREE;
     if (usage.request_count >= limit) {
-      return { allowed: false, remaining: 0, isNewUser: usage.is_first_day };
+      return { allowed: false, remaining: 0 };
     }
-
-    await supabase.from('user_usage').update({
-      request_count: usage.request_count + 1
-    }).eq('user_id', user.id);
-
-    return {
-      allowed: true,
-      remaining: limit - (usage.request_count + 1),
-      isNewUser: usage.is_first_day
-    };
+    await supabase.from('user_usage').update({ request_count: usage.request_count + 1 }).eq('user_id', user.id);
+    return { allowed: true, remaining: limit - (usage.request_count + 1) };
   };
 
   const handleSend = async (overrideText = null) => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
+    if (!user) { setShowAuthModal(true); return; }
 
-    const { allowed, remaining, isNewUser, isPro, hitProLimit } = await checkAndIncrementUsage();
-    
+    const { allowed, remaining, isPro, hitProLimit } = await checkAndIncrementUsage();
+
     if (!allowed) {
       setResponse(
         isPro && hitProLimit
-          ? `⚠️ You've hit the 100 request daily limit. Resets at midnight. Thank you for being a Pro member! 🙏`
-          : isNewUser
-            ? `⚠️ You've used your 5 welcome requests! You now get 2 requests per day free. Upgrade to Pro for 100 requests/day! 🚀`
-            : `⚠️ You've used your 2 free requests today. Come back tomorrow or upgrade to Pro for 100 requests/day! 🚀`
+          ? `⚠️ You've reached your 50 daily requests. Resets at midnight. Thank you for being a Pro member! 🙏`
+          : `⚠️ You've used your 2 free requests today. Come back tomorrow or upgrade to Pro for 50 requests/day! 🚀`
       );
       return;
     }
@@ -436,61 +343,40 @@ Your mission: Make AI make sense to real people.`;
     setIsLoading(true);
     setResponse('');
     setIsDropdownOpen(false);
-    
+
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    if (audioBlobUrl) {
-      URL.revokeObjectURL(audioBlobUrl);
-      setAudioBlobUrl(null);
-    }
+    if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); }
     setIsAudioPlaying(false);
     setApiFailed(false);
 
     try {
-      const currentMessages = [
-        { role: 'system', content: systemPrompts[currentMode] },
-        { role: 'user', content: textToSend }
-      ];
-
       const { data: { session } } = await supabase.auth.getSession();
-
       const apiResponse = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({
-          messages: currentMessages
+          messages: [
+            { role: 'system', content: systemPrompts[currentMode] },
+            { role: 'user', content: textToSend }
+          ]
         })
       });
 
       const data = await apiResponse.json();
 
-      if (apiResponse.status === 429) {
-        setResponse(`⚠️ ${data.error}`);
-        setIsLoading(false);
-        return;
-      }
+      if (apiResponse.status === 429) { setResponse(`⚠️ ${data.error}`); setIsLoading(false); return; }
 
-      if (data.choices && data.choices.length > 0) {
+      if (data.choices?.length > 0) {
         const replyText = data.choices[0].message.content;
         setResponse(replyText);
-        
-        if (currentMode === 'generateAudio') {
-          await handleAudioPlayback(replyText);
-        }
-        
-        if (currentMode === 'summarize') {
-          setSummarizeDone(true);
-          setIsTranscriptPasted(false);
-          setShowVideoPreview(false);
-        }
+        if (currentMode === 'generateAudio') await handleAudioPlayback(replyText);
+        if (currentMode === 'summarize') { setSummarizeDone(true); setIsTranscriptPasted(false); setShowVideoPreview(false); }
       } else {
-        setResponse("Error: Received an unexpected response.");
+        setResponse('Error: Received an unexpected response.');
       }
     } catch (error) {
-      console.error("API Error:", error);
-      setResponse("Failed to connect to the AI. Please try again.");
+      console.error('API Error:', error);
+      setResponse('Failed to connect to the AI. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -498,63 +384,37 @@ Your mission: Make AI make sense to real people.`;
 
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert("Ah! Your browser doesn't support voice input yet. Try using Chrome or Edge!");
-      return;
-    }
+    if (!SpeechRecognition) { alert("Your browser doesn't support voice input. Try Chrome or Edge."); return; }
 
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
-
     recognition.onstart = () => setIsListening(true);
-
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       let finalTranscript = transcript;
       let shouldAutoSend = false;
-
       const triggerMatch = transcript.match(/\b(send it|send)\.?$/i);
-      if (triggerMatch) {
-        shouldAutoSend = true;
-        finalTranscript = transcript.replace(/\b(send it|send)\.?$/i, '').trim();
-      }
-
-      setInputText((prevText) => {
-        const combinedText = prevText ? prevText + ' ' + finalTranscript : finalTranscript;
-        if (shouldAutoSend) {
-          setTimeout(() => handleSend(combinedText), 100);
-        }
-        return combinedText;
+      if (triggerMatch) { shouldAutoSend = true; finalTranscript = transcript.replace(/\b(send it|send)\.?$/i, '').trim(); }
+      setInputText((prev) => {
+        const combined = prev ? prev + ' ' + finalTranscript : finalTranscript;
+        if (shouldAutoSend) setTimeout(() => handleSend(combined), 100);
+        return combined;
       });
     };
-
-    recognition.onerror = (event) => {
-      console.error("Microphone error:", event.error);
-      setIsListening(false);
-    };
-
+    recognition.onerror = (e) => { console.error('Mic error:', e.error); setIsListening(false); };
     recognition.onend = () => setIsListening(false);
-    
-    try {
-      recognition.start();
-    } catch (err) {
-      console.error('Failed to start recognition:', err);
-      setIsListening(false);
-    }
+    try { recognition.start(); } catch (err) { console.error('Recognition failed:', err); setIsListening(false); }
   };
 
   const handleTextareaChange = (e) => {
     const value = e.target.value;
     setInputText(value);
     setSummarizeDone(false);
-
     if (window.innerWidth > MOBILE_BREAKPOINT) {
       e.target.style.height = 'auto';
       e.target.style.height = `${e.target.scrollHeight}px`;
     }
-
     if (currentMode === 'summarize' && value.length > 500 && !extractYouTubeID(value)) {
       setIsTranscriptPasted(true);
     } else {
@@ -573,12 +433,7 @@ Your mission: Make AI make sense to real people.`;
         created_at: new Date().toISOString()
       });
       setFeedbackSent(true);
-      setTimeout(() => {
-        setShowFeedback(false);
-        setFeedbackSent(false);
-        setFeedbackText('');
-        setFeedbackType('suggestion');
-      }, 2500);
+      setTimeout(() => { setShowFeedback(false); setFeedbackSent(false); setFeedbackText(''); setFeedbackType('suggestion'); }, 2500);
     } catch (err) {
       console.error('Feedback error:', err);
     } finally {
@@ -590,14 +445,33 @@ Your mission: Make AI make sense to real people.`;
 
   let inputPlaceholder = `Enter text or data to ${currentMode}...`;
   if (currentMode === 'summarize' && activeVideoId) {
-    inputPlaceholder = "Video ready! Clear this box, paste the transcript here, then hit Send...";
+    inputPlaceholder = 'Video ready! Clear this box, paste the transcript here, then hit Send...';
   } else if (currentMode === 'summarize' && isMobile) {
-    inputPlaceholder = "📱 Tip: YouTube transcript copy works best on desktop. Or paste any article text here!";
+    inputPlaceholder = '📱 Tip: YouTube transcript copy works best on desktop. Or paste any article text here!';
   } else if (currentMode === 'summarize') {
-    inputPlaceholder = "Paste an article, text, or a YouTube link here...";
-  } else if (currentMode === 'imageAnalysis') {
-    inputPlaceholder = "Add optional notes about the image...";
+    inputPlaceholder = 'Paste an article, text, or a YouTube link here...';
+  } else if (COMING_SOON_MODES.includes(currentMode)) {
+    inputPlaceholder = 'This feature is coming soon. Stay tuned!';
   }
+
+  const handleModeSelect = (modeKey) => {
+    if (COMING_SOON_MODES.includes(modeKey)) {
+      setCurrentMode(modeKey);
+      setIsDropdownOpen(false);
+      setResponse('');
+      return;
+    }
+    setCurrentMode(modeKey);
+    setIsDropdownOpen(false);
+    setUploadedImage(null);
+    setImagePreview(null);
+  };
+
+  const handleSubmitGuard = () => {
+    if (COMING_SOON_MODES.includes(currentMode)) return;
+    if (currentMode === 'imageAnalysis') handleImageAnalysis();
+    else handleSend();
+  };
 
   return (
     <div className="ai-utility-section">
@@ -607,14 +481,10 @@ Your mission: Make AI make sense to real people.`;
             <>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="5"/>
-                <line x1="12" y1="1" x2="12" y2="3"/>
-                <line x1="12" y1="21" x2="12" y2="23"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="1" y1="12" x2="3" y2="12"/>
-                <line x1="21" y1="12" x2="23" y2="12"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
               </svg>
               Light Mode
             </>
@@ -632,22 +502,37 @@ Your mission: Make AI make sense to real people.`;
       <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
         {user && requestsRemaining !== null && (
           <div style={{
-            textAlign: 'right',
-            fontSize: '0.75rem',
-            color: requestsRemaining <= 1
-              ? '#ff6b6b'
-              : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
-            paddingRight: '0.5rem',
-            marginTop: '0.25rem'
+            textAlign: 'right', fontSize: '0.75rem',
+            color: requestsRemaining <= 1 ? '#ff6b6b' : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+            paddingRight: '0.5rem', marginTop: '0.25rem'
           }}>
             {userTier === 'pro'
               ? `⚡ Pro — ${requestsRemaining} / ${PRO_DAILY_LIMIT} requests today`
-              : `${requestsRemaining} requests remaining today`
-            }
+              : `${requestsRemaining} requests remaining today`}
           </div>
         )}
 
-        {currentMode === 'imageAnalysis' && (
+        {/* Coming Soon Banner */}
+        {COMING_SOON_MODES.includes(currentMode) && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+            background: isDark ? 'rgba(255,180,0,0.07)' : 'rgba(255,160,0,0.08)',
+            border: `1px solid ${isDark ? 'rgba(255,180,0,0.2)' : 'rgba(255,160,0,0.25)'}`,
+            borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '0.5rem'
+          }}>
+            <span style={{ fontSize: '1.1rem' }}>🛠️</span>
+            <div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: isDark ? '#ffd166' : '#b37400' }}>
+                {currentMode === 'generateAudio' ? 'Audio Generation' : 'Image Analysis'} — Coming Soon
+              </div>
+              <div style={{ fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', marginTop: '2px' }}>
+                We're putting the finishing touches on this feature. Check back soon!
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentMode === 'imageAnalysis' && !COMING_SOON_MODES.includes(currentMode) && (
           <div className="image-upload-zone">
             {imagePreview ? (
               <div className="image-preview-wrapper">
@@ -655,7 +540,7 @@ Your mission: Make AI make sense to real people.`;
                 <button className="image-remove-btn" onClick={() => { setUploadedImage(null); setImagePreview(null); }}>✕ Remove</button>
               </div>
             ) : (
-              <div className="image-drop-area" onClick={() => userTier === 'pro' ? fileInputRef.current.click() : setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to unlock!')}>
+              <div className="image-drop-area" onClick={() => userTier === 'pro' ? fileInputRef.current.click() : setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to unlock.')}>
                 <span className="image-drop-icon">🖼️</span>
                 <span className="image-drop-text">{userTier === 'pro' ? 'Click to upload image' : 'Pro feature — Upgrade to upload images'}</span>
                 <span className="image-drop-hint">JPG, PNG, GIF under 4MB</span>
@@ -693,18 +578,36 @@ Your mission: Make AI make sense to real people.`;
           <div className="mode-selector-wrapper" ref={dropdownRef}>
             <button className="plus-icon-btn" onClick={() => setIsDropdownOpen(!isDropdownOpen)} title="Switch Mode">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
             </button>
             {isDropdownOpen && (
               <div className="mode-dropdown-menu">
-                {Object.keys(modeLabels).map((modeKey) => (
-                  <div key={modeKey} className={"dropdown-item " + (currentMode === modeKey ? 'active' : '') + (modeKey === 'imageAnalysis' && userTier !== 'pro' ? ' locked-item' : '')} onClick={() => { setCurrentMode(modeKey); setIsDropdownOpen(false); if (modeKey !== 'imageAnalysis') { setUploadedImage(null); setImagePreview(null); } }}>
-                    {modeLabels[modeKey]}
-                    {modeKey === 'imageAnalysis' && userTier !== 'pro' && <span className="dropdown-pro-badge">PRO</span>}
-                  </div>
-                ))}
+                {Object.keys(modeLabels).map((modeKey) => {
+                  const isComingSoon = COMING_SOON_MODES.includes(modeKey);
+                  return (
+                    <div
+                      key={modeKey}
+                      className={`dropdown-item ${currentMode === modeKey ? 'active' : ''} ${isComingSoon ? 'coming-soon-item' : ''}`}
+                      onClick={() => handleModeSelect(modeKey)}
+                      style={{ opacity: isComingSoon ? 0.65 : 1 }}
+                    >
+                      {isComingSoon ? (
+                        <>
+                          <span style={{ flex: 1 }}>
+                            {modeKey === 'generateAudio' ? 'Audio Generation' : 'Image Analysis'}
+                          </span>
+                          <span style={{
+                            fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.04em',
+                            background: 'rgba(255,180,0,0.15)', color: '#ffa500',
+                            border: '1px solid rgba(255,160,0,0.3)',
+                            padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap'
+                          }}>SOON</span>
+                        </>
+                      ) : modeLabels[modeKey]}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -719,23 +622,48 @@ Your mission: Make AI make sense to real people.`;
               <div style={{ fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', marginTop: '0.5rem' }}>{inputText.split(/\s+/).filter(w => w).length.toLocaleString()} words · Hit Send to summarize</div>
             </div>
           ) : (
-            <textarea id="question-input" placeholder={isListening ? "Listening... Speak now!" : inputPlaceholder} value={inputText} onChange={handleTextareaChange} rows="1" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (currentMode === 'imageAnalysis') handleImageAnalysis(); else handleSend(); } }} style={{ flex: 1 }} />
+            <textarea
+              id="question-input"
+              placeholder={isListening ? 'Listening... Speak now!' : inputPlaceholder}
+              value={inputText}
+              onChange={handleTextareaChange}
+              rows="1"
+              disabled={COMING_SOON_MODES.includes(currentMode)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmitGuard();
+                }
+              }}
+              style={{ flex: 1, opacity: COMING_SOON_MODES.includes(currentMode) ? 0.45 : 1, cursor: COMING_SOON_MODES.includes(currentMode) ? 'not-allowed' : 'text' }}
+            />
           )}
 
-          <button className={`mic-btn ${isListening ? 'listening-pulse' : ''}`} onClick={startListening} disabled={isLoading} title="Use Voice Input">
+          <button
+            className={`mic-btn ${isListening ? 'listening-pulse' : ''}`}
+            onClick={startListening}
+            disabled={isLoading || COMING_SOON_MODES.includes(currentMode)}
+            title="Use Voice Input"
+            style={{ opacity: COMING_SOON_MODES.includes(currentMode) ? 0.4 : 1 }}
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
             </svg>
           </button>
 
-          <button id="submit-btn" onClick={currentMode === 'imageAnalysis' ? handleImageAnalysis : handleSend} disabled={isLoading || (currentMode === 'imageAnalysis' ? !uploadedImage : !inputText.trim())} title={currentMode === 'imageAnalysis' ? 'Analyze Image' : 'Send'}>
+          <button
+            id="submit-btn"
+            onClick={handleSubmitGuard}
+            disabled={isLoading || isAnalyzing || COMING_SOON_MODES.includes(currentMode) || (!COMING_SOON_MODES.includes(currentMode) && currentMode === 'imageAnalysis' ? !uploadedImage : !inputText.trim())}
+            title={COMING_SOON_MODES.includes(currentMode) ? 'Coming Soon' : currentMode === 'imageAnalysis' ? 'Analyze Image' : 'Send'}
+            style={{ opacity: COMING_SOON_MODES.includes(currentMode) ? 0.4 : 1 }}
+          >
             {isLoading || isAnalyzing ? <span className="loading-dots">...</span> : (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
             )}
           </button>
@@ -748,10 +676,24 @@ Your mission: Make AI make sense to real people.`;
             <span className="current-mode-badge">{modeLabels[currentMode]}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <button onClick={handleCopy} title="Copy response" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'}`, color: copied ? '#10b981' : 'rgba(255,255,255,0.5)', padding: '0.3rem 0.65rem', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                {copied ? (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>Copied!</>) : (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>Copy</>)}
+                {copied
+                  ? (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>)
+                  : (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</>)}
               </button>
-              <button onClick={() => { setResponse(''); setSummarizeDone(false); setIsTranscriptPasted(false); setPersistedVideoId(null); setShowVideoPreview(false); setInputText(''); if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); } setIsAudioPlaying(false); setApiFailed(false); window.speechSynthesis.cancel(); }} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', transition: 'all 0.2s ease' }} onMouseEnter={e => e.currentTarget.style.color = '#ff4fd8'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'} title="Close response">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <button
+                onClick={() => {
+                  setResponse(''); setSummarizeDone(false); setIsTranscriptPasted(false);
+                  setPersistedVideoId(null); setShowVideoPreview(false); setInputText('');
+                  if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); }
+                  setIsAudioPlaying(false); setApiFailed(false);
+                  if (window.speechSynthesis) window.speechSynthesis.cancel();
+                }}
+                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', transition: 'all 0.2s ease' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#ff4fd8'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                title="Close response"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
           </div>
@@ -761,15 +703,9 @@ Your mission: Make AI make sense to real people.`;
               {apiFailed && <div style={{ fontSize: '0.7rem', color: '#ffaa44', textAlign: 'center', marginBottom: '0.5rem' }}>⚠️ TTS server error – using browser speech instead</div>}
               <button onClick={handleManualPlay} className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`} disabled={isAudioPlaying}>
                 {isAudioPlaying ? (
-                  <>
-                    <span className="waveform"><span></span><span></span><span></span><span></span></span>
-                    <span>Playing...</span>
-                  </>
+                  <><span className="waveform"><span/><span/><span/><span/></span><span>Playing...</span></>
                 ) : (
-                  <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                    <span>Play Audio</span>
-                  </>
+                  <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play Audio</span></>
                 )}
               </button>
             </div>
@@ -782,7 +718,7 @@ Your mission: Make AI make sense to real people.`;
       {!isLoading && !isAnalyzing && (
         <div className="feedback-btn-wrap">
           <button className="feedback-btn" onClick={() => setShowFeedback(true)}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             Send Feedback
           </button>
         </div>
@@ -792,19 +728,38 @@ Your mission: Make AI make sense to real people.`;
         <div className="feedback-modal-overlay" onClick={() => setShowFeedback(false)}>
           <div className="feedback-modal" onClick={e => e.stopPropagation()}>
             {feedbackSent ? (
-              <div className="feedback-success"><div className="feedback-success-icon">🎉</div><div>Thanks for your feedback!</div><div style={{ fontSize: '0.78rem', opacity: 0.5, marginTop: '0.25rem' }}>We read every single one.</div></div>
+              <div className="feedback-success">
+                <div className="feedback-success-icon">🎉</div>
+                <div>Thanks for your feedback!</div>
+                <div style={{ fontSize: '0.78rem', opacity: 0.5, marginTop: '0.25rem' }}>We read every single one.</div>
+              </div>
             ) : (
               <>
                 <div className="feedback-modal-header"><h4>Send Feedback</h4><button className="feedback-close" onClick={() => setShowFeedback(false)}>✕</button></div>
                 <div className="feedback-types">
                   {['suggestion', 'bug', 'compliment', 'other'].map(type => (
                     <button key={type} className={`feedback-type-btn ${feedbackType === type ? 'active' : ''}`} onClick={() => setFeedbackType(type)}>
-                      {type === 'suggestion' && '💡 Suggestion'}{type === 'bug' && '🐛 Bug'}{type === 'compliment' && '❤️ Love it'}{type === 'other' && '💬 Other'}
+                      {type === 'suggestion' && '💡 Suggestion'}
+                      {type === 'bug' && '🐛 Bug'}
+                      {type === 'compliment' && '❤️ Love it'}
+                      {type === 'other' && '💬 Other'}
                     </button>
                   ))}
                 </div>
-                <textarea className="feedback-textarea" placeholder={feedbackType === 'bug' ? 'Describe what went wrong...' : feedbackType === 'suggestion' ? 'What would make vAIbes better?' : feedbackType === 'compliment' ? 'Tell us what you love! 😊' : 'What\'s on your mind?'} value={feedbackText} onChange={e => setFeedbackText(e.target.value)} rows={4} />
-                <button className="feedback-submit" onClick={handleFeedbackSubmit} disabled={!feedbackText.trim() || feedbackSending}>{feedbackSending ? 'Sending...' : 'Send Feedback →'}</button>
+                <textarea
+                  className="feedback-textarea"
+                  placeholder={
+                    feedbackType === 'bug' ? 'Describe what went wrong...' :
+                    feedbackType === 'suggestion' ? 'What would make vAIbes better?' :
+                    feedbackType === 'compliment' ? 'Tell us what you love! 😊' : "What's on your mind?"
+                  }
+                  value={feedbackText}
+                  onChange={e => setFeedbackText(e.target.value)}
+                  rows={4}
+                />
+                <button className="feedback-submit" onClick={handleFeedbackSubmit} disabled={!feedbackText.trim() || feedbackSending}>
+                  {feedbackSending ? 'Sending...' : 'Send Feedback →'}
+                </button>
               </>
             )}
           </div>
