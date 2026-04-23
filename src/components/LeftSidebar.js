@@ -4,7 +4,7 @@ import AuthModal from './AuthModal';
 import SettingsModal from './SettingsModal';
 import StudyMode from './StudyMode';
 
-const LeftSidebar = () => {
+const LeftSidebar = ({ onOpenDM }) => {
   const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -18,7 +18,7 @@ const LeftSidebar = () => {
     <>
       <aside className="brand-sidebar">
 
-        {/* TOP ZONE — Profile / Sign In */}
+        {/* ── TOP ZONE — Profile / Sign In ── */}
         <div className="sidebar-top-zone">
           {user ? (
             <div
@@ -59,28 +59,32 @@ const LeftSidebar = () => {
               <span>Sign In</span>
             </button>
           )}
+
+          {/* ✅ Messages button — only shows when logged in */}
+          {user && (
+            <button
+              onClick={onOpenDM}
+              className="sidebar-user-card"
+              style={{ marginTop: '0.5rem' }}
+              title="Messages"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <div className="sidebar-user-info">
+                <span className="user-display-name">Messages</span>
+                <span className="sidebar-settings-hint">Chat with users</span>
+              </div>
+            </button>
+          )}
         </div>
 
-        <aside className="brand-sidebar">
+        {/* ── STUDY MODE ── */}
+        <div className="sidebar-study-zone">
+          <StudyMode />
+        </div>
 
-  {/* TOP ZONE */}
-  <div className="sidebar-top-zone">
-    {/* ... existing auth code ... */}
-  </div>
-
-  {/* STUDY MODE — middle of sidebar */}
-  <div className="sidebar-study-zone">
-    <StudyMode />
-  </div>
-
-  {/* BOTTOM ZONE — logo + tagline */}
-  <div className="sidebar-bottom-zone">
-    {/* ... existing logo code ... */}
-  </div>
-
-</aside>
-
-        {/* BOTTOM ZONE — Logo + Tagline */}
+        {/* ── BOTTOM ZONE — Logo + Tagline ── */}
         <div className="sidebar-bottom-zone">
           <div className="sidebar-middle-zone">
             <div className="brand-visual">
