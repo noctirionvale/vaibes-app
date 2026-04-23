@@ -537,3 +537,38 @@ body.light-mode .sidebar-messages-arrow {
 body.light-mode .sidebar-messages-btn:hover .sidebar-messages-arrow {
   color: var(--accent1);
 }
+
+body.light-mode .dm-container {
+  background: rgba(245, 245, 255, 0.99);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #111;
+}
+
+body.light-mode .dm-chat-window {
+  background: rgba(245, 245, 255, 0.99);
+}
+
+body.light-mode .dm-messages {
+  background: rgba(240, 240, 252, 0.5);
+}
+
+body.light-mode .dm-chat-header {
+  background: rgba(245, 245, 255, 0.99);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .dm-input-row {
+  background: rgba(245, 245, 255, 0.99);
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .dm-header {
+  background: rgba(245, 245, 255, 0.99);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .dm-chat-username { color: #111; }
+
+body.light-mode .dm-bubble-time { color: rgba(0, 0, 0, 0.35); }
+
+body.light-mode .dm-messages-empty { color: rgba(0, 0, 0, 0.3); }

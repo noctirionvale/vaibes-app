@@ -4775,3 +4775,33 @@ body.light-mode .mobile-icon-btn {
 body.light-mode .mobile-brand-name {
   color: #1a1a1a;
 }
+/* Mobile drawer right — AI Models */
+.mobile-drawer-right {
+  position: fixed;
+  z-index: 2005 !important;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 260px;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 30, 0.98) 0%,
+    rgba(15, 15, 25, 0.97) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideInRight 0.25s ease-out forwards;
+}
+
+body.light-mode .mobile-drawer-right {
+  background: linear-gradient(
+    180deg,
+    rgba(235, 235, 248, 0.99) 0%,
+    rgba(228, 228, 242, 0.98) 100%
+  );
+  border-left-color: rgba(0, 0, 0, 0.08);
+}

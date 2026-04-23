@@ -116,19 +116,18 @@ const MobileTopbar = () => {
           }}
         >
           <div
-            style={{
-              width: '100%',
-              height: '85vh',
-              borderRadius: '16px 16px 0 0',
-              overflow: 'hidden',
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              backgroundColor: 'var(--bg-primary, #fff)',
-              boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
+  style={{
+    width: '100%',
+    height: '85vh',
+    borderRadius: '16px 16px 0 0',
+    overflow: 'hidden',
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    boxShadow: '0 -4px 20px rgba(0,0,0,0.2)'
+  }}
+  onClick={e => e.stopPropagation()}
+>
             <DirectMessage onClose={() => setShowDM(false)} />
           </div>
         </div>
