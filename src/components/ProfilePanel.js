@@ -10,6 +10,7 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
 
   // Local form state – initialised from context
   const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [email] = useState(user?.email || '');
 
@@ -17,14 +18,20 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  
+  // Username specific state
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameChecking, setUsernameChecking] = useState(false);
 
   // Sync local state when context profile changes
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || '');
+      setUsername(profile.username || '');
       setAvatarUrl(profile.avatar_url || '');
     } else if (user?.user_metadata) {
       setDisplayName(user.user_metadata.display_name || user.user_metadata.full_name || '');
+      setUsername(user.user_metadata.username || '');
       setAvatarUrl(user.user_metadata.avatar_url || '');
     }
   }, [profile, user]);
@@ -33,6 +40,36 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
   useEffect(() => {
     return () => { isMounted.current = false; };
   }, []);
+
+  // Debounced username availability check
+  useEffect(() => {
+    if (!username || username.length < 3) {
+      setUsernameError('');
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      setUsernameChecking(true);
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username.toLowerCase())
+          .neq('id', user.id)
+          .maybeSingle();
+        
+        if (isMounted.current) {
+          setUsernameError(data ? 'Username already taken' : '');
+        }
+      } catch (err) {
+        console.error('Username check failed:', err);
+      } finally {
+        if (isMounted.current) setUsernameChecking(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(handler);
+  }, [username, user.id]);
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
@@ -74,6 +111,12 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
   };
 
   const handleSave = async () => {
+    // Validate username before saving
+    if (usernameError) {
+      setError('Please fix username errors before saving.');
+      return;
+    }
+
     setSaving(true);
     setError('');
     setMessage('');
@@ -87,16 +130,26 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
     }, 5000);
 
     try {
+      const cleanUsername = username.toLowerCase().trim();
+
       // 1. Update auth metadata
       const { error: authError } = await supabase.auth.updateUser({
-        data: { display_name: displayName, avatar_url: avatarUrl }
+        data: { 
+          display_name: displayName, 
+          avatar_url: avatarUrl,
+          username: cleanUsername 
+        }
       });
       if (authError) throw authError;
 
       // 2. Update profiles table
       const { error: dbError } = await supabase
         .from('profiles')
-        .update({ display_name: displayName, avatar_url: avatarUrl })
+        .update({ 
+          display_name: displayName, 
+          avatar_url: avatarUrl,
+          username: cleanUsername 
+        })
         .eq('id', user.id);
       if (dbError) throw dbError;
 
@@ -171,6 +224,36 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
             className="auth-input"
           />
         </div>
+
+        <div className="profile-field">
+          <label>Username <span style={{color:'var(--accent2)', fontSize:'0.7rem'}}>— required to be searchable</span></label>
+          <div style={{ position: 'relative' }}>
+            <span style={{
+              position: 'absolute', left: '0.85rem', top: '50%',
+              transform: 'translateY(-50%)', color: 'var(--muted)',
+              fontSize: '0.9rem', pointerEvents: 'none'
+            }}>@</span>
+            <input
+              className="auth-input"
+              style={{ paddingLeft: '1.75rem' }}
+              placeholder="yourhandle"
+              value={username}
+              onChange={e => {
+                const val = e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+                setUsername(val);
+                setUsernameError('');
+              }}
+              maxLength={30}
+            />
+          </div>
+          {usernameChecking && <span className="field-hint">Checking...</span>}
+          {usernameError && <span style={{fontSize:'0.75rem', color:'#ff6b6b'}}>{usernameError}</span>}
+          {username && !usernameError && !usernameChecking && username.length >= 3 && (
+            <span style={{fontSize:'0.75rem', color:'#10b981'}}>✓ @{username} is available</span>
+          )}
+          <span className="field-hint">Only letters, numbers, underscores. Sets your searchable identity.</span>
+        </div>
+
         <div className="profile-field">
           <label>Email Address</label>
           <input
