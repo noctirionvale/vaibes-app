@@ -670,46 +670,6 @@ Your mission: Make AI make sense to real people.`;
         </div>
       </div>
 
-      {/* ── AI QUICK-LAUNCH ── */}
-      {!response && !isLoading && (
-        <div className="ai-quicklaunch">
-          <span className="ai-quicklaunch-label">Open in</span>
-          <div className="ai-quicklaunch-grid">
-            {[
-              { name: 'ChatGPT',    url: 'https://chat.openai.com',        color: '#10a37f' },
-              { name: 'Gemini',     url: 'https://gemini.google.com',      color: '#4285f4' },
-              { name: 'Grok',       url: 'https://grok.com',               color: '#ff6b6b' },
-              { name: 'Claude',     url: 'https://claude.ai',              color: '#d97706' },
-              { name: 'DeepSeek',   url: 'https://chat.deepseek.com',      color: '#10b981' },
-              { name: 'Perplexity', url: 'https://www.perplexity.ai',      color: '#8b5cf6' },
-              { name: 'Qwen',       url: 'https://chat.qwen.ai',           color: '#9333ea' },
-              { name: 'Kimi',       url: 'https://kimi.moonshot.cn',       color: '#00e6e6' },
-              { name: 'Google',     url: 'https://www.google.com',         color: '#1a73e8' },
-              { name: 'Wikipedia',  url: 'https://www.wikipedia.org',      color: '#6b7280' },
-            ].map(tool => (
-              <a
-                key={tool.name}
-                href={tool.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ai-quicklaunch-pill"
-                style={{ '--pill-color': tool.color }}
-                onClick={() => {
-                  if (inputText.trim()) {
-                    navigator.clipboard.writeText(inputText.trim()).catch(() => {
-                      // silent fail — clipboard not critical
-                    });
-                  }
-                }}
-                title={inputText.trim() ? `Open ${tool.name} + copy your text` : `Open ${tool.name}`}
-              >
-                {tool.name}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-
       {response && (
         <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
           <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
