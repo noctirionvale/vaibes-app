@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -8,6 +8,8 @@ import Sidebar from './components/Sidebar';
 import AIComparison from './components/AIComparison';
 import MobileTopbar from './components/MobileTopbar';
 import LandingPage from './components/LandingPage';
+// Import the DM component as requested
+import DirectMessage from './components/DirectMessage'; 
 import './styles/App.css';
 
 const allTools = [
@@ -24,6 +26,8 @@ const allTools = [
 ];
 
 const AppShell = () => {
+  const [showDM, setShowDM] = useState(false);
+
   useEffect(() => {
     supabase.auth.getSession();
     if ('serviceWorker' in navigator) {
@@ -45,6 +49,42 @@ const AppShell = () => {
         </main>
         <Sidebar items={allTools} title="AI Models & Sources" />
       </div>
+
+      {/* DM Modal Implementation */}
+      {showDM && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => setShowDM(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ 
+              width: '680px', 
+              height: '520px', 
+              borderRadius: '16px', 
+              overflow: 'hidden',
+              backgroundColor: 'var(--bg-primary, #fff)', // Fallback to white if var not defined
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              position: 'relative'
+            }}
+          >
+            <DirectMessage onClose={() => setShowDM(false)} />
+          </div>
+        </div>
+      )}
     </>
   );
 };

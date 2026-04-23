@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import AuthModal from './AuthModal';
 import SettingsModal from './SettingsModal';
 import MobileStudyMode from './MobileStudyMode';
+import DirectMessage from './DirectMessage';
 
 const MobileTopbar = () => {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ const MobileTopbar = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showModels, setShowModels] = useState(false);
   const [showStudy, setShowStudy] = useState(false);
+  const [showDM, setShowDM] = useState(false);
   
   const avatarUrl = user?.user_metadata?.avatar_url;
   const displayName = user?.user_metadata?.full_name
@@ -61,6 +63,17 @@ const MobileTopbar = () => {
             )}
           </button>
 
+          {/* Messages Button */}
+          <button
+            className="mobile-icon-btn"
+            onClick={() => setShowDM(true)}
+            title="Messages"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </button>
+
           {/* AI Models */}
           <button className="mobile-icon-btn" onClick={() => setShowModels(true)} title="AI Models">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -85,6 +98,42 @@ const MobileTopbar = () => {
       </div>
 
       {/* ═══════════ MODALS & DRAWERS ═══════════ */}
+      
+      {/* DM Modal */}
+      {showDM && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => setShowDM(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              height: '85vh',
+              borderRadius: '16px 16px 0 0',
+              overflow: 'hidden',
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              backgroundColor: 'var(--bg-primary, #fff)',
+              boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <DirectMessage onClose={() => setShowDM(false)} />
+          </div>
+        </div>
+      )}
+
       {/* Study Mode Drawer */}
       <MobileStudyMode isOpen={showStudy} onClose={() => setShowStudy(false)} />
 
