@@ -4,7 +4,7 @@ import AuthModal from './AuthModal';
 import SettingsModal from './SettingsModal';
 import StudyMode from './StudyMode';
 
-const LeftSidebar = ({ onOpenDM }) => {
+const LeftSidebar = ({ onNavigate }) => {
   const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -13,6 +13,18 @@ const LeftSidebar = ({ onOpenDM }) => {
   const displayName = user?.user_metadata?.full_name
     || user?.user_metadata?.name
     || user?.email?.split('@')[0];
+
+  const handleSettingsClick = () => {
+    if (user) {
+      setIsSettingsOpen(true);
+    }
+  };
+
+  const handleMessagesClick = () => {
+    if (onNavigate) {
+      onNavigate('messages');
+    }
+  };
 
   return (
     <>
@@ -23,8 +35,9 @@ const LeftSidebar = ({ onOpenDM }) => {
           {user ? (
             <div
               className="sidebar-user-card"
-              onClick={() => setIsSettingsOpen(true)}
+              onClick={handleSettingsClick}
               title="Open Settings"
+              style={{ cursor: 'pointer' }}
             >
               {avatarUrl
                 ? <img src={avatarUrl} alt="avatar" className="user-avatar" />
@@ -63,9 +76,9 @@ const LeftSidebar = ({ onOpenDM }) => {
           {/* ✅ Messages button — only shows when logged in */}
           {user && (
             <button
-              onClick={onOpenDM}
+              onClick={handleMessagesClick}
               className="sidebar-user-card"
-              style={{ marginTop: '0.5rem' }}
+              style={{ marginTop: '0.5rem', cursor: 'pointer', border: 'none', background: 'transparent', width: '100%', display: 'flex', alignItems: 'center', padding: '0.5rem', borderRadius: '0.5rem' }}
               title="Messages"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
