@@ -9,10 +9,13 @@ const LeftSidebar = ({ onOpenDM }) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const avatarUrl = user?.user_metadata?.avatar_url;
-  const displayName = user?.user_metadata?.full_name
-    || user?.user_metadata?.name
-    || user?.email?.split('@')[0];
+  const { user, profile } = useAuth(); // make sure profile is destructured
+
+const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
+const displayName = profile?.display_name
+  || user?.user_metadata?.full_name
+  || user?.user_metadata?.name
+  || user?.email?.split('@')[0];
 
   return (
     <>

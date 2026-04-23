@@ -15,10 +15,13 @@ const MobileTopbar = () => {
   const [showStudy, setShowStudy] = useState(false);
   const [showDM, setShowDM] = useState(false);
   
-  const avatarUrl = user?.user_metadata?.avatar_url;
-  const displayName = user?.user_metadata?.full_name
-    || user?.user_metadata?.name
-    || user?.email?.split('@')[0];
+  const { user, profile } = useAuth(); // make sure profile is destructured
+
+const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
+const displayName = profile?.display_name
+  || user?.user_metadata?.full_name
+  || user?.user_metadata?.name
+  || user?.email?.split('@')[0];
 
   const allTools = [
     { name: 'Grok', url: 'https://grok.com', color: 'grok' },
