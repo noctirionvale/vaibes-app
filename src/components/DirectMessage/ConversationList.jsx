@@ -16,14 +16,14 @@ const ConversationList = ({ onSelect, activeId }) => {
       const { data } = await supabase
         .from('dm_conversations')
         .select(`
-          *,
-          user1:profiles!dm_conversations_user1_id_fkey(
-            id, display_name, avatar_url
-          ),
-          user2:profiles!dm_conversations_user2_id_fkey(
-            id, display_name, avatar_url
-          )
-        `)
+  *,
+  user1:profiles!dm_conversations_user1_profile_fkey(
+    id, display_name, avatar_url
+  ),
+  user2:profiles!dm_conversations_user2_profile_fkey(
+    id, display_name, avatar_url
+  )
+`)
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false })
 
