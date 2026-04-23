@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 
@@ -10,7 +10,36 @@ const ConversationList = ({ onSelect, activeId }) => {
   const [tab, setTab] = useState('chats')
   const [searching, setSearching] = useState(false)
   const [hasUsername, setHasUsername] = useState(true)
+  
+  // Refs
   const searchTimer = useRef(null)
+  const conversationsRef = useRef(conversations)
+  const searchRef = useRef(search)
+  const tabRef = useRef(tab)
+
+  // Keep refs synced
+  useEffect(() => { conversationsRef.current = conversations }, [conversations])
+  useEffect(() => { searchRef.current = search }, [search])
+  useEffect(() => { tabRef.current = tab }, [tab])
+
+  const fetchConversations = useCallback(async () => {
+    if (!user?.id) return
+    const { data } = await supabase
+      .from('dm_conversations')
+      .select(`
+        *,
+        user1:profiles!dm_conversations_user1_profile_fkey(
+          id, display_name, username, avatar_url
+        ),
+        user2:profiles!dm_conversations_user2_profile_fkey(
+          id, display_name, username, avatar_url
+        )
+      `)
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+      .order('last_message_at', { ascending: false })
+    
+    if (data) setConversations(data)
+  }, [user?.id])
 
   // Check if current user has username set
   useEffect(() => {
@@ -20,44 +49,49 @@ const ConversationList = ({ onSelect, activeId }) => {
       .then(({ data }) => setHasUsername(!!data?.username))
   }, [user?.id])
 
-  // Fetch conversations
+  // Fetch conversations & Setup Subscription
   useEffect(() => {
     if (!user?.id) return
-    const fetchConversations = async () => {
-      const { data } = await supabase
-        .from('dm_conversations')
-        .select(`
-          *,
-          user1:profiles!dm_conversations_user1_profile_fkey(
-            id, display_name, username, avatar_url
-          ),
-          user2:profiles!dm_conversations_user2_profile_fkey(
-            id, display_name, username, avatar_url
-          )
-        `)
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .order('last_message_at', { ascending: false })
-      setConversations(data || [])
-    }
+
     fetchConversations()
 
-    const sub = supabase.channel('dm_convos')
+    const channel = supabase
+      .channel(`dm_conversations_${user.id}`)
       .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'dm_conversations'
+        event: '*',
+        schema: 'public',
+        table: 'dm_conversations',
+        filter: `user1_id=eq.${user.id}`
+      }, fetchConversations)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'dm_conversations',
+        filter: `user2_id=eq.${user.id}`
       }, fetchConversations)
       .subscribe()
-    return () => sub.unsubscribe()
-  }, [user?.id])
+
+    // Cleanup subscription on unmount or user change
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, fetchConversations])
 
   // Search users by username (debounced)
   useEffect(() => {
     if (tab !== 'people') return
-    clearTimeout(searchTimer.current)
+    
+    // Clear previous timer
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+
     if (!search.trim() || search.length < 2) {
       setSearchResults([])
+      setSearching(false)
       return
     }
+
     setSearching(true)
+    
     searchTimer.current = setTimeout(async () => {
       const { data } = await supabase
         .from('profiles')
@@ -66,23 +100,45 @@ const ConversationList = ({ onSelect, activeId }) => {
         .ilike('username', `%${search.replace('@','')}%`)
         .neq('id', user.id)
         .limit(20)
+      
       setSearchResults(data || [])
       setSearching(false)
     }, 350)
+
+    // Cleanup timeout on unmount or dependency change
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current)
+    }
   }, [search, tab, user?.id])
 
   const startConversation = async (otherUser) => {
-    const existing = conversations.find(c =>
+    // Check against current state via ref to avoid stale closure if needed, 
+    // though standard state is usually fine here if dependencies are correct.
+    const existing = conversationsRef.current.find(c =>
       (c.user1_id === user.id && c.user2_id === otherUser.id) ||
       (c.user2_id === user.id && c.user1_id === otherUser.id)
     )
-    if (existing) { onSelect(existing, otherUser); setTab('chats'); return }
+    
+    if (existing) { 
+      onSelect(existing, otherUser)
+      setTab('chats')
+      return 
+    }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('dm_conversations')
       .insert({ user1_id: user.id, user2_id: otherUser.id })
       .select().single()
-    if (data) { onSelect(data, otherUser); setTab('chats') }
+    
+    if (error) {
+      console.error("Error starting conversation:", error)
+      return
+    }
+
+    if (data) { 
+      onSelect(data, otherUser)
+      setTab('chats') 
+    }
   }
 
   const getOtherUser = (conv) =>
@@ -91,11 +147,17 @@ const ConversationList = ({ onSelect, activeId }) => {
   return (
     <div className="dm-conv-list">
       <div className="dm-tabs">
-        <button className={`dm-tab ${tab === 'chats' ? 'active' : ''}`} onClick={() => setTab('chats')}>
+        <button 
+          className={`dm-tab ${tab === 'chats' ? 'active' : ''}`} 
+          onClick={() => setTab('chats')}
+        >
           Chats
           {conversations.length > 0 && <span className="dm-badge">{conversations.length}</span>}
         </button>
-        <button className={`dm-tab ${tab === 'people' ? 'active' : ''}`} onClick={() => setTab('people')}>
+        <button 
+          className={`dm-tab ${tab === 'people' ? 'active' : ''}`} 
+          onClick={() => setTab('people')}
+        >
           People
         </button>
       </div>
@@ -124,13 +186,15 @@ const ConversationList = ({ onSelect, activeId }) => {
             conversations
               .filter(c => {
                 const other = getOtherUser(c)
-                return other?.display_name?.toLowerCase().includes(search.toLowerCase())
-                  || other?.username?.toLowerCase().includes(search.toLowerCase())
+                const term = search.toLowerCase()
+                return other?.display_name?.toLowerCase().includes(term)
+                  || other?.username?.toLowerCase().includes(term)
               })
               .map(conv => {
                 const other = getOtherUser(conv)
                 return (
-                  <button key={conv.id}
+                  <button 
+                    key={conv.id}
                     className={`dm-conv-item ${activeId === conv.id ? 'active' : ''}`}
                     onClick={() => onSelect(conv, other)}
                   >
@@ -184,7 +248,11 @@ const ConversationList = ({ onSelect, activeId }) => {
                 <div className="dm-list-empty">No users found for "<strong>{search}</strong>"</div>
               )}
               {searchResults.map(u => (
-                <button key={u.id} className="dm-conv-item" onClick={() => startConversation(u)}>
+                <button 
+                  key={u.id} 
+                  className="dm-conv-item" 
+                  onClick={() => startConversation(u)}
+                >
                   <div className="dm-avatar">
                     {u.avatar_url
                       ? <img src={u.avatar_url} alt="" />
