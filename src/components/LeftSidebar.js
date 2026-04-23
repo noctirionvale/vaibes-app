@@ -5,17 +5,15 @@ import SettingsModal from './SettingsModal';
 import StudyMode from './StudyMode';
 
 const LeftSidebar = ({ onOpenDM }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const { user, profile } = useAuth(); // make sure profile is destructured
-
-const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
-const displayName = profile?.display_name
-  || user?.user_metadata?.full_name
-  || user?.user_metadata?.name
-  || user?.email?.split('@')[0];
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
+  const displayName = profile?.display_name
+    || user?.user_metadata?.full_name
+    || user?.user_metadata?.name
+    || user?.email?.split('@')[0];
 
   return (
     <>
