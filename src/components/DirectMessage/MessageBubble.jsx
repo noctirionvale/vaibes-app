@@ -1,41 +1,41 @@
-import React, { useState } from 'react';
+import React from 'react'
 
 const MessageBubble = ({ message, isOwn }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const time = new Date(message.created_at).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 
   return (
-    <div className={`dm-message-bubble ${isOwn ? 'own-message' : 'other-message'}`}>
-      {/* Render Image if it exists */}
-      {message.image_url && (
-        <div className="dm-message-image-container" style={{ position: 'relative' }}>
-          {!imageLoaded && (
-            <div className="image-placeholder" style={{ minHeight: '150px', background: 'rgba(255,255,255,0.1)' }}>
-              Loading...
-            </div>
-          )}
-          <img 
-            src={message.image_url} 
-            alt="User uploaded content" 
-            className="dm-message-image"
-            style={{ 
-              maxWidth: '100%', 
-              borderRadius: '8px', 
-              display: imageLoaded ? 'block' : 'none' 
+    <div className={`dm-bubble-wrap ${isOwn ? 'own' : 'other'}`}>
+      <div className={`dm-bubble ${isOwn ? 'own' : 'other'}`}>
+
+        {/* ✅ Show image if present */}
+        {message.image_url && (
+          <img
+            src={message.image_url}
+            alt="shared"
+            style={{
+              maxWidth: '220px',
+              maxHeight: '220px',
+              borderRadius: '10px',
+              display: 'block',
+              marginBottom: message.content ? '0.4rem' : 0,
+              cursor: 'pointer',
+              objectFit: 'cover'
             }}
-            onLoad={() => setImageLoaded(true)}
-            loading="lazy"
+            onClick={() => window.open(message.image_url, '_blank')}
           />
-        </div>
-      )}
+        )}
 
-      {/* Render Text if it exists */}
-      {message.content && (
-        <p className="dm-message-text" style={{ marginTop: message.image_url ? '8px' : '0' }}>
-          {message.content}
-        </p>
-      )}
+        {/* ✅ Show text if present */}
+        {message.content && (
+          <span>{message.content}</span>
+        )}
+      </div>
+      <div className="dm-bubble-time">{time}</div>
     </div>
-  );
-};
+  )
+}
 
-export default MessageBubble;
+export default MessageBubble
