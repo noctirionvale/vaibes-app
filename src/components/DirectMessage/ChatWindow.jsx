@@ -105,7 +105,6 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
         setUploadingImage(false)
       }
 
-      // ✅ Updated: select().single() + error handling
       const { data: msgData, error: msgError } = await supabase
         .from('dm_messages')
         .insert({
@@ -118,7 +117,7 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
         .single()
 
       if (msgError) {
-        console.error('Message insert error:', msgError)
+        console.error('Message insert error FULL:', JSON.stringify(msgError))
         throw msgError
       }
       console.log('Message saved:', msgData)
