@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import MessageBubble from './MessageBubble'
@@ -15,7 +15,7 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
   const fileInputRef = useRef(null)
 
   useEffect(() => {
-    if (!conversation?.id) return
+    if (!conversation?.id || !user) return
     const fetchMessages = async () => {
       const { data } = await supabase
         .from('dm_messages')
@@ -26,74 +26,58 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
     }
     fetchMessages()
 
-    const sub = supabase
+    const channel = supabase
       .channel(`dm_messages_${conversation.id}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'dm_messages',
         filter: `conversation_id=eq.${conversation.id}`
-      }, async (payload) => {
-        const { data } = await supabase
-          .from('dm_messages')
-          .select('*')
-          .eq('id', payload.new.id)
-          .single()
-        if (data) setMessages(prev => [...prev, data])
+      }, (payload) => {
+        setMessages(prev => {
+          if (prev.some(m => m.id === payload.new?.id)) return prev
+          return [...prev, payload.new]
+        })
       })
       .subscribe()
-    return () => sub.unsubscribe()
-  }, [conversation?.id])
+
+    return () => { supabase.removeChannel(channel) }
+  }, [conversation?.id, user])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleImageSelect = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) return
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be under 5MB.')
-      return
-    }
+  const handleImageSelect = useCallback((e) => {
+    const file = e.target.files?.[0]
+    if (!file || !file.type.startsWith('image/')) return
+    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB.'); return }
     setImageFile(file)
     const reader = new FileReader()
     reader.onloadend = () => setImagePreview(reader.result)
     reader.readAsDataURL(file)
-  }
+  }, [])
 
-  const clearImage = () => {
+  const clearImage = useCallback(() => {
     setImageFile(null)
     setImagePreview(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
-  }
+  }, [])
 
-  const uploadImage = async () => {
+  const uploadImage = useCallback(async () => {
     if (!imageFile) return null
     const ext = imageFile.name.split('.').pop()
-    const path = `${conversation.id}/${user.id}-${Date.now()}.${ext}`
-    
-    console.log('Uploading to path:', path)
-    
+    const uniqueId = Date.now() + Math.random().toString(36).slice(2)
+    const path = `${conversation.id}/${user.id}-${uniqueId}.${ext}`
     const { error } = await supabase.storage
       .from('dm-images')
       .upload(path, imageFile, { upsert: false })
-    
-    if (error) {
-      console.error('Upload error:', error)
-      throw error
-    }
-    
-    const { data } = supabase.storage
-      .from('dm-images')
-      .getPublicUrl(path)
-    
-    console.log('Public URL:', data.publicUrl)
+    if (error) throw error
+    const { data } = supabase.storage.from('dm-images').getPublicUrl(path)
     return data.publicUrl
-  }
+  }, [imageFile, conversation.id, user.id])
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if ((!input.trim() && !imageFile) || sending) return
     setSending(true)
     if (imageFile) setUploadingImage(true)
@@ -105,7 +89,7 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
         setUploadingImage(false)
       }
 
-      const { data: msgData, error: msgError } = await supabase
+      const { error: msgError } = await supabase
         .from('dm_messages')
         .insert({
           conversation_id: conversation.id,
@@ -113,14 +97,8 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
           content: input.trim() || null,
           image_url: imageUrl
         })
-        .select()
-        .single()
 
-      if (msgError) {
-        console.error('Message insert error FULL:', JSON.stringify(msgError))
-        throw msgError
-      }
-      console.log('Message saved:', msgData)
+      if (msgError) throw msgError
 
       await supabase
         .from('dm_conversations')
@@ -138,11 +116,10 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
     } finally {
       setSending(false)
     }
-  }
+  }, [input, imageFile, sending, conversation.id, user.id, uploadImage, clearImage])
 
   return (
     <div className="dm-chat-window">
-      {/* Header */}
       <div className="dm-chat-header">
         <button className="dm-back-btn" onClick={onBack}>←</button>
         <div className="dm-avatar small">
@@ -164,7 +141,6 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
         </div>
       </div>
 
-      {/* Messages */}
       <div className="dm-messages">
         {messages.length === 0 ? (
           <div className="dm-messages-empty">
@@ -183,99 +159,34 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
         <div ref={bottomRef} />
       </div>
 
-      {/* Image preview above input */}
       {imagePreview && (
-        <div style={{
-          padding: '0.5rem 1rem 0 1rem',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '0.5rem'
-        }}>
+        <div style={{ padding: '0.5rem 1rem 0 1rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
           <div style={{ position: 'relative', display: 'inline-block' }}>
-            <img
-              src={imagePreview}
-              alt="Preview"
-              style={{
-                maxHeight: '80px',
-                maxWidth: '120px',
-                borderRadius: '8px',
-                objectFit: 'cover',
-                border: '1px solid rgba(255,255,255,0.15)'
-              }}
-            />
-            <button
-              onClick={clearImage}
-              style={{
-                position: 'absolute', top: '-6px', right: '-6px',
-                width: '18px', height: '18px', borderRadius: '50%',
-                background: '#ff4fd8', border: 'none', color: 'white',
-                fontSize: '0.6rem', cursor: 'pointer', display: 'flex',
-                alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, lineHeight: 1
-              }}
-            >✕</button>
+            <img src={imagePreview} alt="Preview" style={{ maxHeight: '80px', maxWidth: '120px', borderRadius: '8px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.15)' }} />
+            <button onClick={clearImage} style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: '#ff4fd8', border: 'none', color: 'white', fontSize: '0.6rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, lineHeight: 1 }}>✕</button>
           </div>
-          {uploadingImage && (
-            <span style={{ fontSize: '0.75rem', color: 'var(--accent2)', alignSelf: 'center' }}>
-              Uploading...
-            </span>
-          )}
+          {uploadingImage && <span style={{ fontSize: '0.75rem', color: 'var(--accent2)', alignSelf: 'center' }}>Uploading...</span>}
         </div>
       )}
 
-      {/* Input row */}
       <div className="dm-input-row">
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={sending}
-          title="Send photo"
-          style={{
-            width: '36px', height: '36px', borderRadius: '50%',
-            border: '1px solid rgba(255,255,255,0.1)',
-            background: imageFile ? 'rgba(106,92,255,0.2)' : 'rgba(255,255,255,0.05)',
-            color: imageFile ? 'var(--accent1)' : 'var(--muted)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s ease'
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
+        <button onClick={() => fileInputRef.current?.click()} disabled={sending} title="Send photo"
+          style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: imageFile ? 'rgba(106,92,255,0.2)' : 'rgba(255,255,255,0.05)', color: imageFile ? 'var(--accent1)' : 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s ease' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
           </svg>
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={handleImageSelect}
-        />
+        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageSelect} />
 
-        <input
-          type="text"
-          placeholder={imageFile ? 'Add a caption...' : 'Type a message...'}
-          value={input}
+        <input type="text" placeholder={imageFile ? 'Add a caption...' : 'Type a message...'} value={input}
           onChange={e => setInput(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              handleSend()
-            }
-          }}
-          className="dm-input"
-        />
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+          className="dm-input" />
 
-        <button
-          onClick={handleSend}
-          disabled={(!input.trim() && !imageFile) || sending}
-          className="dm-send-btn"
-        >
+        <button onClick={handleSend} disabled={(!input.trim() && !imageFile) || sending} className="dm-send-btn">
           {sending ? '...' : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           )}
         </button>
