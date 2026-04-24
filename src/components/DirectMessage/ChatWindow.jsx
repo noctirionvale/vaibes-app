@@ -10,22 +10,21 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
   const [sending, setSending] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   
-  // Grouped file state to prevent mismatched renders
   const [fileData, setFileData] = useState({ file: null, preview: null })
   
   const bottomRef = useRef(null)
   const fileInputRef = useRef(null)
 
-  // Scroll to bottom
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  const scrollToBottom = useCallback((behavior = 'smooth') => {
+    bottomRef.current?.scrollIntoView({ behavior })
   }, [])
 
+  // Initial scroll and update scroll
   useEffect(() => {
-    scrollToBottom()
+    scrollToBottom(messages.length <= 1 ? 'auto' : 'smooth')
   }, [messages, fileData.preview, scrollToBottom])
 
-  // Fetch & Subscribe
+  // Fetch & Real-time Subscription
   useEffect(() => {
     if (!conversation?.id) return
 
@@ -42,48 +41,34 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
     fetchMessages()
 
     const sub = supabase
-      .channel(`dm_messages_${conversation.id}`)
+      .channel(`dm_messages:${conversation.id}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'dm_messages',
         filter: `conversation_id=eq.${conversation.id}`
       }, (payload) => {
-        // Prevent duplicate messages if the sender is us (Optimistic UI handles our own)
         setMessages(prev => {
-          const exists = prev.find(m => m.id === payload.new.id);
-          if (exists) return prev;
-          return [...prev, payload.new];
+          if (prev.some(m => m.id === payload.new.id)) return prev
+          return [...prev, payload.new]
         })
       })
       .subscribe()
 
     return () => {
-      sub.unsubscribe()
+      supabase.removeChannel(sub)
     }
   }, [conversation?.id])
 
-  // Improved Image Handling (No Memory Leaks)
   const handleImageSelect = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     
-    if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file.')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be under 5MB.')
-      return
-    }
+    if (!file.type.startsWith('image/')) return alert('Please select an image.')
+    if (file.size > 5 * 1024 * 1024) return alert('Image must be under 5MB.')
 
-    // Clean up previous preview to prevent memory leaks
     if (fileData.preview) URL.revokeObjectURL(fileData.preview)
-
-    setFileData({
-      file,
-      preview: URL.createObjectURL(file) // Much faster than FileReader
-    })
+    setFileData({ file, preview: URL.createObjectURL(file) })
   }
 
   const clearImage = useCallback(() => {
@@ -92,56 +77,46 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [fileData.preview])
 
-  // Cleanup object URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (fileData.preview) URL.revokeObjectURL(fileData.preview)
-    }
-  }, [fileData.preview])
-
   const uploadImage = async (fileToUpload) => {
-    // Generate secure, collision-proof filename
     const ext = fileToUpload.name.split('.').pop() || 'png'
-    const fileName = `${crypto.randomUUID()}.${ext}`
-    const path = `${conversation.id}/${user.id}-${fileName}`
+    const path = `${conversation.id}/${crypto.randomUUID()}.${ext}`
     
     const { error } = await supabase.storage
       .from('DM-IMAGES')
-      .upload(path, fileToUpload, { upsert: false })
+      .upload(path, fileToUpload)
       
     if (error) throw error
-    
     const { data } = supabase.storage.from('DM-IMAGES').getPublicUrl(path)
     return data.publicUrl
   }
 
-  const handleSend = async () => {
+  const handleSend = async (e) => {
+    e?.preventDefault()
     const messageText = input.trim()
     const currentFile = fileData.file
 
     if ((!messageText && !currentFile) || sending) return
     
     setSending(true)
-    if (currentFile) setUploadingImage(true)
-
-    // Optimistic UI Update: Create a temporary message to render instantly
     const tempId = `temp-${Date.now()}`
     const tempMessage = {
       id: tempId,
       conversation_id: conversation.id,
       sender_id: user.id,
       content: messageText || null,
-      image_url: fileData.preview, // Use local preview temporarily
-      created_at: new Date().toISOString()
+      image_url: fileData.preview,
+      created_at: new Date().toISOString(),
+      isOptimistic: true
     }
     
     setMessages(prev => [...prev, tempMessage])
     setInput('')
-    clearImage() // Clear input instantly for better UX
+    clearImage()
 
     try {
       let imageUrl = null
       if (currentFile) {
+        setUploadingImage(true)
         imageUrl = await uploadImage(currentFile)
       }
 
@@ -157,26 +132,100 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
         .single()
 
       if (insertError) throw insertError
-
-      // Swap temp message with real database message
       setMessages(prev => prev.map(m => m.id === tempId ? finalMessage : m))
 
-      // Fire-and-forget conversation update
-      supabase.from('dm_conversations').update({
+      // Update conversation metadata
+      await supabase.from('dm_conversations').update({
         last_message: imageUrl ? (messageText || '📷 Photo') : messageText,
         last_message_at: new Date().toISOString()
-      }).eq('id', conversation.id).then()
+      }).eq('id', conversation.id)
 
     } catch (err) {
       console.error('Send error:', err)
-      // Revert optimistic update on failure
       setMessages(prev => prev.filter(m => m.id !== tempId))
-      alert("Failed to send message. Please try again.")
+      alert("Failed to send message.")
     } finally {
       setSending(false)
       setUploadingImage(false)
     }
   }
 
-  // ... Rest of your JSX render logic remains the same, 
-  // just replace `imagePreview` with `fileData.preview` and `imageFile` with `fileData.file` in the JSX.
+  // ✅ This is the return statement – note the closing brace below
+  return (
+    <div className="flex flex-col h-full bg-white relative">
+      {/* Header */}
+      <div className="flex items-center p-4 border-b">
+        <button onClick={onBack} className="mr-4 p-2 hover:bg-gray-100 rounded-full">←</button>
+        <div className="flex flex-col">
+          <h2 className="font-bold leading-tight">{otherUser?.full_name || 'Chat'}</h2>
+          {uploadingImage && (
+            <span className="text-xs text-blue-500 animate-pulse">Uploading image...</span>
+          )}
+        </div>
+      </div>
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} message={msg} isMe={msg.sender_id === user.id} />
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="p-4 border-t bg-gray-50">
+        {fileData.preview && (
+          <div className="relative inline-block mb-2">
+            <img 
+              src={fileData.preview} 
+              alt="Preview" 
+              className={`h-20 w-20 object-cover rounded-lg border ${uploadingImage ? 'opacity-50' : 'opacity-100'}`} 
+            />
+            {!uploadingImage && (
+              <button 
+                onClick={clearImage}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-sm hover:bg-red-600"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        )}
+        
+        <form onSubmit={handleSend} className="flex items-center gap-2">
+          <button 
+            type="button"
+            disabled={sending}
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 text-gray-500 hover:text-blue-500 disabled:opacity-30"
+          >
+            📷
+          </button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImageSelect} 
+            accept="image/*" 
+            className="hidden" 
+          />
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={uploadingImage ? "Sending image..." : "Type a message..."}
+            className="flex-1 p-2 border rounded-full px-4 outline-none focus:border-blue-400 disabled:bg-gray-100"
+            disabled={sending}
+          />
+          <button 
+            type="submit"
+            disabled={(!input.trim() && !fileData.file) || sending}
+            className="bg-blue-600 text-white px-4 py-2 rounded-full disabled:opacity-50 font-medium transition-colors"
+          >
+            {sending ? '...' : 'Send'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}  // ✅ This closing brace was missing!
+
+export default ChatWindow
