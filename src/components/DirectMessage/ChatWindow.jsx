@@ -27,16 +27,22 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
     fetchMessages()
 
     const sub = supabase
-      .channel(`dm_messages_${conversation.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'dm_messages',
-        filter: `conversation_id=eq.${conversation.id}`
-      }, (payload) => {
-        setMessages(prev => [...prev, payload.new])
-      })
-      .subscribe()
+  .channel(`dm_messages_${conversation.id}`)
+  .on('postgres_changes', {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'dm_messages',
+    filter: `conversation_id=eq.${conversation.id}`
+  }, async (payload) => {
+    // ✅ Re-fetch the message to get all columns including image_url
+    const { data } = await supabase
+      .from('dm_messages')
+      .select('*')
+      .eq('id', payload.new.id)
+      .single()
+    if (data) setMessages(prev => [...prev, data])
+  })
+  .subscribe()
     return () => sub.unsubscribe()
   }, [conversation?.id])
 
@@ -65,16 +71,28 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
   }
 
   const uploadImage = async () => {
-    if (!imageFile) return null
-    const ext = imageFile.name.split('.').pop()
-    const path = `${conversation.id}/${user.id}-${Date.now()}.${ext}`
-    const { error } = await supabase.storage
-      .from('dm-images')
-      .upload(path, imageFile, { upsert: false })
-    if (error) throw error
-    const { data } = supabase.storage.from('dm-images').getPublicUrl(path)
-    return data.publicUrl
+  if (!imageFile) return null
+  const ext = imageFile.name.split('.').pop()
+  const path = `${conversation.id}/${user.id}-${Date.now()}.${ext}`
+  
+  console.log('Uploading to path:', path) // ← add this
+  
+  const { error } = await supabase.storage
+    .from('dm-images')
+    .upload(path, imageFile, { upsert: false })
+  
+  if (error) {
+    console.error('Upload error:', error) // ← add this
+    throw error
   }
+  
+  const { data } = supabase.storage
+    .from('dm-images')
+    .getPublicUrl(path)
+  
+  console.log('Public URL:', data.publicUrl) // ← add this
+  return data.publicUrl
+}
 
   const handleSend = async () => {
     if ((!input.trim() && !imageFile) || sending) return
