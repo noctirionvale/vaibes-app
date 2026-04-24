@@ -69,10 +69,10 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
     const ext = imageFile.name.split('.').pop()
     const path = `${conversation.id}/${user.id}-${Date.now()}.${ext}`
     const { error } = await supabase.storage
-      .from('DM-IMAGES')
+      .from('dm-images')
       .upload(path, imageFile, { upsert: false })
     if (error) throw error
-    const { data } = supabase.storage.from('DM-IMAGES').getPublicUrl(path)
+    const { data } = supabase.storage.from('dm-images').getPublicUrl(path)
     return data.publicUrl
   }
 
