@@ -287,9 +287,9 @@ const SettingsModal = ({ onClose }) => {
                   ))}
                 </div>
                 <div className="socials-footer">
-                  <p>Built with ❤️ by <strong>NoctirionVale</strong></p>
+                  <p>Built by <strong>NoctirionVale</strong></p>
                   <p style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: '0.25rem' }}>
-                    vAIbes · Knovia · Tindahan.AI
+                    vAIbes · Knovia ·
                   </p>
                 </div>
               </div>

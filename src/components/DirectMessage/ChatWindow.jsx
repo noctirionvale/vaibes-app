@@ -106,12 +106,12 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
     const path = `${conversation.id}/${user.id}-${fileName}`
     
     const { error } = await supabase.storage
-      .from('dm-images')
+      .from('DM-IMAGES')
       .upload(path, fileToUpload, { upsert: false })
       
     if (error) throw error
     
-    const { data } = supabase.storage.from('dm-images').getPublicUrl(path)
+    const { data } = supabase.storage.from('DM-IMAGES').getPublicUrl(path)
     return data.publicUrl
   }
 
