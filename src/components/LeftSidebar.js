@@ -64,7 +64,7 @@ const LeftSidebar = ({ onOpenDM }) => {
 
         {/* ── MESSAGES ZONE — between profile and study mode ── */}
         {user && (
-  <div className="sidebar-messages-zone">
+  <div className="sidebar-messages-zone" style={{ marginBottom: '0.5rem' }}>
     <button
       onClick={onOpenDM}
       className="sidebar-messages-btn"
