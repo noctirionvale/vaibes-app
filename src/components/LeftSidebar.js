@@ -64,29 +64,25 @@ const LeftSidebar = ({ onOpenDM }) => {
 
         {/* ── MESSAGES ZONE — between profile and study mode ── */}
         {user && (
-          <div className="sidebar-messages-zone">
-            <button
-              onClick={onOpenDM}
-              className="sidebar-messages-btn"
-              title="Messages"
-            >
-              <div className="sidebar-messages-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-              </div>
-              <div className="sidebar-user-info">
-                <span className="user-display-name">Messages</span>
-                <span className="sidebar-settings-hint">Chat with users</span>
-              </div>
-              <div className="sidebar-messages-arrow">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </div>
-            </button>
-          </div>
-        )}
+  <div className="sidebar-messages-zone">
+    <button
+      onClick={onOpenDM}
+      className="sidebar-messages-btn"
+      title="Messages"
+    >
+      <div className="sidebar-messages-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <div className="sidebar-messages-label">
+        <span className="sidebar-messages-title">Messages</span>
+        <span className="sidebar-messages-subtitle">Chat with users</span>
+      </div>
+    </button>
+  </div>
+)}
 
         {/* ── STUDY MODE ── */}
         <div className="sidebar-study-zone">
