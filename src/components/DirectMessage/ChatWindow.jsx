@@ -27,22 +27,21 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
     fetchMessages()
 
     const sub = supabase
-  .channel(`dm_messages_${conversation.id}`)
-  .on('postgres_changes', {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'dm_messages',
-    filter: `conversation_id=eq.${conversation.id}`
-  }, async (payload) => {
-    // ✅ Re-fetch the message to get all columns including image_url
-    const { data } = await supabase
-      .from('dm_messages')
-      .select('*')
-      .eq('id', payload.new.id)
-      .single()
-    if (data) setMessages(prev => [...prev, data])
-  })
-  .subscribe()
+      .channel(`dm_messages_${conversation.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'dm_messages',
+        filter: `conversation_id=eq.${conversation.id}`
+      }, async (payload) => {
+        const { data } = await supabase
+          .from('dm_messages')
+          .select('*')
+          .eq('id', payload.new.id)
+          .single()
+        if (data) setMessages(prev => [...prev, data])
+      })
+      .subscribe()
     return () => sub.unsubscribe()
   }, [conversation?.id])
 
@@ -71,28 +70,28 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
   }
 
   const uploadImage = async () => {
-  if (!imageFile) return null
-  const ext = imageFile.name.split('.').pop()
-  const path = `${conversation.id}/${user.id}-${Date.now()}.${ext}`
-  
-  console.log('Uploading to path:', path) // ← add this
-  
-  const { error } = await supabase.storage
-    .from('dm-images')
-    .upload(path, imageFile, { upsert: false })
-  
-  if (error) {
-    console.error('Upload error:', error) // ← add this
-    throw error
+    if (!imageFile) return null
+    const ext = imageFile.name.split('.').pop()
+    const path = `${conversation.id}/${user.id}-${Date.now()}.${ext}`
+    
+    console.log('Uploading to path:', path)
+    
+    const { error } = await supabase.storage
+      .from('dm-images')
+      .upload(path, imageFile, { upsert: false })
+    
+    if (error) {
+      console.error('Upload error:', error)
+      throw error
+    }
+    
+    const { data } = supabase.storage
+      .from('dm-images')
+      .getPublicUrl(path)
+    
+    console.log('Public URL:', data.publicUrl)
+    return data.publicUrl
   }
-  
-  const { data } = supabase.storage
-    .from('dm-images')
-    .getPublicUrl(path)
-  
-  console.log('Public URL:', data.publicUrl) // ← add this
-  return data.publicUrl
-}
 
   const handleSend = async () => {
     if ((!input.trim() && !imageFile) || sending) return
@@ -106,17 +105,31 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
         setUploadingImage(false)
       }
 
-      await supabase.from('dm_messages').insert({
-        conversation_id: conversation.id,
-        sender_id: user.id,
-        content: input.trim() || null,
-        image_url: imageUrl
-      })
+      // ✅ Updated: select().single() + error handling
+      const { data: msgData, error: msgError } = await supabase
+        .from('dm_messages')
+        .insert({
+          conversation_id: conversation.id,
+          sender_id: user.id,
+          content: input.trim() || null,
+          image_url: imageUrl
+        })
+        .select()
+        .single()
 
-      await supabase.from('dm_conversations').update({
-        last_message: imageUrl ? (input.trim() || '📷 Photo') : input.trim(),
-        last_message_at: new Date().toISOString()
-      }).eq('id', conversation.id)
+      if (msgError) {
+        console.error('Message insert error:', msgError)
+        throw msgError
+      }
+      console.log('Message saved:', msgData)
+
+      await supabase
+        .from('dm_conversations')
+        .update({
+          last_message: imageUrl ? (input.trim() || '📷 Photo') : input.trim(),
+          last_message_at: new Date().toISOString()
+        })
+        .eq('id', conversation.id)
 
       setInput('')
       clearImage()
@@ -213,7 +226,6 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
 
       {/* Input row */}
       <div className="dm-input-row">
-        {/* Photo button */}
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={sending}
