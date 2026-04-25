@@ -2775,7 +2775,7 @@ body.light-mode .transcript-paste-content {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--accent2);
+  color: var(--accent1);
 }
 
 .mobile-drawer-close {
