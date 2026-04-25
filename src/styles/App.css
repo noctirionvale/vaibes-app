@@ -1518,10 +1518,7 @@ body::after {
 }
 
 .drawer-header h3 {
-  background: linear-gradient(135deg, var(--accent2) 0%, var(--text) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent1); /* Add this line */
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -2620,7 +2617,7 @@ body.light-mode .transcript-paste-content {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    border: 2px solid var(--accent2);
+    border: 2px solid var(--accent1);
     object-fit: cover;
     cursor: pointer;
   }
@@ -2636,7 +2633,7 @@ body.light-mode .transcript-paste-content {
     font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
-    border: 2px solid var(--accent2);
+    border: 2px solid var(--accent1);
   }
 
   .ai-utility-section {
