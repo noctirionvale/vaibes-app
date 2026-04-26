@@ -152,13 +152,7 @@ const ConversationList = ({ onSelect, activeId }) => {
                           </div>}
                     </div>
                     <div className="dm-conv-info">
-                      <div className="dm-conv-name">{other?.display_name || other?.username || 'User'}</div>
-                      <div className="dm-conv-last">
-                        {other?.username && (
-                          <span style={{ color: 'var(--accent1)', marginRight: '0.25rem' }}>
-                            @{other.username}
-                          </span>
-                        )}
+                      <div className="dm-conv-name">
                         {conv.last_message || 'Start a conversation'}
                       </div>
                     </div>
