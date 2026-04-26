@@ -4980,3 +4980,39 @@ body.light-mode .sidebar-messages-btn {
   border-color: rgba(106, 92, 255, 0.12);
   color: #0d0d0d;
 }
+
+/* ── FINAL OVERRIDE: Force identical height on both buttons ── */
+.study-mode-toggle,
+.sidebar-messages-btn {
+  min-height: unset !important;
+  height: auto !important;
+  padding: 0.75rem 0.85rem !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+.study-mode-icon,
+.sidebar-messages-icon {
+  font-size: 1.1rem !important;
+  width: 1.1rem !important;
+  height: auto !important;
+  flex-shrink: 0 !important;
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.study-mode-label,
+.sidebar-messages-title {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: var(--accent1) !important;
+  line-height: 1.2 !important;
+}
+
+.sidebar-messages-subtitle {
+  font-size: 0.7rem !important;
+  color: var(--muted) !important;
+  line-height: 1.2 !important;
+}
