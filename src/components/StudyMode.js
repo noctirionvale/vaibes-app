@@ -180,7 +180,7 @@ const StudyMode = () => {
           <div className="study-youtube-input-group">
             <input
               type="text"
-              placeholder="Paste YouTube URL"
+              placeholder="Paste Link"
               value={customYoutubeUrl}
               onChange={(e) => setCustomYoutubeUrl(e.target.value)}
               className="study-youtube-input"
