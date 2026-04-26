@@ -4892,3 +4892,91 @@ body.light-mode .ai-quicklaunch-pill:hover {
     padding: 0.3rem 0.75rem;
   }
 }
+
+/* ===== UNIFY STUDY MODE & MESSAGES BUTTON SIZE ===== */
+
+/* Force identical container behaviour */
+.study-mode-container,
+.sidebar-messages-zone {
+  width: 100%;
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+}
+
+/* Make both buttons use exactly the same sizing rules */
+.study-mode-toggle,
+.sidebar-messages-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  background: rgba(106, 92, 255, 0.06);
+  border: 1px solid rgba(106, 92, 255, 0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  box-sizing: border-box;
+  min-height: 56px;           /* ensures both have the same minimum height */
+  line-height: 1.2;           /* prevents extra line-height from pushing height */
+}
+
+/* Keep the equalizer and icon aligned */
+.study-mode-icon,
+.sidebar-messages-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 1.3rem;
+  text-align: center;
+}
+
+/* For the Messages button: make the two‑line label behave like a single column
+   but without adding extra height – use normal flex column and consistent line‑height */
+.sidebar-messages-label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;                   /* keep small gap but no extra margin */
+  min-width: 0;
+  justify-content: center;    /* vertical centering */
+}
+
+.sidebar-messages-title,
+.sidebar-messages-subtitle {
+  line-height: 1.2;           /* match the button’s line-height */
+  white-space: nowrap;        /* prevent wrapping – optional, but keeps height predictable */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Study Mode label already single‑line, just inherit line‑height */
+.study-mode-label {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent1);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* If you still see a height difference on very small screens, you can optionally
+   remove the subtitle on mobile or change it to a single line 💡 */
+@media (max-width: 480px) {
+  .sidebar-messages-subtitle {
+    display: none;  /* or change to a tooltip – up to you */
+  }
+}
+
+/* Light mode styles – keep consistent */
+body.light-mode .study-mode-toggle,
+body.light-mode .sidebar-messages-btn {
+  background: rgba(106, 92, 255, 0.04);
+  border-color: rgba(106, 92, 255, 0.12);
+  color: #0d0d0d;
+}
