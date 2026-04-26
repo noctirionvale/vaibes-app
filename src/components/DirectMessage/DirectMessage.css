@@ -392,6 +392,109 @@
     border-right: none;
   }
 
+  /* ── MOBILE LIGHT MODE FIXES ── */
+@media (max-width: 768px) {
+  body.light-mode .dm-container {
+    background: rgba(245, 245, 255, 0.99);
+  }
+
+  body.light-mode .dm-chat-window {
+    background: rgba(245, 245, 255, 0.99);
+  }
+
+  body.light-mode .dm-messages {
+    background: rgba(245, 245, 255, 0.99);
+  }
+
+  body.light-mode .dm-input-row {
+    background: rgba(245, 245, 255, 0.99);
+    border-top-color: rgba(0, 0, 0, 0.08);
+  }
+
+  body.light-mode .dm-input {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #111 !important;
+  }
+
+  body.light-mode .dm-input::placeholder {
+    color: rgba(0, 0, 0, 0.35) !important;
+  }
+
+  body.light-mode .dm-bubble.other {
+    background: rgba(0, 0, 0, 0.07);
+    color: #111 !important;
+  }
+
+  body.light-mode .dm-bubble.own {
+    color: #fff !important;
+  }
+
+  body.light-mode .dm-bubble-time {
+    color: rgba(0, 0, 0, 0.35) !important;
+  }
+
+  body.light-mode .dm-chat-header {
+    background: rgba(245, 245, 255, 0.99);
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+  }
+
+  body.light-mode .dm-chat-username {
+    color: #111 !important;
+  }
+
+  body.light-mode .dm-back-btn {
+    color: rgba(0, 0, 0, 0.4) !important;
+  }
+
+  body.light-mode .dm-conv-list {
+    background: rgba(245, 245, 255, 0.99);
+  }
+
+  body.light-mode .dm-conv-name {
+    color: #111 !important;
+  }
+
+  body.light-mode .dm-conv-last {
+    color: rgba(0, 0, 0, 0.45) !important;
+  }
+
+  body.light-mode .dm-header {
+    background: rgba(245, 245, 255, 0.99);
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+  }
+
+  body.light-mode .dm-header h3 {
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  body.light-mode .dm-search-input {
+    color: #111 !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  body.light-mode .dm-messages-empty {
+    color: rgba(0, 0, 0, 0.35) !important;
+  }
+
+  body.light-mode .dm-tabs {
+    background: rgba(245, 245, 255, 0.99);
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+  }
+
+  body.light-mode .dm-tab {
+    color: rgba(0, 0, 0, 0.4) !important;
+  }
+
+  body.light-mode .dm-tab.active {
+    color: var(--accent1) !important;
+    border-bottom-color: var(--accent1) !important;
+  }
+}
+
   .dm-chat-window {
     position: absolute;
     top: 0;
