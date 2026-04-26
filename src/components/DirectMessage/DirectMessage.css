@@ -19,7 +19,7 @@
 .dm-header h3 {
   font-size: 1rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--accent2), var(--accent1));
+  background: linear-gradient(135deg, var(--accent1), var(--accent1));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -513,65 +513,151 @@ body.light-mode .dm-conv-last { color: rgba(0,0,0,0.4); }
   transform: translateX(2px);
 }
 
-/* Light mode */
-body.light-mode .sidebar-messages-btn {
-  background: rgba(106,92,255,0.04);
-  border-color: rgba(106,92,255,0.15);
+/* ── LIGHT MODE: DM COMPLETE FIX ── */
+
+/* Tab base — remove hardcoded white, use muted that works on both */
+.dm-tab {
+  color: var(--muted, rgba(255,255,255,0.4));
 }
 
-body.light-mode .sidebar-messages-btn:hover {
-  border-color: rgba(106,92,255,0.4);
-  box-shadow: 0 4px 16px rgba(106,92,255,0.1);
+body.light-mode .dm-tab {
+  color: rgba(0, 0, 0, 0.4);
 }
 
-body.light-mode .sidebar-messages-icon {
-  background: linear-gradient(135deg, rgba(106,92,255,0.1), rgba(0,229,255,0.1));
-  border-color: rgba(106,92,255,0.2);
+body.light-mode .dm-tab.active {
+  color: var(--accent1);
+  border-bottom-color: var(--accent1);
+}
+
+body.light-mode .dm-tab:hover {
   color: var(--accent1);
 }
 
-body.light-mode .sidebar-messages-arrow {
-  color: rgba(0,0,0,0.2);
+/* Header title */
+body.light-mode .dm-header h3 {
+  background: linear-gradient(135deg, var(--accent1), var(--accent1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-body.light-mode .sidebar-messages-btn:hover .sidebar-messages-arrow {
+/* Close button */
+body.light-mode .dm-close {
+  color: rgba(0, 0, 0, 0.35);
+}
+body.light-mode .dm-close:hover {
+  color: #ff4fd8;
+}
+
+/* Back button */
+body.light-mode .dm-back-btn {
+  color: rgba(0, 0, 0, 0.35);
+}
+body.light-mode .dm-back-btn:hover {
   color: var(--accent1);
 }
 
-body.light-mode .dm-container {
-  background: rgba(245, 245, 255, 0.99);
-  border-color: rgba(0, 0, 0, 0.08);
+/* Chat username */
+body.light-mode .dm-chat-username {
+  color: var(--accent1);
+}
+
+/* Conv item name */
+body.light-mode .dm-conv-name {
+  color: var(--accent1);
+}
+
+/* Conv last message preview */
+body.light-mode .dm-conv-last {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* Badge */
+body.light-mode .dm-badge {
+  background: var(--accent1);
+  color: #fff;
+}
+
+/* Empty state */
+body.light-mode .dm-empty,
+body.light-mode .dm-list-empty {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+body.light-mode .dm-start-btn {
+  color: var(--accent1);
+  border-color: rgba(106, 92, 255, 0.3);
+  background: rgba(106, 92, 255, 0.08);
+}
+
+/* Search input */
+body.light-mode .dm-search-input {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
   color: #111;
 }
-
-body.light-mode .dm-chat-window {
-  background: rgba(245, 245, 255, 0.99);
+body.light-mode .dm-search-input::placeholder {
+  color: rgba(0, 0, 0, 0.3);
 }
 
-body.light-mode .dm-messages {
-  background: rgba(240, 240, 252, 0.5);
+/* Message input */
+body.light-mode .dm-input {
+  color: #111;
+}
+body.light-mode .dm-input::placeholder {
+  color: rgba(0, 0, 0, 0.3);
+}
+body.light-mode .dm-input:focus {
+  border-color: var(--accent1);
 }
 
-body.light-mode .dm-chat-header {
-  background: rgba(245, 245, 255, 0.99);
-  border-bottom-color: rgba(0, 0, 0, 0.08);
+/* Bubble time */
+body.light-mode .dm-bubble-time {
+  color: rgba(0, 0, 0, 0.35);
 }
 
+/* Messages empty */
+body.light-mode .dm-messages-empty {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+/* Divider lines */
+body.light-mode .dm-header,
+body.light-mode .dm-tabs,
+body.light-mode .dm-search,
+body.light-mode .dm-chat-header,
 body.light-mode .dm-input-row {
-  background: rgba(245, 245, 255, 0.99);
-  border-top-color: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
-body.light-mode .dm-header {
-  background: rgba(245, 245, 255, 0.99);
-  border-bottom-color: rgba(0, 0, 0, 0.08);
+body.light-mode .dm-conv-list {
+  border-right-color: rgba(0, 0, 0, 0.08);
 }
 
-body.light-mode .dm-chat-username { color: #111; }
+/* Conv item hover/active */
+body.light-mode .dm-conv-item:hover {
+  background: rgba(106, 92, 255, 0.05);
+}
+body.light-mode .dm-conv-item.active {
+  background: rgba(106, 92, 255, 0.08);
+}
 
-body.light-mode .dm-bubble-time { color: rgba(0, 0, 0, 0.35); }
+/* Avatar placeholder */
+body.light-mode .dm-avatar-placeholder {
+  background: linear-gradient(135deg, var(--accent1), var(--accent1));
+  color: #fff;
+}
 
-body.light-mode .dm-messages-empty { color: rgba(0, 0, 0, 0.3); }
+/* Sidebar messages zone — light mode */
+body.light-mode .sidebar-messages-title {
+  color: var(--accent1);
+}
+body.light-mode .sidebar-messages-subtitle {
+  color: rgba(0, 0, 0, 0.45);
+}
+body.light-mode .sidebar-messages-icon {
+  color: var(--accent1);
+}
 
 /* Match exact spacing to Study Mode */
 .sidebar-messages-zone {

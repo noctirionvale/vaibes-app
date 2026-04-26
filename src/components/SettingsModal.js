@@ -220,7 +220,7 @@ const SettingsModal = ({ onClose }) => {
                       </div>
                     )}
                     {userTier === 'pro' && (
-                      <div className="tier-current-label" style={{ color: 'var(--accent2)' }}>
+                      <div className="tier-current-label" style={{ color: 'var(--accent1)' }}>
                         ✅ You are on Pro
                       </div>
                     )}

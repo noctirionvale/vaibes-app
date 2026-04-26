@@ -1730,7 +1730,7 @@ body::after {
 }
 
 .sign-out-btn {
-  background: rgba(8, 152, 248, 0.926);
+  background: var(--accent1);
   border: 1px solid #0bfb07;
   color: #c0c0d0;
   padding: 0.4rem 1rem;
@@ -2172,7 +2172,7 @@ body.light-mode .profile-avatar-hint {
 
 .theme-toggle-btn:hover {
   border-color: var(--accent1);
-  color: var(--accent2);
+  color: var(--accent1);
   box-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
 }
 

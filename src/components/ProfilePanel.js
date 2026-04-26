@@ -226,7 +226,7 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
         </div>
 
         <div className="profile-field">
-          <label>Username <span style={{color:'var(--accent2)', fontSize:'0.7rem'}}>— required to be searchable</span></label>
+          <label>Username <span style={{color:'var(--accent1)', fontSize:'0.7rem'}}>— required to be searchable</span></label>
           <div style={{ position: 'relative' }}>
             <span style={{
               position: 'absolute', left: '0.85rem', top: '50%',
