@@ -155,7 +155,7 @@ const ConversationList = ({ onSelect, activeId }) => {
                       <div className="dm-conv-name">{other?.display_name || other?.username || 'User'}</div>
                       <div className="dm-conv-last">
                         {other?.username && (
-                          <span style={{ color: 'var(--accent2)', marginRight: '0.25rem' }}>
+                          <span style={{ color: 'var(--accent1)', marginRight: '0.25rem' }}>
                             @{other.username}
                           </span>
                         )}
@@ -202,7 +202,7 @@ const ConversationList = ({ onSelect, activeId }) => {
                   </div>
                   <div className="dm-conv-info">
                     <div className="dm-conv-name">{u.display_name || u.username}</div>
-                    <div className="dm-conv-last" style={{ color: 'var(--accent2)' }}>@{u.username}</div>
+                    <div className="dm-conv-last" style={{ color: 'var(--accent1)' }}>@{u.username}</div>
                   </div>
                 </button>
               ))}

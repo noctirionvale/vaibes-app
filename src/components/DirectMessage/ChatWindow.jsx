@@ -134,7 +134,7 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
             {otherUser?.display_name || otherUser?.username || 'User'}
           </div>
           {otherUser?.username && (
-            <div style={{ fontSize: '0.7rem', color: 'var(--accent2)' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--accent1)' }}>
               @{otherUser.username}
             </div>
           )}
@@ -165,7 +165,7 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
             <img src={imagePreview} alt="Preview" style={{ maxHeight: '80px', maxWidth: '120px', borderRadius: '8px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.15)' }} />
             <button onClick={clearImage} style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: '#ff4fd8', border: 'none', color: 'white', fontSize: '0.6rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, lineHeight: 1 }}>✕</button>
           </div>
-          {uploadingImage && <span style={{ fontSize: '0.75rem', color: 'var(--accent2)', alignSelf: 'center' }}>Uploading...</span>}
+          {uploadingImage && <span style={{ fontSize: '0.75rem', color: 'var(--accent1)', alignSelf: 'center' }}>Uploading...</span>}
         </div>
       )}
 
