@@ -1,0 +1,256 @@
+/* ================================================
+   MobileTopbar.css
+   Scoped to .mobile-topbar and its children.
+   Safe to import alongside your global CSS.
+   ================================================ */
+
+/* ── Topbar shell ── */
+.mobile-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 1rem;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+body.light-mode .mobile-topbar {
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ── Left: avatar + brand ── */
+.mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-brand-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent1);
+  letter-spacing: -0.01em;
+  user-select: none;
+}
+
+/* ── Avatar ── */
+.mobile-avatar-wrap {
+  cursor: pointer;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mobile-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent1);
+  display: block;
+}
+
+.mobile-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent1), var(--accent3));
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--accent1);
+}
+
+/* ── Login button (unauthenticated) ── */
+.mobile-login-btn {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--accent1);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s;
+}
+
+.mobile-login-btn:hover { opacity: 0.85; }
+
+/* ── Right: icon buttons ── */
+.mobile-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.mobile-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.mobile-icon-btn:hover {
+  background: rgba(106, 92, 255, 0.15);
+  color: var(--accent1);
+}
+
+body.light-mode .mobile-icon-btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.45);
+}
+
+body.light-mode .mobile-icon-btn:hover {
+  background: rgba(106, 92, 255, 0.1);
+  color: var(--accent1);
+}
+
+/* ── Modal overlay (shared by DM + Models) ── */
+.mobile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9999;
+}
+
+/* ── DM bottom sheet ── */
+.mobile-dm-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 85vh;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  z-index: 10000;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* ── AI Models bottom sheet ── */
+.mobile-bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-radius: 20px 20px 0 0;
+  z-index: 10000;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.25);
+}
+
+.mobile-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  margin: 0.75rem auto 0;
+}
+
+body.light-mode .mobile-sheet-handle {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.mobile-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--accent1);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+body.light-mode .mobile-sheet-header {
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.mobile-sheet-close {
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.2rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.mobile-sheet-close:hover { color: var(--accent1); }
+
+body.light-mode .mobile-sheet-close {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.mobile-sheet-body {
+  padding: 0.75rem 1rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* ── Tool items ── */
+.mobile-tool-item {
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.mobile-tool-item:hover {
+  background: rgba(106, 92, 255, 0.1);
+  border-color: rgba(106, 92, 255, 0.25);
+  color: var(--accent1);
+}
+
+body.light-mode .mobile-tool-item {
+  color: #0d0d0d;
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .mobile-tool-item:hover {
+  background: rgba(106, 92, 255, 0.07);
+  border-color: rgba(106, 92, 255, 0.2);
+  color: var(--accent1);
+}
+
+/* ── Tool accent colors (left border hint) ── */
+.tool-chatgpt  { border-left: 3px solid var(--chatgpt-green);      }
+.tool-claude   { border-left: 3px solid var(--claude-orange);      }
+.tool-gemini   { border-left: 3px solid var(--gemini-blue);        }
+.tool-grok     { border-left: 3px solid var(--grok-red);           }
+.tool-deepseek { border-left: 3px solid var(--deepseek-green);     }
+.tool-perplexity { border-left: 3px solid var(--perplexity-purple);}
+.tool-qwen     { border-left: 3px solid var(--qwen-purple);        }
+.tool-google   { border-left: 3px solid var(--google-blue);        }
+.tool-wiki     { border-left: 3px solid var(--wiki-gray);          }
+.tool-kimi     { border-left: 3px solid var(--kimi-cyan);          }

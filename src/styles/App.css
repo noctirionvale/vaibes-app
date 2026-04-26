@@ -21,6 +21,15 @@
   --kimi-cyan: #00e6e6;
 }
 
+/* Add this right after your :root block */
+body.light-mode {
+  --bg: #f5f5ff;
+  --text: #0d0d0d;
+  --muted: #666666;
+  --sidebar-bg: rgba(240, 240, 252, 0.95);
+  /* accent vars stay the same — they work on both themes */
+}
+
 /* ========== RESET & BASE STYLES ========== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
