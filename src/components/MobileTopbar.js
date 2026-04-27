@@ -185,18 +185,17 @@ const MobileTopbar = () => {
         </>
       )}
 
-      {/* ═══════════ SETTINGS ═══════════ */}
-      {showSettings && (
-        <>
-          <div
-            className="mobile-modal-overlay"
-            onClick={() => setShowSettings(false)}
-          />
-          <div className="profile-panel-wrapper">
-            <SettingsModal onClose={() => setShowSettings(false)} />
-          </div>
-        </>
-      )}
+     {/* ═══════════ SETTINGS ═══════════ */}
+{showSettings && (
+  <div
+    className="modal-overlay"
+    onClick={() => setShowSettings(false)}
+  >
+    <div onClick={e => e.stopPropagation()}>
+      <SettingsModal onClose={() => setShowSettings(false)} />
+    </div>
+  </div>
+)}
 
       {/* ═══════════ AUTH ═══════════ */}
       {showAuthModal && (
