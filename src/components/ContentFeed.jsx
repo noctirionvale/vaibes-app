@@ -4,8 +4,8 @@ import { supabase } from '../lib/supabase'
 // ── PASTE YOUR YOUTUBE CHANNEL IDs HERE ──
 const YOUTUBE_CHANNELS = [
   { id: 'UCFuDhy4tFjvWnRwvATM7H8Q', label: 'vAIbes' },
-  { id: 'UCL-kP2OlQdYF3z06l1GjqjA', label: 'Channel 2' },
-  { id: 'UCsFG39ve0KyCDXUoUDGGhog', label: 'Channel 3' },
+  { id: 'UCsFG39ve0KyCDXUoUDGGhog', label: 'Channel 2' },
+  { id: 'UCL-kP2OlQdYF3z06l1GjqjA', label: 'Channel 3' },
 ]
 
 const parseYouTubeRSS = async (channelId) => {
