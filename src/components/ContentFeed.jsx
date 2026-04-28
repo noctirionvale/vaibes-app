@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import ContentFeed from './ContentFeed';
 
 // ── PASTE YOUR YOUTUBE CHANNEL IDs HERE ──
 const YOUTUBE_CHANNELS = [
