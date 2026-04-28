@@ -34,7 +34,6 @@ const parseYouTubeRSS = async (channelId) => {
         thumbnail: `${thumbBase}/mqdefault.jpg`,
         fallbackThumb: `${thumbBase}/hqdefault.jpg`,
         url: `https://www.youtube.com/watch?v=${videoId}`,
-        type: 'youtube'
       };
     });
   } catch {
@@ -51,8 +50,17 @@ const ContentFeed = () => {
   const [linkInput, setLinkInput] = useState('');
   const [customVideos, setCustomVideos] = useState([]);
   const autoRotateRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  
   const [playerSize, setPlayerSize] = useState({ width: 640, height: 380 });
+  const [playerPosition, setPlayerPosition] = useState({ x: window.innerWidth - 660, y: window.innerHeight - 420 });
   const [isResizing, setIsResizing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
+  // For horizontal scroll on mobile
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -92,6 +100,9 @@ const ContentFeed = () => {
     }, 5000);
   };
 
+  const nextCard = () => goToCard((activeCard + 1) % cards.length);
+  const prevCard = () => goToCard((activeCard - 1 + cards.length) % cards.length);
+
   const addVideoFromLink = () => {
     const videoId = getYouTubeId(linkInput);
     if (!videoId) {
@@ -106,7 +117,6 @@ const ContentFeed = () => {
       thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
       fallbackThumb: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
       url: linkInput,
-      type: 'custom'
     };
     setCustomVideos(prev => [newVideo, ...prev]);
     setLinkInput('');
@@ -115,6 +125,26 @@ const ContentFeed = () => {
   const allVideos = [...customVideos, ...videos];
   const currentCard = cards[activeCard];
 
+  // Scroll handlers for horizontal video grid
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
+  const updateScrollArrows = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setShowLeftArrow(scrollLeft > 20);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 20);
+    }
+  };
+
+  // Resize & drag logic (same as before)...
   const startResize = (e) => {
     e.preventDefault();
     setIsResizing(true);
@@ -122,7 +152,6 @@ const ContentFeed = () => {
     const startY = e.clientY;
     const startWidth = playerSize.width;
     const startHeight = playerSize.height;
-
     const onMouseMove = (moveEvent) => {
       const deltaX = moveEvent.clientX - startX;
       const deltaY = moveEvent.clientY - startY;
@@ -130,22 +159,55 @@ const ContentFeed = () => {
       let newHeight = Math.min(700, Math.max(260, startHeight + deltaY));
       setPlayerSize({ width: newWidth, height: newHeight });
     };
-
     const onMouseUp = () => {
       setIsResizing(false);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     };
-
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
   };
 
+  const startDrag = (e) => {
+    if (e.target.closest('.cf-resize-handle')) return;
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX - playerPosition.x,
+      y: e.clientY - playerPosition.y,
+    };
+  };
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMouseMove = (moveEvent) => {
+      let newX = moveEvent.clientX - dragStartRef.current.x;
+      let newY = moveEvent.clientY - dragStartRef.current.y;
+      newX = Math.min(window.innerWidth - 50, Math.max(0, newX));
+      newY = Math.min(window.innerHeight - 50, Math.max(0, newY));
+      setPlayerPosition({ x: newX, y: newY });
+    };
+    const onMouseUp = () => {
+      setIsDragging(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isDragging]);
+
   return (
     <div className="content-feed">
-      {/* Rotating Card */}
+      {/* Rotating Card WITH VIDEO PREVIEW */}
       {cards.length > 0 && currentCard && (
         <div className="cf-card" style={{ '--card-accent': currentCard.tag_color || '#6a5cff' }}>
+          {/* Arrow buttons */}
+          <button className="cf-card-arrow cf-card-arrow-left" onClick={prevCard} aria-label="Previous card">‹</button>
+          <button className="cf-card-arrow cf-card-arrow-right" onClick={nextCard} aria-label="Next card">›</button>
+          
           <div className="cf-card-inner">
             <div className="cf-card-top">
               <span className="cf-tag" style={{
@@ -159,6 +221,23 @@ const ContentFeed = () => {
             </div>
             <h3 className="cf-card-title">{currentCard.title}</h3>
             <p className="cf-card-sub">{currentCard.subtitle}</p>
+            
+            {/* Video Preview (if videoUrl exists on card) */}
+            {currentCard.video_url && (() => {
+              const previewId = getYouTubeId(currentCard.video_url);
+              if (previewId) {
+                return (
+                  <div className="cf-card-video-preview" onClick={() => setSelectedVideo({ videoId: previewId, title: currentCard.title })}>
+                    <img src={`https://img.youtube.com/vi/${previewId}/mqdefault.jpg`} alt="preview" />
+                    <div className="cf-play-overlay-small">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            
             {currentCard.cta_text && (
               <a href={currentCard.cta_url || '#'} className="cf-card-cta"
                  style={{ background: `linear-gradient(135deg, ${currentCard.tag_color}, ${currentCard.tag_color}99)` }}
@@ -183,7 +262,7 @@ const ContentFeed = () => {
       <div className="cf-gallery-header">
         <div className="cf-video-label">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ff0000', marginRight: '0.5rem' }}>
-            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/>
+            <path d="M23.498 6.186..."/>
             <polygon points="9.545 15.568 15.818 12 9.545 8.432 9.545 15.568" fill="white"/>
           </svg>
           Latest from vAIbes
@@ -194,40 +273,51 @@ const ContentFeed = () => {
         </div>
       </div>
 
-      {/* Video Grid */}
-      {loadingVideos && videos.length === 0 ? (
-        <div className="cf-video-grid">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="cf-video-skeleton"><div className="cf-skeleton-thumb" /><div className="cf-skeleton-line" /></div>
-          ))}
-        </div>
-      ) : (
-        <div className="cf-video-grid">
-          {allVideos.map((video) => (
-            <div key={video.id} className="cf-video-item" onClick={() => setSelectedVideo(video)}>
-              <div className="cf-video-thumb-wrap">
-                <img src={video.thumbnail} alt={video.title} className="cf-video-thumb" onError={e => e.target.src = video.fallbackThumb} />
-                <div className="cf-play-overlay"><div className="cf-play-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3" /></svg></div></div>
+      {/* Horizontal Scrollable Video Grid with Arrows */}
+      <div className="cf-video-carousel">
+        {showLeftArrow && (
+          <button className="cf-carousel-arrow cf-carousel-left" onClick={scrollLeft}>‹</button>
+        )}
+        <div 
+          className="cf-video-grid-scroll" 
+          ref={scrollContainerRef}
+          onScroll={updateScrollArrows}
+        >
+          {loadingVideos && videos.length === 0 ? (
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="cf-video-skeleton">
+                <div className="cf-skeleton-thumb" />
+                <div className="cf-skeleton-line" />
               </div>
-              <div className="cf-video-info"><p className="cf-video-title">{video.title}</p><span className="cf-video-date">{video.published}</span></div>
-            </div>
-          ))}
+            ))
+          ) : (
+            allVideos.map((video) => (
+              <div key={video.id} className="cf-video-item" onClick={() => setSelectedVideo(video)}>
+                <div className="cf-video-thumb-wrap">
+                  <img src={video.thumbnail} alt={video.title} className="cf-video-thumb" onError={e => e.target.src = video.fallbackThumb} />
+                  <div className="cf-play-overlay"><div className="cf-play-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+                </div>
+                <div className="cf-video-info"><p className="cf-video-title">{video.title}</p><span className="cf-video-date">{video.published}</span></div>
+              </div>
+            ))
+          )}
         </div>
-      )}
+        {showRightArrow && allVideos.length > 0 && (
+          <button className="cf-carousel-arrow cf-carousel-right" onClick={scrollRight}>›</button>
+        )}
+      </div>
 
-      {/* Resizable Bottom Player */}
+      {/* Draggable & Resizable Bottom Player (same as before) */}
       {selectedVideo && (
-        <div className="cf-bottom-player" style={{ width: playerSize.width, height: playerSize.height, transition: isResizing ? 'none' : 'all 0.2s' }}>
-          <div className="cf-player-bar">
+        <div className="cf-bottom-player" style={{ width: playerSize.width, height: playerSize.height, top: playerPosition.y, left: playerPosition.x, transition: (isResizing || isDragging) ? 'none' : 'all 0.2s', cursor: isDragging ? 'grabbing' : 'auto' }}>
+          <div className="cf-player-bar" onMouseDown={startDrag} style={{ cursor: 'grab' }}>
             <span className="cf-player-title">{selectedVideo.title}</span>
             <button className="cf-player-close" onClick={() => setSelectedVideo(null)}>✕</button>
           </div>
           <div className="cf-player-container" style={{ height: `calc(100% - 40px)` }}>
-            <iframe src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`} title={selectedVideo.title} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ width: '100%', height: '100%' }} />
+            <iframe src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`} title={selectedVideo.title} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ width: '100%', height: '100%', pointerEvents: isDragging ? 'none' : 'auto' }} />
           </div>
-          <div className="cf-resize-handle" onMouseDown={startResize} title="Drag to resize">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 2v20H2V2h20zM4 4v16h16V4H4z"/><path d="M18 18h-4v-4h4v4zM10 10H6v4h4v-4z"/></svg>
-          </div>
+          <div className="cf-resize-handle" onMouseDown={startResize} title="Drag to resize"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 2v20H2V2h20zM4 4v16h16V4H4z"/><path d="M18 18h-4v-4h4v4zM10 10H6v4h4v-4z"/></svg></div>
         </div>
       )}
     </div>
