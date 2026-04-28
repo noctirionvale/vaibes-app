@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import './ContentFeed.css'; // we'll add the new styles below
+import './ContentFeed.css';
 
 const YOUTUBE_CHANNELS = [
   { id: 'UCsFG39ve0KyCDXUoUDGGhog', label: 'vAIbes' },
 ];
 
-// Extract YouTube ID from any URL
 const getYouTubeId = (url) => {
   const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
   const match = url.match(regExp);
   return match && match[7]?.length === 11 ? match[7] : null;
 };
 
-// Fetch RSS and convert to video objects
 const parseYouTubeRSS = async (channelId) => {
   try {
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
@@ -27,13 +25,14 @@ const parseYouTubeRSS = async (channelId) => {
       const videoId = entry.querySelector('videoId')?.textContent;
       const title = entry.querySelector('title')?.textContent;
       const published = entry.querySelector('published')?.textContent;
+      const thumbBase = `https://img.youtube.com/vi/${videoId}`;
       return {
         id: videoId,
         videoId,
         title,
         published: published ? new Date(published).toLocaleDateString() : '',
-        thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-        fallbackThumb: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
+        thumbnail: `${thumbBase}/mqdefault.jpg`,
+        fallbackThumb: `${thumbBase}/hqdefault.jpg`,
         url: `https://www.youtube.com/watch?v=${videoId}`,
         type: 'youtube'
       };
@@ -47,13 +46,14 @@ const ContentFeed = () => {
   const [cards, setCards] = useState([]);
   const [videos, setVideos] = useState([]);
   const [activeCard, setActiveCard] = useState(0);
-  const [selectedVideo, setSelectedVideo] = useState(null); // for bottom player
+  const [selectedVideo, setSelectedVideo] = useState(null);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [linkInput, setLinkInput] = useState('');
   const [customVideos, setCustomVideos] = useState([]);
   const autoRotateRef = useRef(null);
+  const [playerSize, setPlayerSize] = useState({ width: 640, height: 380 });
+  const [isResizing, setIsResizing] = useState(false);
 
-  // Fetch cards from Supabase
   useEffect(() => {
     const fetchCards = async () => {
       const { data } = await supabase
@@ -66,7 +66,6 @@ const ContentFeed = () => {
     fetchCards();
   }, []);
 
-  // Fetch YouTube channel videos
   useEffect(() => {
     const fetchVideos = async () => {
       setLoadingVideos(true);
@@ -77,7 +76,6 @@ const ContentFeed = () => {
     fetchVideos();
   }, []);
 
-  // Auto-rotate cards
   useEffect(() => {
     if (cards.length === 0) return;
     autoRotateRef.current = setInterval(() => {
@@ -94,7 +92,6 @@ const ContentFeed = () => {
     }, 5000);
   };
 
-  // Add video from custom link
   const addVideoFromLink = () => {
     const videoId = getYouTubeId(linkInput);
     if (!videoId) {
@@ -106,8 +103,8 @@ const ContentFeed = () => {
       videoId,
       title: 'Custom Video',
       published: new Date().toLocaleDateString(),
-      thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-      fallbackThumb: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
+      thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
+      fallbackThumb: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
       url: linkInput,
       type: 'custom'
     };
@@ -117,6 +114,32 @@ const ContentFeed = () => {
 
   const allVideos = [...customVideos, ...videos];
   const currentCard = cards[activeCard];
+
+  const startResize = (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = playerSize.width;
+    const startHeight = playerSize.height;
+
+    const onMouseMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+      let newWidth = Math.min(1200, Math.max(400, startWidth + deltaX));
+      let newHeight = Math.min(700, Math.max(260, startHeight + deltaY));
+      setPlayerSize({ width: newWidth, height: newHeight });
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
 
   return (
     <div className="content-feed">
@@ -156,7 +179,7 @@ const ContentFeed = () => {
         </div>
       )}
 
-      {/* Video Gallery Header + URL Input */}
+      {/* Gallery Header + URL Input */}
       <div className="cf-gallery-header">
         <div className="cf-video-label">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ff0000', marginRight: '0.5rem' }}>
@@ -166,81 +189,44 @@ const ContentFeed = () => {
           Latest from vAIbes
         </div>
         <div className="cf-url-input">
-          <input
-            type="text"
-            value={linkInput}
-            onChange={(e) => setLinkInput(e.target.value)}
-            placeholder="Paste YouTube link..."
-            onKeyPress={(e) => e.key === 'Enter' && addVideoFromLink()}
-          />
+          <input type="text" value={linkInput} onChange={(e) => setLinkInput(e.target.value)} placeholder="Paste YouTube link..." onKeyPress={(e) => e.key === 'Enter' && addVideoFromLink()} />
           <button onClick={addVideoFromLink}>+ Add</button>
         </div>
       </div>
 
-      {/* Video Grid - Streaming Style */}
+      {/* Video Grid */}
       {loadingVideos && videos.length === 0 ? (
         <div className="cf-video-grid">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="cf-video-skeleton">
-              <div className="cf-skeleton-thumb" />
-              <div className="cf-skeleton-line" />
-            </div>
+            <div key={i} className="cf-video-skeleton"><div className="cf-skeleton-thumb" /><div className="cf-skeleton-line" /></div>
           ))}
         </div>
       ) : (
         <div className="cf-video-grid">
           {allVideos.map((video) => (
-            <div
-              key={video.id}
-              className="cf-video-item"
-              onClick={() => setSelectedVideo(video)}
-            >
+            <div key={video.id} className="cf-video-item" onClick={() => setSelectedVideo(video)}>
               <div className="cf-video-thumb-wrap">
-                <img
-                  src={video.thumbnail}
-                  alt={video.title}
-                  className="cf-video-thumb"
-                  onError={e => e.target.src = video.fallbackThumb}
-                />
-                <div className="cf-play-overlay">
-                  <div className="cf-play-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                  </div>
-                </div>
+                <img src={video.thumbnail} alt={video.title} className="cf-video-thumb" onError={e => e.target.src = video.fallbackThumb} />
+                <div className="cf-play-overlay"><div className="cf-play-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3" /></svg></div></div>
               </div>
-              <div className="cf-video-info">
-                <p className="cf-video-title">{video.title}</p>
-                <span className="cf-video-date">{video.published}</span>
-              </div>
+              <div className="cf-video-info"><p className="cf-video-title">{video.title}</p><span className="cf-video-date">{video.published}</span></div>
             </div>
           ))}
         </div>
       )}
 
-      {!loadingVideos && allVideos.length === 0 && (
-        <div className="cf-video-empty">
-          <span>No videos found</span>
-          <span>Check your channel ID or add a link above</span>
-        </div>
-      )}
-
-      {/* Bottom Modal Player (appears below chat) */}
+      {/* Resizable Bottom Player */}
       {selectedVideo && (
-        <div className="cf-bottom-player">
+        <div className="cf-bottom-player" style={{ width: playerSize.width, height: playerSize.height, transition: isResizing ? 'none' : 'all 0.2s' }}>
           <div className="cf-player-bar">
             <span className="cf-player-title">{selectedVideo.title}</span>
             <button className="cf-player-close" onClick={() => setSelectedVideo(null)}>✕</button>
           </div>
-          <div className="cf-player-container">
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`}
-              title={selectedVideo.title}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+          <div className="cf-player-container" style={{ height: `calc(100% - 40px)` }}>
+            <iframe src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`} title={selectedVideo.title} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ width: '100%', height: '100%' }} />
+          </div>
+          <div className="cf-resize-handle" onMouseDown={startResize} title="Drag to resize">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 2v20H2V2h20zM4 4v16h16V4H4z"/><path d="M18 18h-4v-4h4v4zM10 10H6v4h4v-4z"/></svg>
           </div>
         </div>
       )}
