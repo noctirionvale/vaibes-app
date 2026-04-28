@@ -53,15 +53,20 @@ const ContentFeed = () => {
   const scrollContainerRef = useRef(null);
   
   const [playerSize, setPlayerSize] = useState({ width: 640, height: 380 });
-  const [playerPosition, setPlayerPosition] = useState({ x: window.innerWidth - 660, y: window.innerHeight - 420 });
+  // Centered initial position
+  const [playerPosition, setPlayerPosition] = useState(() => ({
+    x: (window.innerWidth - 640) / 2,
+    y: (window.innerHeight - 380) / 2,
+  }));
   const [isResizing, setIsResizing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
+  const dragStartRef = useRef({ x: 0, y: 0, startPos: { x: 0, y: 0 } });
+  const resizeStartRef = useRef({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 });
 
-  // For horizontal scroll on mobile
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
 
+  // --- fetch cards & videos (unchanged) ---
   useEffect(() => {
     const fetchCards = async () => {
       const { data } = await supabase
@@ -125,7 +130,7 @@ const ContentFeed = () => {
   const allVideos = [...customVideos, ...videos];
   const currentCard = cards[activeCard];
 
-  // Scroll handlers for horizontal video grid
+  // --- scroll handlers for carousel ---
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
@@ -144,67 +149,115 @@ const ContentFeed = () => {
     }
   };
 
-  // Resize & drag logic (same as before)...
-  const startResize = (e) => {
-    e.preventDefault();
-    setIsResizing(true);
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startWidth = playerSize.width;
-    const startHeight = playerSize.height;
-    const onMouseMove = (moveEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const deltaY = moveEvent.clientY - startY;
-      let newWidth = Math.min(1200, Math.max(400, startWidth + deltaX));
-      let newHeight = Math.min(700, Math.max(260, startHeight + deltaY));
-      setPlayerSize({ width: newWidth, height: newHeight });
-    };
-    const onMouseUp = () => {
-      setIsResizing(false);
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  };
-
+  // --- DRAG LOGIC (mouse + touch) ---
   const startDrag = (e) => {
     if (e.target.closest('.cf-resize-handle')) return;
     e.preventDefault();
     setIsDragging(true);
+    const clientX = e.clientX ?? e.touches[0].clientX;
+    const clientY = e.clientY ?? e.touches[0].clientY;
     dragStartRef.current = {
-      x: e.clientX - playerPosition.x,
-      y: e.clientY - playerPosition.y,
+      x: clientX - playerPosition.x,
+      y: clientY - playerPosition.y,
+      startPos: { x: playerPosition.x, y: playerPosition.y },
     };
   };
+
   useEffect(() => {
-    if (!isDragging) return;
-    const onMouseMove = (moveEvent) => {
-      let newX = moveEvent.clientX - dragStartRef.current.x;
-      let newY = moveEvent.clientY - dragStartRef.current.y;
-      newX = Math.min(window.innerWidth - 50, Math.max(0, newX));
-      newY = Math.min(window.innerHeight - 50, Math.max(0, newY));
-      setPlayerPosition({ x: newX, y: newY });
+  if (!isDragging) return;
+
+  const onDragMove = (moveEvent) => {
+    const clientX = moveEvent.clientX ?? moveEvent.touches[0].clientX;
+    const clientY = moveEvent.clientY ?? moveEvent.touches[0].clientY;
+    let newX = clientX - dragStartRef.current.x;
+    let newY = clientY - dragStartRef.current.y;
+    newX = Math.min(window.innerWidth - 50, Math.max(0, newX));
+    newY = Math.min(window.innerHeight - 50, Math.max(0, newY));
+    setPlayerPosition({ x: newX, y: newY });
+  };
+
+  const stopDrag = () => {
+    setIsDragging(false);
+  };
+
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('mouseup', stopDrag);
+  window.addEventListener('touchmove', onDragMove, { passive: false });
+  window.addEventListener('touchend', stopDrag);
+
+  return () => {
+    window.removeEventListener('mousemove', onDragMove);
+    window.removeEventListener('mouseup', stopDrag);
+    window.removeEventListener('touchmove', onDragMove);
+    window.removeEventListener('touchend', stopDrag);
+  };
+}, [isDragging]);
+
+  // --- RESIZE LOGIC (mouse + touch) ---
+  const startResize = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    const clientX = e.clientX ?? e.touches[0].clientX;
+    const clientY = e.clientY ?? e.touches[0].clientY;
+    resizeStartRef.current = {
+      x: clientX,
+      y: clientY,
+      width: playerSize.width,
+      height: playerSize.height,
+      left: playerPosition.x,
+      top: playerPosition.y,
     };
-    const onMouseUp = () => {
-      setIsDragging(false);
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-    return () => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-  }, [isDragging]);
+  };
+
+  useEffect(() => {
+  if (!isResizing) return;
+
+  const onResizeMove = (moveEvent) => {
+    const clientX = moveEvent.clientX ?? moveEvent.touches[0].clientX;
+    const clientY = moveEvent.clientY ?? moveEvent.touches[0].clientY;
+    const deltaX = clientX - resizeStartRef.current.x;
+    const deltaY = clientY - resizeStartRef.current.y;
+    let newWidth = Math.min(1200, Math.max(400, resizeStartRef.current.width + deltaX));
+    let newHeight = Math.min(700, Math.max(260, resizeStartRef.current.height + deltaY));
+    let newLeft = resizeStartRef.current.left;
+    let newTop = resizeStartRef.current.top;
+    newLeft = Math.min(window.innerWidth - 50, Math.max(0, newLeft));
+    newTop = Math.min(window.innerHeight - 50, Math.max(0, newTop));
+    setPlayerSize({ width: newWidth, height: newHeight });
+    setPlayerPosition({ x: newLeft, y: newTop });
+  };
+
+  const stopResize = () => {
+    setIsResizing(false);
+  };
+
+  window.addEventListener('mousemove', onResizeMove);
+  window.addEventListener('mouseup', stopResize);
+  window.addEventListener('touchmove', onResizeMove, { passive: false });
+  window.addEventListener('touchend', stopResize);
+
+  return () => {
+    window.removeEventListener('mousemove', onResizeMove);
+    window.removeEventListener('mouseup', stopResize);
+    window.removeEventListener('touchmove', onResizeMove);
+    window.removeEventListener('touchend', stopResize);
+  };
+}, [isResizing]);
+
+  // Double‑click to re‑center
+  const recenterPlayer = () => {
+    setPlayerPosition({
+      x: (window.innerWidth - playerSize.width) / 2,
+      y: (window.innerHeight - playerSize.height) / 2,
+    });
+  };
 
   return (
     <div className="content-feed">
-      {/* Rotating Card WITH VIDEO PREVIEW */}
+      {/* Rotating Card (unchanged) */}
       {cards.length > 0 && currentCard && (
         <div className="cf-card" style={{ '--card-accent': currentCard.tag_color || '#6a5cff' }}>
-          {/* Arrow buttons */}
           <button className="cf-card-arrow cf-card-arrow-left" onClick={prevCard} aria-label="Previous card">‹</button>
           <button className="cf-card-arrow cf-card-arrow-right" onClick={nextCard} aria-label="Next card">›</button>
           
@@ -222,7 +275,6 @@ const ContentFeed = () => {
             <h3 className="cf-card-title">{currentCard.title}</h3>
             <p className="cf-card-sub">{currentCard.subtitle}</p>
             
-            {/* Video Preview (if videoUrl exists on card) */}
             {currentCard.video_url && (() => {
               const previewId = getYouTubeId(currentCard.video_url);
               if (previewId) {
@@ -273,7 +325,7 @@ const ContentFeed = () => {
         </div>
       </div>
 
-      {/* Horizontal Scrollable Video Grid with Arrows */}
+      {/* Horizontal Scrollable Video Grid */}
       <div className="cf-video-carousel">
         {showLeftArrow && (
           <button className="cf-carousel-arrow cf-carousel-left" onClick={scrollLeft}>‹</button>
@@ -307,17 +359,51 @@ const ContentFeed = () => {
         )}
       </div>
 
-      {/* Draggable & Resizable Bottom Player (same as before) */}
+      {/* Draggable & Resizable Player (touch + mouse) */}
       {selectedVideo && (
-        <div className="cf-bottom-player" style={{ width: playerSize.width, height: playerSize.height, top: playerPosition.y, left: playerPosition.x, transition: (isResizing || isDragging) ? 'none' : 'all 0.2s', cursor: isDragging ? 'grabbing' : 'auto' }}>
-          <div className="cf-player-bar" onMouseDown={startDrag} style={{ cursor: 'grab' }}>
+        <div 
+          className="cf-bottom-player" 
+          style={{ 
+            width: playerSize.width, 
+            height: playerSize.height, 
+            top: playerPosition.y, 
+            left: playerPosition.x,
+            transition: (isResizing || isDragging) ? 'none' : 'all 0.2s',
+            cursor: isDragging ? 'grabbing' : 'auto'
+          }}
+        >
+          <div 
+            className="cf-player-bar" 
+            onMouseDown={startDrag}
+            onTouchStart={startDrag}
+            onDoubleClick={recenterPlayer}
+            style={{ cursor: 'grab', touchAction: 'none' }}
+          >
             <span className="cf-player-title">{selectedVideo.title}</span>
             <button className="cf-player-close" onClick={() => setSelectedVideo(null)}>✕</button>
           </div>
           <div className="cf-player-container" style={{ height: `calc(100% - 40px)` }}>
-            <iframe src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`} title={selectedVideo.title} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ width: '100%', height: '100%', pointerEvents: isDragging ? 'none' : 'auto' }} />
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`}
+              title={selectedVideo.title}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ width: '100%', height: '100%', pointerEvents: (isDragging || isResizing) ? 'none' : 'auto' }}
+            />
           </div>
-          <div className="cf-resize-handle" onMouseDown={startResize} title="Drag to resize"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 2v20H2V2h20zM4 4v16h16V4H4z"/><path d="M18 18h-4v-4h4v4zM10 10H6v4h4v-4z"/></svg></div>
+          <div 
+            className="cf-resize-handle" 
+            onMouseDown={startResize}
+            onTouchStart={startResize}
+            title="Drag to resize"
+            style={{ touchAction: 'none' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22 2v20H2V2h20zM4 4v16h16V4H4z"/>
+              <path d="M18 18h-4v-4h4v4zM10 10H6v4h4v-4z"/>
+            </svg>
+          </div>
         </div>
       )}
     </div>
