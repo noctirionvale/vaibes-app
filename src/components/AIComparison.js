@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
+import ContentFeed from './ContentFeed'; // ← ADD THIS
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -19,32 +20,24 @@ const AIComparison = () => {
   const [persistedVideoId, setPersistedVideoId] = useState(null);
   const [isTranscriptPasted, setIsTranscriptPasted] = useState(false);
   const [summarizeDone, setSummarizeDone] = useState(false);
-
-  // AUDIO STATES
   const [copied, setCopied] = useState(false);
   const [audioBlobUrl, setAudioBlobUrl] = useState(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [apiFailed, setApiFailed] = useState(false);
-
-  // Image Analysis states
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef(null);
-
-  // FEEDBACK STATES
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackType, setFeedbackType] = useState('suggestion');
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackSending, setFeedbackSending] = useState(false);
-
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [userTier, setUserTier] = useState('free');
 
-  // Rate limit constants
   const DAILY_LIMIT_NEW = 2;
   const DAILY_LIMIT_FREE = 2;
   const PRO_DAILY_LIMIT = 50;
@@ -75,11 +68,7 @@ const AIComparison = () => {
     const fetchTier = async () => {
       if (!user?.id) return;
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('plan')
-          .eq('id', user.id)
-          .maybeSingle();
+        const { data, error } = await supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle();
         if (error) throw error;
         if (data?.plan) setUserTier(data.plan);
       } catch (err) {
@@ -91,9 +80,7 @@ const AIComparison = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    return () => {
-      if (audioBlobUrl) URL.revokeObjectURL(audioBlobUrl);
-    };
+    return () => { if (audioBlobUrl) URL.revokeObjectURL(audioBlobUrl); };
   }, [audioBlobUrl]);
 
   const activeVideoId = extractYouTubeID(inputText) || persistedVideoId;
@@ -133,15 +120,10 @@ Your mission: Make AI make sense to real people.`;
 
   const COMING_SOON_MODES = ['generateAudio', 'imageAnalysis'];
 
-  // Generate and store audio (no auto-play)
   const handleAudioPlayback = async (textToSpeak) => {
-    if (audioBlobUrl) {
-      URL.revokeObjectURL(audioBlobUrl);
-      setAudioBlobUrl(null);
-    }
+    if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); }
     setIsAudioPlaying(false);
     setApiFailed(false);
-
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
@@ -157,9 +139,7 @@ Your mission: Make AI make sense to real people.`;
         for (let i = 0; i < audioBytes.length; i++) view[i] = audioBytes.charCodeAt(i);
         const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
         setAudioBlobUrl(URL.createObjectURL(blob));
-      } else {
-        throw new Error('No audio content in response');
-      }
+      } else throw new Error('No audio content in response');
     } catch (error) {
       console.error('TTS error:', error);
       setApiFailed(true);
@@ -184,9 +164,7 @@ Your mission: Make AI make sense to real people.`;
       audio.onended = () => setIsAudioPlaying(false);
       audio.onerror = () => { setIsAudioPlaying(false); speakFallback(response); };
       audio.play().catch(() => speakFallback(response));
-    } else {
-      speakFallback(response);
-    }
+    } else speakFallback(response);
   };
 
   const handleCopy = async () => {
@@ -199,8 +177,7 @@ Your mission: Make AI make sense to real people.`;
       ta.value = response;
       ta.style.cssText = 'position:fixed;opacity:0';
       document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
+      ta.focus(); ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
       setCopied(true);
@@ -223,16 +200,9 @@ Your mission: Make AI make sense to real people.`;
 
   const handleImageAnalysis = async () => {
     if (!user) { setShowAuthModal(true); return; }
-    if (userTier !== 'pro') {
-      setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to Pro to unlock it.');
-      return;
-    }
+    if (userTier !== 'pro') { setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to Pro to unlock it.'); return; }
     if (!uploadedImage) return;
-
-    setIsAnalyzing(true);
-    setIsLoading(true);
-    setResponse('');
-
+    setIsAnalyzing(true); setIsLoading(true); setResponse('');
     try {
       const visionRes = await fetch('/api/vision', {
         method: 'POST',
@@ -240,10 +210,7 @@ Your mission: Make AI make sense to real people.`;
         body: JSON.stringify({ imageBase64: uploadedImage, mimeType: 'image/jpeg' })
       });
       const visionData = await visionRes.json();
-      if (!visionRes.ok || visionData.error) {
-        setResponse('⚠️ ' + (visionData.error || 'Could not analyze image.'));
-        return;
-      }
+      if (!visionRes.ok || visionData.error) { setResponse('⚠️ ' + (visionData.error || 'Could not analyze image.')); return; }
       setIsAnalyzing(false);
       const { data: { session } } = await supabase.auth.getSession();
       const apiResponse = await fetch('/api/chat', {
@@ -262,133 +229,72 @@ Your mission: Make AI make sense to real people.`;
       console.error('Image analysis error:', error);
       setResponse('Failed to analyze image. Please try again.');
     } finally {
-      setIsLoading(false);
-      setIsAnalyzing(false);
+      setIsLoading(false); setIsAnalyzing(false);
     }
   };
 
   const checkAndIncrementUsage = async () => {
     const today = new Date().toISOString().split('T')[0];
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('plan')
-      .eq('id', user.id)
-      .maybeSingle();
-
+    const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle();
     if (profile?.plan === 'pro') {
-      const { data: usage } = await supabase
-        .from('user_usage')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!usage) {
-        await supabase.from('user_usage').insert({ user_id: user.id, request_count: 1, last_reset: today, is_first_day: true });
-        return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true };
-      }
-      if (usage.last_reset !== today) {
-        await supabase.from('user_usage').update({ request_count: 1, last_reset: today }).eq('user_id', user.id);
-        return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true };
-      }
-      if (usage.request_count >= PRO_DAILY_LIMIT) {
-        return { allowed: false, remaining: 0, isPro: true, hitProLimit: true };
-      }
+      const { data: usage } = await supabase.from('user_usage').select('*').eq('user_id', user.id).maybeSingle();
+      if (!usage) { await supabase.from('user_usage').insert({ user_id: user.id, request_count: 1, last_reset: today, is_first_day: true }); return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true }; }
+      if (usage.last_reset !== today) { await supabase.from('user_usage').update({ request_count: 1, last_reset: today }).eq('user_id', user.id); return { allowed: true, remaining: PRO_DAILY_LIMIT - 1, isPro: true }; }
+      if (usage.request_count >= PRO_DAILY_LIMIT) return { allowed: false, remaining: 0, isPro: true, hitProLimit: true };
       await supabase.from('user_usage').update({ request_count: usage.request_count + 1 }).eq('user_id', user.id);
       return { allowed: true, remaining: PRO_DAILY_LIMIT - (usage.request_count + 1), isPro: true };
     }
-
-    // Free user
-    const { data: usage } = await supabase
-      .from('user_usage')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!usage) {
-      await supabase.from('user_usage').insert({ user_id: user.id, request_count: 1, last_reset: today, is_first_day: true });
-      return { allowed: true, remaining: DAILY_LIMIT_NEW - 1 };
-    }
-    if (usage.last_reset !== today) {
-      await supabase.from('user_usage').update({ request_count: 1, last_reset: today, is_first_day: false }).eq('user_id', user.id);
-      return { allowed: true, remaining: DAILY_LIMIT_FREE - 1 };
-    }
-
+    const { data: usage } = await supabase.from('user_usage').select('*').eq('user_id', user.id).maybeSingle();
+    if (!usage) { await supabase.from('user_usage').insert({ user_id: user.id, request_count: 1, last_reset: today, is_first_day: true }); return { allowed: true, remaining: DAILY_LIMIT_NEW - 1 }; }
+    if (usage.last_reset !== today) { await supabase.from('user_usage').update({ request_count: 1, last_reset: today, is_first_day: false }).eq('user_id', user.id); return { allowed: true, remaining: DAILY_LIMIT_FREE - 1 }; }
     const limit = DAILY_LIMIT_FREE;
-    if (usage.request_count >= limit) {
-      return { allowed: false, remaining: 0 };
-    }
+    if (usage.request_count >= limit) return { allowed: false, remaining: 0 };
     await supabase.from('user_usage').update({ request_count: usage.request_count + 1 }).eq('user_id', user.id);
     return { allowed: true, remaining: limit - (usage.request_count + 1) };
   };
 
   const handleSend = async (overrideText = null) => {
     if (!user) { setShowAuthModal(true); return; }
-
     const { allowed, remaining, isPro, hitProLimit } = await checkAndIncrementUsage();
-
     if (!allowed) {
-      setResponse(
-        isPro && hitProLimit
-          ? `⚠️ You've reached your 50 daily requests. Resets at midnight. Thank you for being a Pro member! 🙏`
-          : `⚠️ You've used your 2 free requests today. Come back tomorrow or upgrade to Pro for 50 requests/day! 🚀`
-      );
+      setResponse(isPro && hitProLimit
+        ? `⚠️ You've reached your 50 daily requests. Resets at midnight. Thank you for being a Pro member! 🙏`
+        : `⚠️ You've used your 2 free requests today. Come back tomorrow or upgrade to Pro for 50 requests/day! 🚀`);
       return;
     }
     setRequestsRemaining(remaining);
-
     const textToSend = typeof overrideText === 'string' ? overrideText : inputText;
     if (!textToSend.trim()) return;
-
-    setIsLoading(true);
-    setResponse('');
-    setIsDropdownOpen(false);
-
+    setIsLoading(true); setResponse(''); setIsDropdownOpen(false);
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); }
-    setIsAudioPlaying(false);
-    setApiFailed(false);
-
+    setIsAudioPlaying(false); setApiFailed(false);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const apiResponse = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompts[currentMode] },
-            { role: 'user', content: textToSend }
-          ]
-        })
+        body: JSON.stringify({ messages: [{ role: 'system', content: systemPrompts[currentMode] }, { role: 'user', content: textToSend }] })
       });
-
       const data = await apiResponse.json();
-
       if (apiResponse.status === 429) { setResponse(`⚠️ ${data.error}`); setIsLoading(false); return; }
-
       if (data.choices?.length > 0) {
         const replyText = data.choices[0].message.content;
         setResponse(replyText);
         if (currentMode === 'generateAudio') await handleAudioPlayback(replyText);
         if (currentMode === 'summarize') { setSummarizeDone(true); setIsTranscriptPasted(false); setShowVideoPreview(false); }
-      } else {
-        setResponse('Error: Received an unexpected response.');
-      }
+      } else setResponse('Error: Received an unexpected response.');
     } catch (error) {
       console.error('API Error:', error);
       setResponse('Failed to connect to the AI. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) { alert("Your browser doesn't support voice input. Try Chrome or Edge."); return; }
-
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = false; recognition.interimResults = false;
     recognition.onstart = () => setIsListening(true);
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
@@ -417,54 +323,31 @@ Your mission: Make AI make sense to real people.`;
     }
     if (currentMode === 'summarize' && value.length > 500 && !extractYouTubeID(value)) {
       setIsTranscriptPasted(true);
-    } else {
-      setIsTranscriptPasted(false);
-    }
+    } else setIsTranscriptPasted(false);
   };
 
   const handleFeedbackSubmit = async () => {
     if (!feedbackText.trim()) return;
     setFeedbackSending(true);
     try {
-      await supabase.from('feedback').insert({
-        user_id: user?.id || null,
-        type: feedbackType,
-        message: feedbackText,
-        created_at: new Date().toISOString()
-      });
+      await supabase.from('feedback').insert({ user_id: user?.id || null, type: feedbackType, message: feedbackText, created_at: new Date().toISOString() });
       setFeedbackSent(true);
       setTimeout(() => { setShowFeedback(false); setFeedbackSent(false); setFeedbackText(''); setFeedbackType('suggestion'); }, 2500);
-    } catch (err) {
-      console.error('Feedback error:', err);
-    } finally {
-      setFeedbackSending(false);
-    }
+    } catch (err) { console.error('Feedback error:', err); }
+    finally { setFeedbackSending(false); }
   };
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
   let inputPlaceholder = `Enter text or data to ${currentMode}...`;
-  if (currentMode === 'summarize' && activeVideoId) {
-    inputPlaceholder = 'Video ready! Clear this box, paste the transcript here, then hit Send...';
-  } else if (currentMode === 'summarize' && isMobile) {
-    inputPlaceholder = '📱 Tip: YouTube transcript copy works best on desktop. Or paste any article text here!';
-  } else if (currentMode === 'summarize') {
-    inputPlaceholder = 'Paste an article, text, or a YouTube link here...';
-  } else if (COMING_SOON_MODES.includes(currentMode)) {
-    inputPlaceholder = 'This feature is coming soon. Stay tuned!';
-  }
+  if (currentMode === 'summarize' && activeVideoId) inputPlaceholder = 'Video ready! Clear this box, paste the transcript here, then hit Send...';
+  else if (currentMode === 'summarize' && isMobile) inputPlaceholder = '📱 Tip: YouTube transcript copy works best on desktop. Or paste any article text here!';
+  else if (currentMode === 'summarize') inputPlaceholder = 'Paste an article, text, or a YouTube link here...';
+  else if (COMING_SOON_MODES.includes(currentMode)) inputPlaceholder = 'This feature is coming soon. Stay tuned!';
 
   const handleModeSelect = (modeKey) => {
-    if (COMING_SOON_MODES.includes(modeKey)) {
-      setCurrentMode(modeKey);
-      setIsDropdownOpen(false);
-      setResponse('');
-      return;
-    }
-    setCurrentMode(modeKey);
-    setIsDropdownOpen(false);
-    setUploadedImage(null);
-    setImagePreview(null);
+    if (COMING_SOON_MODES.includes(modeKey)) { setCurrentMode(modeKey); setIsDropdownOpen(false); setResponse(''); return; }
+    setCurrentMode(modeKey); setIsDropdownOpen(false); setUploadedImage(null); setImagePreview(null);
   };
 
   const handleSubmitGuard = () => {
@@ -478,56 +361,26 @@ Your mission: Make AI make sense to real people.`;
       <div className="theme-toggle-wrapper">
         <button className="theme-toggle-btn" onClick={toggleTheme}>
           {isDark ? (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="5"/>
-                <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-              </svg>
-              Light Mode
-            </>
+            <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>Light Mode</>
           ) : (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-              Dark Mode
-            </>
+            <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Dark Mode</>
           )}
         </button>
       </div>
 
       <div className="chat-input-container sticky-chatbox" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
         {user && requestsRemaining !== null && (
-          <div style={{
-            textAlign: 'right', fontSize: '0.75rem',
-            color: requestsRemaining <= 1 ? '#ff6b6b' : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
-            paddingRight: '0.5rem', marginTop: '0.25rem'
-          }}>
-            {userTier === 'pro'
-              ? `⚡ Pro — ${requestsRemaining} / ${PRO_DAILY_LIMIT} requests today`
-              : `${requestsRemaining} requests remaining today`}
+          <div style={{ textAlign: 'right', fontSize: '0.75rem', color: requestsRemaining <= 1 ? '#ff6b6b' : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', paddingRight: '0.5rem', marginTop: '0.25rem' }}>
+            {userTier === 'pro' ? `⚡ Pro — ${requestsRemaining} / ${PRO_DAILY_LIMIT} requests today` : `${requestsRemaining} requests remaining today`}
           </div>
         )}
 
-        {/* Coming Soon Banner */}
         {COMING_SOON_MODES.includes(currentMode) && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.75rem',
-            background: isDark ? 'rgba(255,180,0,0.07)' : 'rgba(255,160,0,0.08)',
-            border: `1px solid ${isDark ? 'rgba(255,180,0,0.2)' : 'rgba(255,160,0,0.25)'}`,
-            borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '0.5rem'
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: isDark ? 'rgba(255,180,0,0.07)' : 'rgba(255,160,0,0.08)', border: `1px solid ${isDark ? 'rgba(255,180,0,0.2)' : 'rgba(255,160,0,0.25)'}`, borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '0.5rem' }}>
             <span style={{ fontSize: '1.1rem' }}>🛠️</span>
             <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: isDark ? '#ffd166' : '#b37400' }}>
-                {currentMode === 'generateAudio' ? 'Audio Generation' : 'Image Analysis'} — Coming Soon
-              </div>
-              <div style={{ fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', marginTop: '2px' }}>
-                We're putting the finishing touches on this feature. Check back soon!
-              </div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: isDark ? '#ffd166' : '#b37400' }}>{currentMode === 'generateAudio' ? 'Audio Generation' : 'Image Analysis'} — Coming Soon</div>
+              <div style={{ fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', marginTop: '2px' }}>We're putting the finishing touches on this feature. Check back soon!</div>
             </div>
           </div>
         )}
@@ -586,24 +439,9 @@ Your mission: Make AI make sense to real people.`;
                 {Object.keys(modeLabels).map((modeKey) => {
                   const isComingSoon = COMING_SOON_MODES.includes(modeKey);
                   return (
-                    <div
-                      key={modeKey}
-                      className={`dropdown-item ${currentMode === modeKey ? 'active' : ''} ${isComingSoon ? 'coming-soon-item' : ''}`}
-                      onClick={() => handleModeSelect(modeKey)}
-                      style={{ opacity: isComingSoon ? 0.65 : 1 }}
-                    >
+                    <div key={modeKey} className={`dropdown-item ${currentMode === modeKey ? 'active' : ''}`} onClick={() => handleModeSelect(modeKey)} style={{ opacity: isComingSoon ? 0.65 : 1 }}>
                       {isComingSoon ? (
-                        <>
-                          <span style={{ flex: 1 }}>
-                            {modeKey === 'generateAudio' ? 'Audio Generation' : 'Image Analysis'}
-                          </span>
-                          <span style={{
-                            fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.04em',
-                            background: 'rgba(255,180,0,0.15)', color: '#ffa500',
-                            border: '1px solid rgba(255,160,0,0.3)',
-                            padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap'
-                          }}>SOON</span>
-                        </>
+                        <><span style={{ flex: 1 }}>{modeKey === 'generateAudio' ? 'Audio Generation' : 'Image Analysis'}</span><span style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.04em', background: 'rgba(255,180,0,0.15)', color: '#ffa500', border: '1px solid rgba(255,160,0,0.3)', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap' }}>SOON</span></>
                       ) : modeLabels[modeKey]}
                     </div>
                   );
@@ -622,30 +460,12 @@ Your mission: Make AI make sense to real people.`;
               <div style={{ fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', marginTop: '0.5rem' }}>{inputText.split(/\s+/).filter(w => w).length.toLocaleString()} words · Hit Send to summarize</div>
             </div>
           ) : (
-            <textarea
-              id="question-input"
-              placeholder={isListening ? 'Listening... Speak now!' : inputPlaceholder}
-              value={inputText}
-              onChange={handleTextareaChange}
-              rows="1"
-              disabled={COMING_SOON_MODES.includes(currentMode)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmitGuard();
-                }
-              }}
-              style={{ flex: 1, opacity: COMING_SOON_MODES.includes(currentMode) ? 0.45 : 1, cursor: COMING_SOON_MODES.includes(currentMode) ? 'not-allowed' : 'text' }}
-            />
+            <textarea id="question-input" placeholder={isListening ? 'Listening... Speak now!' : inputPlaceholder} value={inputText} onChange={handleTextareaChange} rows="1" disabled={COMING_SOON_MODES.includes(currentMode)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitGuard(); } }}
+              style={{ flex: 1, opacity: COMING_SOON_MODES.includes(currentMode) ? 0.45 : 1, cursor: COMING_SOON_MODES.includes(currentMode) ? 'not-allowed' : 'text' }} />
           )}
 
-          <button
-            className={`mic-btn ${isListening ? 'listening-pulse' : ''}`}
-            onClick={startListening}
-            disabled={isLoading || COMING_SOON_MODES.includes(currentMode)}
-            title="Use Voice Input"
-            style={{ opacity: COMING_SOON_MODES.includes(currentMode) ? 0.4 : 1 }}
-          >
+          <button className={`mic-btn ${isListening ? 'listening-pulse' : ''}`} onClick={startListening} disabled={isLoading || COMING_SOON_MODES.includes(currentMode)} title="Use Voice Input" style={{ opacity: COMING_SOON_MODES.includes(currentMode) ? 0.4 : 1 }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -653,22 +473,21 @@ Your mission: Make AI make sense to real people.`;
             </svg>
           </button>
 
-          <button
-            id="submit-btn"
-            onClick={handleSubmitGuard}
+          <button id="submit-btn" onClick={handleSubmitGuard}
             disabled={isLoading || isAnalyzing || COMING_SOON_MODES.includes(currentMode) || (!COMING_SOON_MODES.includes(currentMode) && currentMode === 'imageAnalysis' ? !uploadedImage : !inputText.trim())}
             title={COMING_SOON_MODES.includes(currentMode) ? 'Coming Soon' : currentMode === 'imageAnalysis' ? 'Analyze Image' : 'Send'}
-            style={{ opacity: COMING_SOON_MODES.includes(currentMode) ? 0.4 : 1 }}
-          >
+            style={{ opacity: COMING_SOON_MODES.includes(currentMode) ? 0.4 : 1 }}>
             {isLoading || isAnalyzing ? <span className="loading-dots">...</span> : (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
             )}
           </button>
         </div>
       </div>
+
+      {/* ── CONTENT FEED — shows when no response ── */}
+      {!response && !isLoading && !isAnalyzing && <ContentFeed />}
 
       {response && (
         <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
@@ -676,41 +495,25 @@ Your mission: Make AI make sense to real people.`;
             <span className="current-mode-badge">{modeLabels[currentMode]}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <button onClick={handleCopy} title="Copy response" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'}`, color: copied ? '#10b981' : 'rgba(255,255,255,0.5)', padding: '0.3rem 0.65rem', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                {copied
-                  ? (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>)
-                  : (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</>)}
+                {copied ? (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>) : (<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</>)}
               </button>
-              <button
-                onClick={() => {
-                  setResponse(''); setSummarizeDone(false); setIsTranscriptPasted(false);
-                  setPersistedVideoId(null); setShowVideoPreview(false); setInputText('');
-                  if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); }
-                  setIsAudioPlaying(false); setApiFailed(false);
-                  if (window.speechSynthesis) window.speechSynthesis.cancel();
-                }}
+              <button onClick={() => { setResponse(''); setSummarizeDone(false); setIsTranscriptPasted(false); setPersistedVideoId(null); setShowVideoPreview(false); setInputText(''); if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); } setIsAudioPlaying(false); setApiFailed(false); if (window.speechSynthesis) window.speechSynthesis.cancel(); }}
                 style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', transition: 'all 0.2s ease' }}
                 onMouseEnter={e => e.currentTarget.style.color = '#ff4fd8'}
                 onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
-                title="Close response"
-              >
+                title="Close response">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
           </div>
-
           {currentMode === 'generateAudio' && response && (
             <div className="audio-player-wrapper">
               {apiFailed && <div style={{ fontSize: '0.7rem', color: '#ffaa44', textAlign: 'center', marginBottom: '0.5rem' }}>⚠️ TTS server error – using browser speech instead</div>}
               <button onClick={handleManualPlay} className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`} disabled={isAudioPlaying}>
-                {isAudioPlaying ? (
-                  <><span className="waveform"><span/><span/><span/><span/></span><span>Playing...</span></>
-                ) : (
-                  <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play Audio</span></>
-                )}
+                {isAudioPlaying ? (<><span className="waveform"><span/><span/><span/><span/></span><span>Playing...</span></>) : (<><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play Audio</span></>)}
               </button>
             </div>
           )}
-
           <div className="ai-response-text">{response}</div>
         </div>
       )}
@@ -728,35 +531,20 @@ Your mission: Make AI make sense to real people.`;
         <div className="feedback-modal-overlay" onClick={() => setShowFeedback(false)}>
           <div className="feedback-modal" onClick={e => e.stopPropagation()}>
             {feedbackSent ? (
-              <div className="feedback-success">
-                <div className="feedback-success-icon">🎉</div>
-                <div>Thanks for your feedback!</div>
-                <div style={{ fontSize: '0.78rem', opacity: 0.5, marginTop: '0.25rem' }}>We read every single one.</div>
-              </div>
+              <div className="feedback-success"><div className="feedback-success-icon">🎉</div><div>Thanks for your feedback!</div><div style={{ fontSize: '0.78rem', opacity: 0.5, marginTop: '0.25rem' }}>We read every single one.</div></div>
             ) : (
               <>
                 <div className="feedback-modal-header"><h4>Send Feedback</h4><button className="feedback-close" onClick={() => setShowFeedback(false)}>✕</button></div>
                 <div className="feedback-types">
                   {['suggestion', 'bug', 'compliment', 'other'].map(type => (
                     <button key={type} className={`feedback-type-btn ${feedbackType === type ? 'active' : ''}`} onClick={() => setFeedbackType(type)}>
-                      {type === 'suggestion' && '💡 Suggestion'}
-                      {type === 'bug' && '🐛 Bug'}
-                      {type === 'compliment' && '❤️ Love it'}
-                      {type === 'other' && '💬 Other'}
+                      {type === 'suggestion' && '💡 Suggestion'}{type === 'bug' && '🐛 Bug'}{type === 'compliment' && '❤️ Love it'}{type === 'other' && '💬 Other'}
                     </button>
                   ))}
                 </div>
-                <textarea
-                  className="feedback-textarea"
-                  placeholder={
-                    feedbackType === 'bug' ? 'Describe what went wrong...' :
-                    feedbackType === 'suggestion' ? 'What would make vAIbes better?' :
-                    feedbackType === 'compliment' ? 'Tell us what you love! 😊' : "What's on your mind?"
-                  }
-                  value={feedbackText}
-                  onChange={e => setFeedbackText(e.target.value)}
-                  rows={4}
-                />
+                <textarea className="feedback-textarea"
+                  placeholder={feedbackType === 'bug' ? 'Describe what went wrong...' : feedbackType === 'suggestion' ? 'What would make vAIbes better?' : feedbackType === 'compliment' ? 'Tell us what you love! 😊' : "What's on your mind?"}
+                  value={feedbackText} onChange={e => setFeedbackText(e.target.value)} rows={4} />
                 <button className="feedback-submit" onClick={handleFeedbackSubmit} disabled={!feedbackText.trim() || feedbackSending}>
                   {feedbackSending ? 'Sending...' : 'Send Feedback →'}
                 </button>
