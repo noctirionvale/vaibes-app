@@ -53,7 +53,6 @@ const ContentFeed = () => {
   const [lightboxImage, setLightboxImage] = useState(null);
   const [siteConfig, setSiteConfig] = useState({});
 
-  // Detect mobile
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const defaultSize = isMobile
     ? { width: window.innerWidth - 20, height: (window.innerWidth - 20) * 0.5625 }
@@ -86,7 +85,7 @@ const ContentFeed = () => {
     fetchConfig();
   }, []);
 
-  // Fetch featured items (wallpapers)
+  // Fetch featured items (cards from content_cards)
   useEffect(() => {
     const fetchFeaturedItems = async () => {
       setLoadingFeatured(true);
@@ -263,24 +262,6 @@ const ContentFeed = () => {
     }
   };
 
-  const downloadImage = async (imageUrl, title) => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `${title.replace(/\s+/g, '_')}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error('Download failed:', error);
-      alert('Sorry, the image could not be downloaded.');
-    }
-  };
-
   const handleCtaClick = () => {
     const url = siteConfig.featured_cta_url || '#';
     if (url && url !== '#') {
@@ -288,14 +269,12 @@ const ContentFeed = () => {
     }
   };
 
-  // Determine featured video source (local file or YouTube)
   const featuredVideoSrc = siteConfig.featured_video_url || '/videos/sway.mp4';
   const isYouTubeVideo = featuredVideoSrc.includes('youtube.com') || featuredVideoSrc.includes('youtu.be');
   const youtubeId = isYouTubeVideo ? getYouTubeId(featuredVideoSrc) : null;
 
   return (
     <div className="content-feed">
-
       {/* FEATURED SECTION */}
       <div className="cf-featured-section">
         <div className="cf-featured-video">
@@ -321,16 +300,16 @@ const ContentFeed = () => {
           <div className="cf-featured-video-overlay">
             <h2>{siteConfig.featured_headline || 'Featured Highlight'}</h2>
             <button className="cf-featured-cta" onClick={handleCtaClick}>
-              {siteConfig.featured_cta_text || 'Explore Now'}
+              {siteConfig.featured_cta_text || 'Watch Now'}
             </button>
           </div>
         </div>
 
         <div className="cf-featured-grid-section">
           <div className="cf-section-header">
-            <span className="cf-section-icon">👍</span>
-            <h3 className="cf-section-title">Random Features</h3>
-            <span className="cf-section-subtitle">Download your favorites</span>
+            <span className="cf-section-icon">🖼️</span>
+            <h3 className="cf-section-title">Anime Wallpapers & Trailers</h3>
+            <span className="cf-section-subtitle">Download or watch</span>
           </div>
 
           <div className="cf-image-grid">
@@ -343,48 +322,74 @@ const ContentFeed = () => {
               ))
             ) : (
               featuredItems.map((item) => (
-                <div
-                  className="cf-image-card"
-                  key={item.id}
-                  onClick={() => {
-                    if (item.trailer_url) {
-                      const videoId = getYouTubeId(item.trailer_url);
-                      if (videoId) {
-                        setSelectedVideo({ videoId, title: item.title, type: 'youtube' });
-                      } else {
-                        setSelectedVideo({ videoUrl: item.trailer_url, title: item.title, type: 'file' });
-                      }
-                    } else {
-                      setLightboxImage(item.image_url);
-                    }
-                  }}
-                >
+                <div className="cf-image-card" key={item.id}>
                   <div className="cf-image-wrapper">
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="cf-featured-image"
-                      onError={(e) => { e.target.src = '/fallback-image.jpg'; }}
-                    />
+                    {item.trailer_url ? (
+                      item.trailer_url.includes('youtube.com') || item.trailer_url.includes('youtu.be') ? (
+                        <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${getYouTubeId(item.trailer_url)}?rel=0`}
+                          title={item.title}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="cf-featured-video-iframe"
+                        />
+                      ) : (
+                        <video
+                          src={item.trailer_url}
+                          poster={item.image_url}
+                          controls
+                          className="cf-featured-video-element"
+                          preload="metadata"
+                        />
+                      )
+                    ) : (
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="cf-featured-image"
+                        onClick={() => setLightboxImage(item.image_url)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    )}
                     {item.emoji && <div className="cf-image-badge">{item.emoji}</div>}
                   </div>
+
                   <div className="cf-image-info">
                     <div className="cf-image-title">{item.title}</div>
                     <div className="cf-image-description">{item.subtitle}</div>
-                    <button
-                      className="cf-download-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        downloadImage(item.image_url, item.title);
-                      }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 17 12 23 18 17" />
-                        <line x1="12" y1="2" x2="12" y2="6" />
-                        <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
-                      </svg>
-                      Download
-                    </button>
+                    <div className="cf-button-group">
+                      <button
+                        className="cf-download-button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const urlToDownload = item.trailer_url || item.image_url;
+                          const ext = item.trailer_url ? 'mp4' : 'jpg';
+                          const fileName = `${item.title.replace(/\s+/g, '_')}.${ext}`;
+                          try {
+                            const response = await fetch(urlToDownload);
+                            const blob = await response.blob();
+                            const blobUrl = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = blobUrl;
+                            link.download = fileName;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(blobUrl);
+                          } catch (err) {
+                            alert('Download failed (CORS or network issue).');
+                          }
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="6 17 12 23 18 17" />
+                          <line x1="12" y1="2" x2="12" y2="6" />
+                          <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
+                        </svg>
+                        Download {item.trailer_url ? 'Video' : 'Image'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -461,7 +466,7 @@ const ContentFeed = () => {
         )}
       </div>
 
-      {/* Floating Video Player */}
+      {/* Floating Video Player for YouTube Feed */}
       {selectedVideo && (
         <div
           className="cf-bottom-player"
@@ -528,7 +533,7 @@ const ContentFeed = () => {
         </div>
       )}
 
-      {/* Lightbox */}
+      {/* Lightbox for images */}
       {lightboxImage && (
         <div className="cf-lightbox" onClick={() => setLightboxImage(null)}>
           <div className="cf-lightbox-content" onClick={(e) => e.stopPropagation()}>

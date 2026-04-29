@@ -1474,3 +1474,35 @@ body.light-mode .cf-player-title {
 .cf-lightbox-close:hover {
   background: #ff4444;
 }
+/* Video inside card */
+.cf-featured-video-iframe,
+.cf-featured-video-element {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 12px;
+}
+
+.cf-button-group {
+  margin-top: 0.5rem;
+}
+
+.cf-download-button {
+  background: rgba(106,92,255,0.15);
+  border: 1px solid rgba(106,92,255,0.3);
+  border-radius: 30px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent1);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.cf-download-button:hover {
+  background: rgba(106,92,255,0.25);
+  transform: scale(1.02);
+}

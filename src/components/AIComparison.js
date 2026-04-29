@@ -486,9 +486,7 @@ Your mission: Make AI make sense to real people.`;
         </div>
       </div>
 
-      {/* ── CONTENT FEED — shows when no response ── */}
-      <ContentFeed />
-
+      {/* AI Response – always shows above the feed */}
       {response && (
         <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
           <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -517,6 +515,9 @@ Your mission: Make AI make sense to real people.`;
           <div className="ai-response-text">{response}</div>
         </div>
       )}
+
+      {/* Content Feed – always below the chat & response */}
+      <ContentFeed />
 
       {!isLoading && !isAnalyzing && (
         <div className="feedback-btn-wrap">
