@@ -13,7 +13,6 @@ const getYouTubeId = (url) => {
 };
 
 const parseYouTubeRSS = async (channelId) => {
-  // ... (keep exactly the same as before)
   try {
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
@@ -43,22 +42,20 @@ const parseYouTubeRSS = async (channelId) => {
 };
 
 const ContentFeed = () => {
-  const [cards, setCards] = useState([]);
   const [videos, setVideos] = useState([]);
-  const [activeCard, setActiveCard] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [linkInput, setLinkInput] = useState('');
   const [customVideos, setCustomVideos] = useState([]);
-  const autoRotateRef = useRef(null);
   const scrollContainerRef = useRef(null);
+  const [featuredItems, setFeaturedItems] = useState([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
   
+
   // Detect mobile
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  
-  // Player size & position
-  const defaultSize = isMobile 
-    ? { width: window.innerWidth - 20, height: (window.innerWidth - 20) * 0.5625 } // 16:9
+  const defaultSize = isMobile
+    ? { width: window.innerWidth - 20, height: (window.innerWidth - 20) * 0.5625 }
     : { width: 640, height: 380 };
   const [playerSize, setPlayerSize] = useState(defaultSize);
   const [playerPosition, setPlayerPosition] = useState(() => {
@@ -71,25 +68,31 @@ const ContentFeed = () => {
   });
   const [isResizing, setIsResizing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
-  
-  // For horizontal scroll on mobile
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
 
-  // Fetch cards and videos (same as before)
+  // Fetch featured items (wallpapers)
   useEffect(() => {
-    const fetchCards = async () => {
-      const { data } = await supabase
-        .from('content_cards')
+    const fetchFeaturedItems = async () => {
+      setLoadingFeatured(true);
+      const { data, error } = await supabase
+        .from('content_cards') // Still using your existing 'content_cards' table
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
-      if (data) setCards(data);
+      if (error) {
+        console.error("Error fetching featured items:", error);
+      } else if (data) {
+        setFeaturedItems(data);
+      }
+      setLoadingFeatured(false);
     };
-    fetchCards();
+    fetchFeaturedItems();
   }, []);
 
+  // Fetch YouTube channel videos
   useEffect(() => {
     const fetchVideos = async () => {
       setLoadingVideos(true);
@@ -99,25 +102,6 @@ const ContentFeed = () => {
     };
     fetchVideos();
   }, []);
-
-  useEffect(() => {
-    if (cards.length === 0) return;
-    autoRotateRef.current = setInterval(() => {
-      setActiveCard(prev => (prev + 1) % cards.length);
-    }, 5000);
-    return () => clearInterval(autoRotateRef.current);
-  }, [cards.length]);
-
-  const goToCard = (index) => {
-    clearInterval(autoRotateRef.current);
-    setActiveCard(index);
-    autoRotateRef.current = setInterval(() => {
-      setActiveCard(prev => (prev + 1) % cards.length);
-    }, 5000);
-  };
-
-  const nextCard = () => goToCard((activeCard + 1) % cards.length);
-  const prevCard = () => goToCard((activeCard - 1 + cards.length) % cards.length);
 
   const addVideoFromLink = () => {
     const videoId = getYouTubeId(linkInput);
@@ -139,7 +123,6 @@ const ContentFeed = () => {
   };
 
   const allVideos = [...customVideos, ...videos];
-  const currentCard = cards[activeCard];
 
   // Scroll handlers for horizontal video grid
   const scrollLeft = () => {
@@ -160,7 +143,7 @@ const ContentFeed = () => {
     }
   };
 
-  // ---- Touch & mouse drag for mobile ----
+  // Drag & resize (touch + mouse)
   const startDrag = (e) => {
     if (e.target.closest('.cf-resize-handle')) return;
     e.preventDefault();
@@ -170,12 +153,9 @@ const ContentFeed = () => {
     dragStartRef.current = {
       x: clientX - playerPosition.x,
       y: clientY - playerPosition.y,
-      posX: playerPosition.x,
-      posY: playerPosition.y,
     };
   };
 
-  // Resize (touch + mouse)
   const startResize = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -195,10 +175,8 @@ const ContentFeed = () => {
       const deltaY = currentY - startY;
       let newWidth = Math.min(window.innerWidth - 20, Math.max(200, startWidth + deltaX));
       let newHeight = Math.min(window.innerHeight - 100, Math.max(140, startHeight + deltaY));
-      // Keep the top-left corner anchored while resizing
       let newLeft = startLeft;
       let newTop = startTop;
-      // Clamp to viewport
       newLeft = Math.min(window.innerWidth - newWidth - 10, Math.max(10, newLeft));
       newTop = Math.min(window.innerHeight - newHeight - 10, Math.max(10, newTop));
       setPlayerSize({ width: newWidth, height: newHeight });
@@ -219,7 +197,6 @@ const ContentFeed = () => {
     document.addEventListener('touchend', handleUp);
   };
 
-  // Global drag listeners
   useEffect(() => {
     if (!isDragging) return;
     const handleMove = (moveEvent) => {
@@ -228,7 +205,6 @@ const ContentFeed = () => {
       if (!clientX || !clientY) return;
       let newX = clientX - dragStartRef.current.x;
       let newY = clientY - dragStartRef.current.y;
-      // Clamp to viewport edges
       newX = Math.min(window.innerWidth - playerSize.width - 10, Math.max(10, newX));
       newY = Math.min(window.innerHeight - playerSize.height - 10, Math.max(10, newY));
       setPlayerPosition({ x: newX, y: newY });
@@ -252,7 +228,6 @@ const ContentFeed = () => {
     };
   }, [isDragging, playerSize.width, playerSize.height]);
 
-  // Toggle size (full width vs small)
   const toggleSize = () => {
     if (isMobile) {
       const isFull = playerSize.width > window.innerWidth * 0.8;
@@ -276,61 +251,102 @@ const ContentFeed = () => {
     }
   };
 
+  // --- Download Function for Featured Images ---
+  const downloadImage = async (imageUrl, title) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${title.replace(/\s+/g, '_')}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Sorry, the image could not be downloaded.');
+    }
+  };
+
   return (
     <div className="content-feed">
-      {/* Rotating Card (unchanged) */}
-      {cards.length > 0 && currentCard && (
-        <div className="cf-card" style={{ '--card-accent': currentCard.tag_color || '#6a5cff' }}>
-          <button className="cf-card-arrow cf-card-arrow-left" onClick={prevCard}>‹</button>
-          <button className="cf-card-arrow cf-card-arrow-right" onClick={nextCard}>›</button>
-          <div className="cf-card-inner">
-            <div className="cf-card-top">
-              <span className="cf-tag" style={{
-                background: `${currentCard.tag_color}20`,
-                color: currentCard.tag_color,
-                borderColor: `${currentCard.tag_color}40`
-              }}>
-                {currentCard.emoji} {currentCard.tag}
-              </span>
-              <span className="cf-card-counter">{activeCard + 1} / {cards.length}</span>
-            </div>
-            <h3 className="cf-card-title">{currentCard.title}</h3>
-            <p className="cf-card-sub">{currentCard.subtitle}</p>
-            {currentCard.video_url && (() => {
-              const previewId = getYouTubeId(currentCard.video_url);
-              if (previewId) {
-                return (
-                  <div className="cf-card-video-preview" onClick={() => setSelectedVideo({ videoId: previewId, title: currentCard.title })}>
-                    <img src={`https://img.youtube.com/vi/${previewId}/mqdefault.jpg`} alt="preview" />
-                    <div className="cf-play-overlay-small">
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-            {currentCard.cta_text && (
-              <a href={currentCard.cta_url || '#'} className="cf-card-cta"
-                 style={{ background: `linear-gradient(135deg, ${currentCard.tag_color}, ${currentCard.tag_color}99)` }}
-                 target="_blank" rel="noopener noreferrer">
-                {currentCard.cta_text} →
-              </a>
-            )}
-          </div>
-          <div className="cf-dots">
-            {cards.map((_, i) => (
-              <button key={i} className={`cf-dot ${i === activeCard ? 'active' : ''}`}
-                      onClick={() => goToCard(i)} style={{ '--dot-color': currentCard.tag_color }} />
-            ))}
-          </div>
-          <div className="cf-progress-bar">
-            <div className="cf-progress-fill" style={{ background: currentCard.tag_color }} key={activeCard} />
+
+      {/* ===== NEW: FEATURED SECTION ===== */}
+      <div className="cf-featured-section">
+
+        {/* 1. Auto-Playing Video Clip (Commercial / Thriller) */}
+        <div className="cf-featured-video">
+          <video
+            className="cf-featured-video-element"
+            src="/videos/sway.mp4" // <--- CHANGE THIS TO YOUR VIDEO FILE
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
+          <div className="cf-featured-video-overlay">
+            <h2>Featured Highlight</h2>
+            <button className="cf-featured-cta">Explore Now</button>
           </div>
         </div>
-      )}
 
-      {/* Gallery Header + URL Input */}
+        {/* 2. Downloadable Featured Images Grid (Revamped 6 Cards) */}
+        <div className="cf-featured-grid-section">
+          <div className="cf-section-header">
+            <span className="cf-section-icon">🖼️</span>
+            <h3 className="cf-section-title">Anime Wallpapers</h3>
+            <span className="cf-section-subtitle">Download your favorites</span>
+          </div>
+
+          <div className="cf-image-grid">
+            {loadingFeatured && featuredItems.length === 0 ? (
+              [...Array(6)].map((_, i) => (
+                <div key={i} className="cf-image-card-skeleton">
+                  <div className="cf-skeleton-image" />
+                  <div className="cf-skeleton-text" />
+                </div>
+              ))
+            ) : (
+              featuredItems.map((item) => (
+                <div className="cf-image-card" key={item.id}>
+                  <div className="cf-image-card-inner">
+                    <div className="cf-image-wrapper">
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="cf-featured-image"
+                        onError={(e) => {
+                          e.target.src = '/fallback-image.jpg'; // Optional: Add a fallback image
+                        }}
+                      />
+                      {item.emoji && <div className="cf-image-badge">{item.emoji}</div>}
+                    </div>
+                    <div className="cf-image-info">
+                      <div className="cf-image-title">{item.title}</div>
+                      <div className="cf-image-description">{item.subtitle}</div>
+                      <button 
+                        className="cf-download-button"
+                        onClick={() => downloadImage(item.image_url, item.title)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="6 17 12 23 18 17"></polyline>
+                          <line x1="12" y1="2" x2="12" y2="6"></line>
+                          <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path>
+                        </svg>
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ===== EXISTING: YOUTUBE FEED SECTION ===== */}
       <div className="cf-gallery-header">
         <div className="cf-video-label">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ff0000', marginRight: '0.5rem' }}>
@@ -340,15 +356,26 @@ const ContentFeed = () => {
           Latest from vAIbes
         </div>
         <div className="cf-url-input">
-          <input type="text" value={linkInput} onChange={(e) => setLinkInput(e.target.value)} placeholder="Paste YouTube link..." onKeyPress={(e) => e.key === 'Enter' && addVideoFromLink()} />
+          <input
+            type="text"
+            value={linkInput}
+            onChange={(e) => setLinkInput(e.target.value)}
+            placeholder="Paste YouTube link..."
+            onKeyPress={(e) => e.key === 'Enter' && addVideoFromLink()}
+          />
           <button onClick={addVideoFromLink}>+ Add</button>
         </div>
       </div>
 
-      {/* Horizontal Scrollable Video Grid */}
       <div className="cf-video-carousel">
-        {showLeftArrow && <button className="cf-carousel-arrow cf-carousel-left" onClick={scrollLeft}>‹</button>}
-        <div className="cf-video-grid-scroll" ref={scrollContainerRef} onScroll={updateScrollArrows}>
+        {showLeftArrow && (
+          <button className="cf-carousel-arrow cf-carousel-left" onClick={scrollLeft}>‹</button>
+        )}
+        <div
+          className="cf-video-grid-scroll"
+          ref={scrollContainerRef}
+          onScroll={updateScrollArrows}
+        >
           {loadingVideos && videos.length === 0 ? (
             [...Array(6)].map((_, i) => (
               <div key={i} className="cf-video-skeleton">
@@ -360,18 +387,34 @@ const ContentFeed = () => {
             allVideos.map((video) => (
               <div key={video.id} className="cf-video-item" onClick={() => setSelectedVideo(video)}>
                 <div className="cf-video-thumb-wrap">
-                  <img src={video.thumbnail} alt={video.title} className="cf-video-thumb" onError={e => e.target.src = video.fallbackThumb} />
-                  <div className="cf-play-overlay"><div className="cf-play-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+                  <img
+                    src={video.thumbnail}
+                    alt={video.title}
+                    className="cf-video-thumb"
+                    onError={e => e.target.src = video.fallbackThumb}
+                  />
+                  <div className="cf-play-overlay">
+                    <div className="cf-play-btn">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-                <div className="cf-video-info"><p className="cf-video-title">{video.title}</p><span className="cf-video-date">{video.published}</span></div>
+                <div className="cf-video-info">
+                  <p className="cf-video-title">{video.title}</p>
+                  <span className="cf-video-date">{video.published}</span>
+                </div>
               </div>
             ))
           )}
         </div>
-        {showRightArrow && allVideos.length > 0 && <button className="cf-carousel-arrow cf-carousel-right" onClick={scrollRight}>›</button>}
+        {showRightArrow && allVideos.length > 0 && (
+          <button className="cf-carousel-arrow cf-carousel-right" onClick={scrollRight}>›</button>
+        )}
       </div>
 
-      {/* Draggable & Resizable Player with mobile support */}
+      {/* Floating Video Player (Same as before) */}
       {selectedVideo && (
         <div
           className="cf-bottom-player"

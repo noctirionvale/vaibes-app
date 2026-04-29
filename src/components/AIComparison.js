@@ -487,7 +487,7 @@ Your mission: Make AI make sense to real people.`;
       </div>
 
       {/* ── CONTENT FEED — shows when no response ── */}
-      {!response && !isLoading && !isAnalyzing && <ContentFeed />}
+      <ContentFeed />
 
       {response && (
         <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
