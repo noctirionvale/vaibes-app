@@ -1161,3 +1161,23 @@ body.light-mode .cf-player-title {
     justify-content: stretch;
   }
 }
+/* Make resize handle bigger on mobile */
+@media (max-width: 768px) {
+  .cf-resize-handle {
+    width: 32px;
+    height: 32px;
+    bottom: 8px;
+    right: 8px;
+  }
+  .cf-size-toggle {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 20px;
+    padding: 4px 8px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
