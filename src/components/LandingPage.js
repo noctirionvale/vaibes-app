@@ -27,13 +27,10 @@ const LandingPage = () => {
 
   return (
     <div className="landing-page">
-
-      {/* Background Logo */}
       <div className="landing-bg-logo">
         <img src="hero.ai.png" alt="" className="landing-bg-img" />
       </div>
 
-      {/* Navbar */}
       <nav className="landing-nav">
         <div className="landing-nav-brand">
           <img src="hero.ai.png" alt="vAIbes" className="landing-nav-logo" />
@@ -45,7 +42,6 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
       <section className="landing-hero">
         <div className="landing-hero-content">
           <div className="landing-badge">✦ AI + Focus + Media</div>
@@ -54,8 +50,8 @@ const LandingPage = () => {
             <span className="landing-headline-accent">Study & Chill Space</span>
           </h1>
           <p className="landing-desc">
-            vAIbes combines a warm AI guide with live cams, wallpapers, study music, 
-            and direct messages — all in one beautifully designed interface. 
+            vAIbes combines a warm AI guide with live cams, wallpapers, study music,
+            and direct messages — all in one beautifully designed interface.
             No more switching between tabs.
           </p>
           <div className="landing-cta-group">
@@ -70,7 +66,6 @@ const LandingPage = () => {
           <p className="landing-social-proof">Free tier • No credit card • 2 AI requests/day • Unlimited media & DMs</p>
         </div>
 
-        {/* Video Demo / App Preview */}
         <div className="landing-video-wrapper">
           <div className="landing-video-glow" />
           <div className="landing-video-frame">
@@ -93,12 +88,10 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features Grid – updated to match real features */}
       <section className="landing-features">
         <div className="landing-features-inner">
           <h2 className="landing-section-title">Everything you need, <span className="landing-accent">all in one place</span>.</h2>
           <p className="landing-section-desc">Study, relax, create, and connect — powered by AI.</p>
-
           <div className="landing-features-grid">
             <div className="landing-feature-card"><div className="landing-feature-icon">🎧</div><h3>Study Mode</h3><p>Play lo‑fi, jazz, or deep focus music from YouTube while you work. No distractions.</p></div>
             <div className="landing-feature-card"><div className="landing-feature-icon">📹</div><h3>Live Cams & Wallpapers</h3><p>Embed zoo, aquarium, or city live cams. Download stunning wallpapers with one click.</p></div>
@@ -110,7 +103,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Pricing Section (unchanged, but note that media features are free) */}
       <section className="landing-pricing">
         <div className="landing-pricing-inner">
           <h2 className="landing-section-title">Simple, Honest Pricing</h2>
@@ -131,7 +123,7 @@ const LandingPage = () => {
             <div className="landing-pricing-card pro">
               <div className="landing-pro-badge">BEST VALUE</div>
               <h3>Pro</h3>
-              <div className="landing-price">$2.7 <span>/month</span></div>
+              <div className="landing-price">₱199 <span>/month</span></div>
               <ul>
                 <li>✅ 50 AI requests/day</li>
                 <li>✅ Image analysis (cloud vision)</li>
@@ -145,7 +137,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="landing-footer">
         <div className="landing-footer-brand"><img src="hero.ai.png" alt="vAIbes" style={{ width: '32px', borderRadius: '50%' }} /><span>vAIbes</span></div>
         <p className="landing-footer-tagline">Demystify AI Through Action, Not Hype.<br />Study. Chill. Connect. All in one tab.</p>

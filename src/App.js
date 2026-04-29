@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { supabase } from './lib/supabase';
 import LeftSidebar from './components/LeftSidebar';
@@ -24,8 +24,34 @@ const allTools = [
   { name: 'Wikipedia',  url: 'https://www.wikipedia.org',       desc: 'Established facts',          color: 'wiki' },
 ];
 
-const AppShell = () => {
+// Inner component that has access to auth
+const AppShellContent = () => {
   const [showDM, setShowDM] = useState(false);
+  const [userTier, setUserTier] = useState('free');
+  const { user } = useAuth();
+
+  // Fetch user tier when user changes
+  useEffect(() => {
+    const fetchTier = async () => {
+      if (!user?.id) {
+        setUserTier('free');
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('plan')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (!error && data?.plan) setUserTier(data.plan);
+        else setUserTier('free');
+      } catch (err) {
+        console.error('Error fetching user tier:', err);
+        setUserTier('free');
+      }
+    };
+    fetchTier();
+  }, [user]);
 
   useEffect(() => {
     supabase.auth.getSession();
@@ -40,39 +66,36 @@ const AppShell = () => {
     <>
       <MobileTopbar />
       <div className="main-wrapper">
-
-        {/* ── LEFT SIDEBAR ── */}
         <LeftSidebar onOpenDM={() => setShowDM(true)} />
-
-        {/* ── MAIN CONTENT ── */}
         <main className="content-center">
           <div className="chatbox-wrapper">
             <AIComparison />
           </div>
         </main>
-
-        {/* ── RIGHT SIDEBAR ── */}
         <Sidebar items={allTools} title="AI Models & Sources" />
       </div>
 
-      {/* ── DM MODAL ── */}
       {showDM && (
         <div className="modal-overlay" onClick={() => setShowDM(false)}>
           <div
             style={{
-              width: '680px',
-              height: '520px',
-              borderRadius: '16px',
-              overflow: 'hidden',
-            }}
+  width: 'min(90vw, 680px)',
+  height: 'min(80vh, 520px)',
+  borderRadius: '16px',
+  overflow: 'hidden',
+}}
             onClick={e => e.stopPropagation()}
           >
-            <DirectMessage onClose={() => setShowDM(false)} />
+            <DirectMessage onClose={() => setShowDM(false)} userTier={userTier} />
           </div>
         </div>
       )}
     </>
   );
+};
+
+const AppShell = () => {
+  return <AppShellContent />;
 };
 
 function App() {
