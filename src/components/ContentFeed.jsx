@@ -328,8 +328,8 @@ const ContentFeed = () => {
 
         <div className="cf-featured-grid-section">
           <div className="cf-section-header">
-            <span className="cf-section-icon">🖼️</span>
-            <h3 className="cf-section-title">Anime Wallpapers</h3>
+            <span className="cf-section-icon">👍</span>
+            <h3 className="cf-section-title">Random Features</h3>
             <span className="cf-section-subtitle">Download your favorites</span>
           </div>
 
@@ -346,7 +346,18 @@ const ContentFeed = () => {
                 <div
                   className="cf-image-card"
                   key={item.id}
-                  onClick={() => setLightboxImage(item.image_url)}
+                  onClick={() => {
+                    if (item.trailer_url) {
+                      const videoId = getYouTubeId(item.trailer_url);
+                      if (videoId) {
+                        setSelectedVideo({ videoId, title: item.title, type: 'youtube' });
+                      } else {
+                        setSelectedVideo({ videoUrl: item.trailer_url, title: item.title, type: 'file' });
+                      }
+                    } else {
+                      setLightboxImage(item.image_url);
+                    }
+                  }}
                 >
                   <div className="cf-image-wrapper">
                     <img
@@ -484,14 +495,24 @@ const ContentFeed = () => {
             </div>
           </div>
           <div className="cf-player-container" style={{ height: `calc(100% - 40px)` }}>
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`}
-              title={selectedVideo.title}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{ width: '100%', height: '100%', pointerEvents: isDragging ? 'none' : 'auto' }}
-            />
+            {selectedVideo.type === 'youtube' ? (
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`}
+                title={selectedVideo.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ width: '100%', height: '100%', pointerEvents: isDragging ? 'none' : 'auto' }}
+              />
+            ) : (
+              <video
+                src={selectedVideo.videoUrl}
+                controls
+                autoPlay
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
           </div>
           <div
             className="cf-resize-handle"
