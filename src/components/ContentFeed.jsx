@@ -15,11 +15,11 @@ const getYouTubeId = (url) => {
 const parseYouTubeRSS = async (channelId) => {
   try {
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(rssUrl)}`;
     const res = await fetch(proxyUrl);
-    const json = await res.json();
+    const text = await res.text();
     const parser = new DOMParser();
-    const xml = parser.parseFromString(json.contents, 'text/xml');
+    const xml = parser.parseFromString(text, 'text/xml');
     const entries = xml.querySelectorAll('entry');
     return Array.from(entries).slice(0, 12).map(entry => {
       const videoId = entry.querySelector('videoId')?.textContent;
@@ -50,7 +50,8 @@ const ContentFeed = () => {
   const scrollContainerRef = useRef(null);
   const [featuredItems, setFeaturedItems] = useState([]);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
-  
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [siteConfig, setSiteConfig] = useState({});
 
   // Detect mobile
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -69,16 +70,28 @@ const ContentFeed = () => {
   const [isResizing, setIsResizing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
-
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+
+  // Fetch site config
+  useEffect(() => {
+    const fetchConfig = async () => {
+      const { data } = await supabase.from('site_config').select('key, value');
+      if (data) {
+        const configObj = {};
+        data.forEach(row => { configObj[row.key] = row.value; });
+        setSiteConfig(configObj);
+      }
+    };
+    fetchConfig();
+  }, []);
 
   // Fetch featured items (wallpapers)
   useEffect(() => {
     const fetchFeaturedItems = async () => {
       setLoadingFeatured(true);
       const { data, error } = await supabase
-        .from('content_cards') // Still using your existing 'content_cards' table
+        .from('content_cards')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
@@ -124,7 +137,6 @@ const ContentFeed = () => {
 
   const allVideos = [...customVideos, ...videos];
 
-  // Scroll handlers for horizontal video grid
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
@@ -251,7 +263,6 @@ const ContentFeed = () => {
     }
   };
 
-  // --- Download Function for Featured Images ---
   const downloadImage = async (imageUrl, title) => {
     try {
       const response = await fetch(imageUrl);
@@ -270,29 +281,51 @@ const ContentFeed = () => {
     }
   };
 
+  const handleCtaClick = () => {
+    const url = siteConfig.featured_cta_url || '#';
+    if (url && url !== '#') {
+      window.open(url, '_blank');
+    }
+  };
+
+  // Determine featured video source (local file or YouTube)
+  const featuredVideoSrc = siteConfig.featured_video_url || '/videos/sway.mp4';
+  const isYouTubeVideo = featuredVideoSrc.includes('youtube.com') || featuredVideoSrc.includes('youtu.be');
+  const youtubeId = isYouTubeVideo ? getYouTubeId(featuredVideoSrc) : null;
+
   return (
     <div className="content-feed">
 
-      {/* ===== NEW: FEATURED SECTION ===== */}
+      {/* FEATURED SECTION */}
       <div className="cf-featured-section">
-
-        {/* 1. Auto-Playing Video Clip (Commercial / Thriller) */}
         <div className="cf-featured-video">
-          <video
-            className="cf-featured-video-element"
-            src="/videos/sway.mp4" // <--- CHANGE THIS TO YOUR VIDEO FILE
-            autoPlay
-            loop
-            muted
-            playsInline
-          />
+          {isYouTubeVideo && youtubeId ? (
+            <iframe
+              className="cf-featured-video-element"
+              src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&loop=1&playlist=${youtubeId}&mute=1`}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Featured Video"
+            />
+          ) : (
+            <video
+              className="cf-featured-video-element"
+              src={featuredVideoSrc}
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+          )}
           <div className="cf-featured-video-overlay">
-            <h2>Featured Highlight</h2>
-            <button className="cf-featured-cta">Explore Now</button>
+            <h2>{siteConfig.featured_headline || 'Featured Highlight'}</h2>
+            <button className="cf-featured-cta" onClick={handleCtaClick}>
+              {siteConfig.featured_cta_text || 'Explore Now'}
+            </button>
           </div>
         </div>
 
-        {/* 2. Downloadable Featured Images Grid (Revamped 6 Cards) */}
         <div className="cf-featured-grid-section">
           <div className="cf-section-header">
             <span className="cf-section-icon">🖼️</span>
@@ -310,34 +343,37 @@ const ContentFeed = () => {
               ))
             ) : (
               featuredItems.map((item) => (
-                <div className="cf-image-card" key={item.id}>
-                  <div className="cf-image-card-inner">
-                    <div className="cf-image-wrapper">
-                      <img
-                        src={item.image_url}
-                        alt={item.title}
-                        className="cf-featured-image"
-                        onError={(e) => {
-                          e.target.src = '/fallback-image.jpg'; // Optional: Add a fallback image
-                        }}
-                      />
-                      {item.emoji && <div className="cf-image-badge">{item.emoji}</div>}
-                    </div>
-                    <div className="cf-image-info">
-                      <div className="cf-image-title">{item.title}</div>
-                      <div className="cf-image-description">{item.subtitle}</div>
-                      <button 
-                        className="cf-download-button"
-                        onClick={() => downloadImage(item.image_url, item.title)}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="6 17 12 23 18 17"></polyline>
-                          <line x1="12" y1="2" x2="12" y2="6"></line>
-                          <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path>
-                        </svg>
-                        Download
-                      </button>
-                    </div>
+                <div
+                  className="cf-image-card"
+                  key={item.id}
+                  onClick={() => setLightboxImage(item.image_url)}
+                >
+                  <div className="cf-image-wrapper">
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="cf-featured-image"
+                      onError={(e) => { e.target.src = '/fallback-image.jpg'; }}
+                    />
+                    {item.emoji && <div className="cf-image-badge">{item.emoji}</div>}
+                  </div>
+                  <div className="cf-image-info">
+                    <div className="cf-image-title">{item.title}</div>
+                    <div className="cf-image-description">{item.subtitle}</div>
+                    <button
+                      className="cf-download-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        downloadImage(item.image_url, item.title);
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="6 17 12 23 18 17" />
+                        <line x1="12" y1="2" x2="12" y2="6" />
+                        <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
+                      </svg>
+                      Download
+                    </button>
                   </div>
                 </div>
               ))
@@ -346,7 +382,7 @@ const ContentFeed = () => {
         </div>
       </div>
 
-      {/* ===== EXISTING: YOUTUBE FEED SECTION ===== */}
+      {/* YOUTUBE FEED */}
       <div className="cf-gallery-header">
         <div className="cf-video-label">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ff0000', marginRight: '0.5rem' }}>
@@ -414,7 +450,7 @@ const ContentFeed = () => {
         )}
       </div>
 
-      {/* Floating Video Player (Same as before) */}
+      {/* Floating Video Player */}
       {selectedVideo && (
         <div
           className="cf-bottom-player"
@@ -467,6 +503,16 @@ const ContentFeed = () => {
               <path d="M22 2v20H2V2h20zM4 4v16h16V4H4z"/>
               <path d="M18 18h-4v-4h4v4zM10 10H6v4h4v-4z"/>
             </svg>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div className="cf-lightbox" onClick={() => setLightboxImage(null)}>
+          <div className="cf-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <button className="cf-lightbox-close" onClick={() => setLightboxImage(null)}>✕</button>
+            <img src={lightboxImage} alt="Full size" />
           </div>
         </div>
       )}
