@@ -51,7 +51,8 @@ const ContentFeed = () => {
   const [featuredItems, setFeaturedItems] = useState([]);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
   const [lightboxImage, setLightboxImage] = useState(null);
-  const [siteConfig, setSiteConfig] = useState({});
+  const [featuredCard, setFeaturedCard] = useState(null);       // NEW
+  const [isSettingFeatured, setIsSettingFeatured] = useState(false);
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const defaultSize = isMobile
@@ -72,20 +73,20 @@ const ContentFeed = () => {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
 
-  // Fetch site config
+  // Fetch featured card (the one with is_featured = true)
   useEffect(() => {
-    const fetchConfig = async () => {
-      const { data } = await supabase.from('site_config').select('key, value');
-      if (data) {
-        const configObj = {};
-        data.forEach(row => { configObj[row.key] = row.value; });
-        setSiteConfig(configObj);
-      }
+    const fetchFeatured = async () => {
+      const { data } = await supabase
+        .from('content_cards')
+        .select('*')
+        .eq('is_featured', true)
+        .maybeSingle();
+      if (data) setFeaturedCard(data);
     };
-    fetchConfig();
+    fetchFeatured();
   }, []);
 
-  // Fetch featured items (cards from content_cards)
+  // Fetch all active cards (limit to 4, ordered by sort_order)
   useEffect(() => {
     const fetchFeaturedItems = async () => {
       setLoadingFeatured(true);
@@ -93,9 +94,10 @@ const ContentFeed = () => {
         .from('content_cards')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order', { ascending: true });
+        .order('sort_order', { ascending: true })
+        .limit(4);   // 👈 only 4 cards
       if (error) {
-        console.error("Error fetching featured items:", error);
+        console.error("Error fetching cards:", error);
       } else if (data) {
         setFeaturedItems(data);
       }
@@ -104,7 +106,7 @@ const ContentFeed = () => {
     fetchFeaturedItems();
   }, []);
 
-  // Fetch YouTube channel videos
+  // Fetch YouTube channel videos (unchanged)
   useEffect(() => {
     const fetchVideos = async () => {
       setLoadingVideos(true);
@@ -154,7 +156,7 @@ const ContentFeed = () => {
     }
   };
 
-  // Drag & resize (touch + mouse)
+  // Drag & resize (touch + mouse) – unchanged
   const startDrag = (e) => {
     if (e.target.closest('.cf-resize-handle')) return;
     e.preventDefault();
@@ -262,70 +264,104 @@ const ContentFeed = () => {
     }
   };
 
-  const handleCtaClick = () => {
-    const url = siteConfig.featured_cta_url || '#';
-    if (url && url !== '#') {
-      window.open(url, '_blank');
-    }
+  // Helper: check if URL is YouTube (any kind)
+  const isYouTubeUrl = (url) => {
+    return url && (url.includes('youtube.com') || url.includes('youtu.be'));
   };
 
-  const featuredVideoSrc = siteConfig.featured_video_url || '/videos/sway.mp4';
-  const isYouTubeVideo = featuredVideoSrc.includes('youtube.com') || featuredVideoSrc.includes('youtu.be');
-  const youtubeId = isYouTubeVideo ? getYouTubeId(featuredVideoSrc) : null;
+  // Set as Featured handler
+  const setAsFeatured = async (item) => {
+    setIsSettingFeatured(true);
+    // Unset all others
+    await supabase.from('content_cards').update({ is_featured: false }).neq('id', '');
+    // Set this one as featured
+    await supabase.from('content_cards').update({ is_featured: true }).eq('id', item.id);
+    // Refetch the new featured card
+    const { data } = await supabase.from('content_cards').select('*').eq('is_featured', true).maybeSingle();
+    if (data) setFeaturedCard(data);
+    alert(`✨ "${item.title}" is now the featured highlight!`);
+    setIsSettingFeatured(false);
+  };
 
   return (
     <div className="content-feed">
-      {/* FEATURED SECTION */}
-      <div className="cf-featured-section">
-        <div className="cf-featured-video">
-          {isYouTubeVideo && youtubeId ? (
-            <iframe
-              className="cf-featured-video-element"
-              src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&loop=1&playlist=${youtubeId}&mute=1`}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title="Featured Video"
-            />
-          ) : (
-            <video
-              className="cf-featured-video-element"
-              src={featuredVideoSrc}
-              autoPlay
-              loop
-              muted
-              playsInline
-            />
-          )}
-          <div className="cf-featured-video-overlay">
-            <h2>{siteConfig.featured_headline || 'Featured Highlight'}</h2>
-            <button className="cf-featured-cta" onClick={handleCtaClick}>
-              {siteConfig.featured_cta_text || 'Watch Now'}
-            </button>
+
+      {/* ===== FEATURED HIGHLIGHT SECTION (from featuredCard) ===== */}
+      {featuredCard && (
+        <div className="cf-featured-section">
+          <div className="cf-featured-video">
+            {featuredCard.trailer_url ? (
+              isYouTubeUrl(featuredCard.trailer_url) ? (
+                <iframe
+                  className="cf-featured-video-element"
+                  src={`https://www.youtube-nocookie.com/embed/${getYouTubeId(featuredCard.trailer_url)}?autoplay=1&loop=1&playlist=${getYouTubeId(featuredCard.trailer_url)}&mute=1`}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={featuredCard.title}
+                />
+              ) : (
+                <video
+                  className="cf-featured-video-element"
+                  src={featuredCard.trailer_url}
+                  poster={featuredCard.image_url}
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                />
+              )
+            ) : (
+              <img
+                src={featuredCard.image_url}
+                alt={featuredCard.title}
+                className="cf-featured-image"
+                onClick={() => setLightboxImage(featuredCard.image_url)}
+                style={{ cursor: 'pointer', width: '100%', aspectRatio: '16/9', objectFit: 'cover' }}
+              />
+            )}
+            <div className="cf-featured-video-overlay">
+              <h2>{featuredCard.title}</h2>
+              <p>{featuredCard.subtitle}</p>
+              {featuredCard.cta_text && (
+                <button className="cf-featured-cta" onClick={() => window.open(featuredCard.cta_url, '_blank')}>
+                  {featuredCard.cta_text}
+                </button>
+              )}
+              <div className="featured-badge">⭐ Featured</div>
+            </div>
           </div>
         </div>
+      )}
 
-        <div className="cf-featured-grid-section">
-          <div className="cf-section-header">
-            <span className="cf-section-icon">🖼️</span>
-            <h3 className="cf-section-title">Anime Wallpapers & Trailers</h3>
-            <span className="cf-section-subtitle">Download or watch</span>
-          </div>
+      {/* ===== 4 CARDS GRID (with Set as Featured & Download) ===== */}
+      <div className="cf-featured-grid-section">
+        <div className="cf-section-header">
+          <span className="cf-section-icon">🎴</span>
+          <h3 className="cf-section-title">Media Gallery</h3>
+          <span className="cf-section-subtitle">Click any card to make it the main feature</span>
+        </div>
 
-          <div className="cf-image-grid">
-            {loadingFeatured && featuredItems.length === 0 ? (
-              [...Array(6)].map((_, i) => (
-                <div key={i} className="cf-image-card-skeleton">
-                  <div className="cf-skeleton-image" />
-                  <div className="cf-skeleton-text" />
-                </div>
-              ))
-            ) : (
-              featuredItems.map((item) => (
+        <div className="cf-image-grid">
+          {loadingFeatured && featuredItems.length === 0 ? (
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="cf-image-card-skeleton">
+                <div className="cf-skeleton-image" />
+                <div className="cf-skeleton-text" />
+              </div>
+            ))
+          ) : (
+            featuredItems.map((item) => {
+              const isYouTube = isYouTubeUrl(item.trailer_url);
+              const isLiveCam = item.media_type === 'livecam' || (isYouTube && item.trailer_url?.includes('live')); // optional live detection
+              const showDownload = !isYouTube && (item.image_url || (item.trailer_url && !isYouTube));
+              return (
                 <div className="cf-image-card" key={item.id}>
                   <div className="cf-image-wrapper">
+                    {isLiveCam && <div className="cf-live-badge">🔴 LIVE</div>}
                     {item.trailer_url ? (
-                      item.trailer_url.includes('youtube.com') || item.trailer_url.includes('youtu.be') ? (
+                      isYouTube ? (
                         <iframe
                           src={`https://www.youtube-nocookie.com/embed/${getYouTubeId(item.trailer_url)}?rel=0`}
                           title={item.title}
@@ -353,52 +389,65 @@ const ContentFeed = () => {
                       />
                     )}
                     {item.emoji && <div className="cf-image-badge">{item.emoji}</div>}
+                    {item.is_featured && <div className="cf-featured-badge-small">⭐ Featured</div>}
                   </div>
 
                   <div className="cf-image-info">
                     <div className="cf-image-title">{item.title}</div>
                     <div className="cf-image-description">{item.subtitle}</div>
                     <div className="cf-button-group">
+                      {showDownload && (
+                        <button
+                          className="cf-download-button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const urlToDownload = item.trailer_url || item.image_url;
+                            const ext = item.trailer_url ? 'mp4' : 'jpg';
+                            const fileName = `${item.title.replace(/\s+/g, '_')}.${ext}`;
+                            try {
+                              const response = await fetch(urlToDownload);
+                              const blob = await response.blob();
+                              const blobUrl = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = blobUrl;
+                              link.download = fileName;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              URL.revokeObjectURL(blobUrl);
+                            } catch (err) {
+                              alert('Download failed (CORS or network issue).');
+                            }
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="6 17 12 23 18 17" />
+                            <line x1="12" y1="2" x2="12" y2="6" />
+                            <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
+                          </svg>
+                          Download {item.trailer_url ? 'Video' : 'Image'}
+                        </button>
+                      )}
                       <button
-                        className="cf-download-button"
-                        onClick={async (e) => {
+                        className="cf-set-featured-btn"
+                        onClick={(e) => {
                           e.stopPropagation();
-                          const urlToDownload = item.trailer_url || item.image_url;
-                          const ext = item.trailer_url ? 'mp4' : 'jpg';
-                          const fileName = `${item.title.replace(/\s+/g, '_')}.${ext}`;
-                          try {
-                            const response = await fetch(urlToDownload);
-                            const blob = await response.blob();
-                            const blobUrl = URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = blobUrl;
-                            link.download = fileName;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            URL.revokeObjectURL(blobUrl);
-                          } catch (err) {
-                            alert('Download failed (CORS or network issue).');
-                          }
+                          setAsFeatured(item);
                         }}
+                        disabled={isSettingFeatured || item.is_featured}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="6 17 12 23 18 17" />
-                          <line x1="12" y1="2" x2="12" y2="6" />
-                          <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
-                        </svg>
-                        Download {item.trailer_url ? 'Video' : 'Image'}
+                        ⭐ {item.is_featured ? 'Current Featured' : 'Set as Featured'}
                       </button>
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              );
+            })
+          )}
         </div>
       </div>
 
-      {/* YOUTUBE FEED */}
+      {/* ===== YOUTUBE FEED (unchanged) ===== */}
       <div className="cf-gallery-header">
         <div className="cf-video-label">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ff0000', marginRight: '0.5rem' }}>
@@ -437,7 +486,7 @@ const ContentFeed = () => {
             ))
           ) : (
             allVideos.map((video) => (
-              <div key={video.id} className="cf-video-item" onClick={() => setSelectedVideo(video)}>
+              <div key={video.id} className="cf-video-item" onClick={() => setSelectedVideo({ videoId: video.videoId, title: video.title, type: 'youtube' })}>
                 <div className="cf-video-thumb-wrap">
                   <img
                     src={video.thumbnail}
@@ -466,7 +515,7 @@ const ContentFeed = () => {
         )}
       </div>
 
-      {/* Floating Video Player for YouTube Feed */}
+      {/* Floating Video Player (for YouTube feed) – unchanged */}
       {selectedVideo && (
         <div
           className="cf-bottom-player"
@@ -500,24 +549,14 @@ const ContentFeed = () => {
             </div>
           </div>
           <div className="cf-player-container" style={{ height: `calc(100% - 40px)` }}>
-            {selectedVideo.type === 'youtube' ? (
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`}
-                title={selectedVideo.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{ width: '100%', height: '100%', pointerEvents: isDragging ? 'none' : 'auto' }}
-              />
-            ) : (
-              <video
-                src={selectedVideo.videoUrl}
-                controls
-                autoPlay
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            )}
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`}
+              title={selectedVideo.title}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ width: '100%', height: '100%', pointerEvents: isDragging ? 'none' : 'auto' }}
+            />
           </div>
           <div
             className="cf-resize-handle"
