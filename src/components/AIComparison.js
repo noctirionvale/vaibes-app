@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
-import ContentFeed from './ContentFeed'; // ← ADD THIS
+import ContentFeed from './ContentFeed';
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -24,22 +24,17 @@ const AIComparison = () => {
   const [audioBlobUrl, setAudioBlobUrl] = useState(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [apiFailed, setApiFailed] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const fileInputRef = useRef(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackType, setFeedbackType] = useState('suggestion');
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackSending, setFeedbackSending] = useState(false);
+  
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [userTier, setUserTier] = useState('free');
 
-  const DAILY_LIMIT_NEW = 2;
-  const DAILY_LIMIT_FREE = 2;
   const PRO_DAILY_LIMIT = 50;
 
   const extractYouTubeID = useCallback((url) => {
@@ -103,9 +98,7 @@ Your mission: Make AI make sense to real people.`;
     summarize: `${vAIbesCore}\n\nYour current task: SUMMARIZE\n- Extract only the most important points\n- Cut ruthlessly — if it's not essential, drop it\n- Structure it so someone who hasn't read the original immediately gets it\n- Keep it tight and scannable`,
     describe: `${vAIbesCore}\n\nYour current task: DESCRIBE\n- Paint a vivid, structured picture with words\n- Be specific and observational\n- Organize your description logically (big picture first, then details)\n- Make the reader feel like they can see it`,
     analyze: `${vAIbesCore}\n\nYour current task: ANALYZE\n- Look for patterns, contradictions, and hidden insights\n- Don't just describe — interpret what it means\n- Point out what's strong, what's weak, what's missing\n- Be direct about your findings, even if uncomfortable`,
-    generateDesc: `${vAIbesCore}\n\nYour current task: GENERATE DESCRIPTION\n- Write compelling, professional copy\n- Lead with the strongest benefit or hook\n- Be specific — vague descriptions don't sell\n- Make it feel human, not like a robot wrote it`,
-    generateAudio: `${vAIbesCore}\n\nYour current task: GENERATE AUDIO SCRIPT\n- Write naturally spoken words only\n- No markdown, no bullet points, no headers\n- Use rhythm and flow — this will be read aloud\n- Sound like a real person having a conversation, not presenting a report`,
-    imageAnalysis: `${vAIbesCore}\n\nYour current task: IMAGE ANALYSIS\n- You have been given the results of a Google Vision AI scan of an image\n- Describe what you see in a warm, clear, engaging way\n- Explain the labels, objects and any text found\n- If there's text in the image, read and explain it\n- Make it feel like a knowledgeable friend describing the photo\n- Be specific and insightful, not just listing labels`
+    generateDesc: `${vAIbesCore}\n\nYour current task: GENERATE DESCRIPTION\n- Write compelling, professional copy\n- Lead with the strongest benefit or hook\n- Be specific — vague descriptions don't sell\n- Make it feel human, not like a robot wrote it`
   };
 
   const modeLabels = {
@@ -113,12 +106,8 @@ Your mission: Make AI make sense to real people.`;
     summarize: 'Summarize Text/Video',
     describe: 'Describe Concept',
     analyze: 'Analyze Data',
-    generateDesc: 'Generate Description',
-    generateAudio: 'Audio Generation — Coming Soon',
-    imageAnalysis: 'Image Analysis — Coming Soon'
+    generateDesc: 'Generate Description'
   };
-
-  const COMING_SOON_MODES = ['generateAudio', 'imageAnalysis'];
 
   const handleAudioPlayback = async (textToSpeak) => {
     if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); }
@@ -185,54 +174,6 @@ Your mission: Make AI make sense to real people.`;
     }
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { setResponse('Please upload an image file.'); return; }
-    if (file.size > 4 * 1024 * 1024) { setResponse('Image must be under 4MB.'); return; }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-      setUploadedImage(reader.result.split(',')[1]);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleImageAnalysis = async () => {
-    if (!user) { setShowAuthModal(true); return; }
-    if (userTier !== 'pro') { setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to Pro to unlock it.'); return; }
-    if (!uploadedImage) return;
-    setIsAnalyzing(true); setIsLoading(true); setResponse('');
-    try {
-      const visionRes = await fetch('/api/vision', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: uploadedImage, mimeType: 'image/jpeg' })
-      });
-      const visionData = await visionRes.json();
-      if (!visionRes.ok || visionData.error) { setResponse('⚠️ ' + (visionData.error || 'Could not analyze image.')); return; }
-      setIsAnalyzing(false);
-      const { data: { session } } = await supabase.auth.getSession();
-      const apiResponse = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompts.imageAnalysis },
-            { role: 'user', content: `Here is what Google Vision detected in the image:\n\n${visionData.summary}\n\n${inputText ? 'User also says: ' + inputText : 'Please explain what you see in this image.'}` }
-          ]
-        })
-      });
-      const data = await apiResponse.json();
-      if (data.choices?.[0]) setResponse(data.choices[0].message.content);
-    } catch (error) {
-      console.error('Image analysis error:', error);
-      setResponse('Failed to analyze image. Please try again.');
-    } finally {
-      setIsLoading(false); setIsAnalyzing(false);
-    }
-  };
-
   const checkAndIncrementUsage = async () => {
     const today = new Date().toISOString().split('T')[0];
     const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle();
@@ -244,22 +185,21 @@ Your mission: Make AI make sense to real people.`;
       await supabase.from('user_usage').update({ request_count: usage.request_count + 1 }).eq('user_id', user.id);
       return { allowed: true, remaining: PRO_DAILY_LIMIT - (usage.request_count + 1), isPro: true };
     }
-    const { data: usage } = await supabase.from('user_usage').select('*').eq('user_id', user.id).maybeSingle();
-    if (!usage) { await supabase.from('user_usage').insert({ user_id: user.id, request_count: 1, last_reset: today, is_first_day: true }); return { allowed: true, remaining: DAILY_LIMIT_NEW - 1 }; }
-    if (usage.last_reset !== today) { await supabase.from('user_usage').update({ request_count: 1, last_reset: today, is_first_day: false }).eq('user_id', user.id); return { allowed: true, remaining: DAILY_LIMIT_FREE - 1 }; }
-    const limit = DAILY_LIMIT_FREE;
-    if (usage.request_count >= limit) return { allowed: false, remaining: 0 };
-    await supabase.from('user_usage').update({ request_count: usage.request_count + 1 }).eq('user_id', user.id);
-    return { allowed: true, remaining: limit - (usage.request_count + 1) };
+    return { allowed: false, remaining: 0 };
   };
 
   const handleSend = async (overrideText = null) => {
     if (!user) { setShowAuthModal(true); return; }
+    if (userTier !== 'pro') {
+      setResponse('✨ AI chat is a Pro feature. Upgrade to Pro to ask questions, summarize videos, and more.');
+      setShowAuthModal(true);
+      return;
+    }
     const { allowed, remaining, isPro, hitProLimit } = await checkAndIncrementUsage();
     if (!allowed) {
       setResponse(isPro && hitProLimit
         ? `⚠️ You've reached your 50 daily requests. Resets at midnight. Thank you for being a Pro member! 🙏`
-        : `⚠️ You've used your 2 free requests today. Come back tomorrow or upgrade to Pro for 50 requests/day! 🚀`);
+        : `⚠️ You have no requests left. Upgrade to Pro for 50 requests/day! 🚀`);
       return;
     }
     setRequestsRemaining(remaining);
@@ -281,7 +221,7 @@ Your mission: Make AI make sense to real people.`;
       if (data.choices?.length > 0) {
         const replyText = data.choices[0].message.content;
         setResponse(replyText);
-        if (currentMode === 'generateAudio') await handleAudioPlayback(replyText);
+        if (currentMode === 'generateDesc') await handleAudioPlayback(replyText);
         if (currentMode === 'summarize') { setSummarizeDone(true); setIsTranscriptPasted(false); setShowVideoPreview(false); }
       } else setResponse('Error: Received an unexpected response.');
     } catch (error) {
@@ -330,11 +270,24 @@ Your mission: Make AI make sense to real people.`;
     if (!feedbackText.trim()) return;
     setFeedbackSending(true);
     try {
-      await supabase.from('feedback').insert({ user_id: user?.id || null, type: feedbackType, message: feedbackText, created_at: new Date().toISOString() });
+      await supabase.from('feedback').insert({
+        user_id: user?.id || null,
+        type: feedbackType,
+        message: feedbackText,
+        created_at: new Date().toISOString()
+      });
       setFeedbackSent(true);
-      setTimeout(() => { setShowFeedback(false); setFeedbackSent(false); setFeedbackText(''); setFeedbackType('suggestion'); }, 2500);
-    } catch (err) { console.error('Feedback error:', err); }
-    finally { setFeedbackSending(false); }
+      setTimeout(() => {
+        setShowFeedback(false);
+        setFeedbackSent(false);
+        setFeedbackText('');
+        setFeedbackType('suggestion');
+      }, 2500);
+    } catch (err) {
+      console.error('Feedback error:', err);
+    } finally {
+      setFeedbackSending(false);
+    }
   };
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
@@ -343,17 +296,14 @@ Your mission: Make AI make sense to real people.`;
   if (currentMode === 'summarize' && activeVideoId) inputPlaceholder = 'Video ready! Clear this box, paste the transcript here, then hit Send...';
   else if (currentMode === 'summarize' && isMobile) inputPlaceholder = '📱 Tip: YouTube transcript copy works best on desktop. Or paste any article text here!';
   else if (currentMode === 'summarize') inputPlaceholder = 'Paste an article, text, or a YouTube link here...';
-  else if (COMING_SOON_MODES.includes(currentMode)) inputPlaceholder = 'This feature is coming soon. Stay tuned!';
 
   const handleModeSelect = (modeKey) => {
-    if (COMING_SOON_MODES.includes(modeKey)) { setCurrentMode(modeKey); setIsDropdownOpen(false); setResponse(''); return; }
-    setCurrentMode(modeKey); setIsDropdownOpen(false); setUploadedImage(null); setImagePreview(null);
+    setCurrentMode(modeKey);
+    setIsDropdownOpen(false);
   };
 
   const handleSubmitGuard = () => {
-    if (COMING_SOON_MODES.includes(currentMode)) return;
-    if (currentMode === 'imageAnalysis') handleImageAnalysis();
-    else handleSend();
+    handleSend();
   };
 
   return (
@@ -372,34 +322,6 @@ Your mission: Make AI make sense to real people.`;
         {user && requestsRemaining !== null && (
           <div style={{ textAlign: 'right', fontSize: '0.75rem', color: requestsRemaining <= 1 ? '#ff6b6b' : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', paddingRight: '0.5rem', marginTop: '0.25rem' }}>
             {userTier === 'pro' ? `⚡ Pro — ${requestsRemaining} / ${PRO_DAILY_LIMIT} requests today` : `${requestsRemaining} requests remaining today`}
-          </div>
-        )}
-
-        {COMING_SOON_MODES.includes(currentMode) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: isDark ? 'rgba(255,180,0,0.07)' : 'rgba(255,160,0,0.08)', border: `1px solid ${isDark ? 'rgba(255,180,0,0.2)' : 'rgba(255,160,0,0.25)'}`, borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '1.1rem' }}>🛠️</span>
-            <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: isDark ? '#ffd166' : '#b37400' }}>{currentMode === 'generateAudio' ? 'Audio Generation' : 'Image Analysis'} — Coming Soon</div>
-              <div style={{ fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', marginTop: '2px' }}>We're putting the finishing touches on this feature. Check back soon!</div>
-            </div>
-          </div>
-        )}
-
-        {currentMode === 'imageAnalysis' && !COMING_SOON_MODES.includes(currentMode) && (
-          <div className="image-upload-zone">
-            {imagePreview ? (
-              <div className="image-preview-wrapper">
-                <img src={imagePreview} alt="Uploaded" className="image-preview" />
-                <button className="image-remove-btn" onClick={() => { setUploadedImage(null); setImagePreview(null); }}>✕ Remove</button>
-              </div>
-            ) : (
-              <div className="image-drop-area" onClick={() => userTier === 'pro' ? fileInputRef.current.click() : setResponse('⚠️ Image Analysis is a Pro feature. Upgrade to unlock.')}>
-                <span className="image-drop-icon">🖼️</span>
-                <span className="image-drop-text">{userTier === 'pro' ? 'Click to upload image' : 'Pro feature — Upgrade to upload images'}</span>
-                <span className="image-drop-hint">JPG, PNG, GIF under 4MB</span>
-              </div>
-            )}
-            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
           </div>
         )}
 
@@ -436,16 +358,11 @@ Your mission: Make AI make sense to real people.`;
             </button>
             {isDropdownOpen && (
               <div className="mode-dropdown-menu">
-                {Object.keys(modeLabels).map((modeKey) => {
-                  const isComingSoon = COMING_SOON_MODES.includes(modeKey);
-                  return (
-                    <div key={modeKey} className={`dropdown-item ${currentMode === modeKey ? 'active' : ''}`} onClick={() => handleModeSelect(modeKey)} style={{ opacity: isComingSoon ? 0.65 : 1 }}>
-                      {isComingSoon ? (
-                        <><span style={{ flex: 1 }}>{modeKey === 'generateAudio' ? 'Audio Generation' : 'Image Analysis'}</span><span style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.04em', background: 'rgba(255,180,0,0.15)', color: '#ffa500', border: '1px solid rgba(255,160,0,0.3)', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap' }}>SOON</span></>
-                      ) : modeLabels[modeKey]}
-                    </div>
-                  );
-                })}
+                {Object.keys(modeLabels).map((modeKey) => (
+                  <div key={modeKey} className={`dropdown-item ${currentMode === modeKey ? 'active' : ''}`} onClick={() => handleModeSelect(modeKey)}>
+                    {modeLabels[modeKey]}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -460,12 +377,12 @@ Your mission: Make AI make sense to real people.`;
               <div style={{ fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', marginTop: '0.5rem' }}>{inputText.split(/\s+/).filter(w => w).length.toLocaleString()} words · Hit Send to summarize</div>
             </div>
           ) : (
-            <textarea id="question-input" placeholder={isListening ? 'Listening... Speak now!' : inputPlaceholder} value={inputText} onChange={handleTextareaChange} rows="1" disabled={COMING_SOON_MODES.includes(currentMode)}
+            <textarea id="question-input" placeholder={isListening ? 'Listening... Speak now!' : inputPlaceholder} value={inputText} onChange={handleTextareaChange} rows="1"
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitGuard(); } }}
-              style={{ flex: 1, opacity: COMING_SOON_MODES.includes(currentMode) ? 0.45 : 1, cursor: COMING_SOON_MODES.includes(currentMode) ? 'not-allowed' : 'text' }} />
+              style={{ flex: 1 }} />
           )}
 
-          <button className={`mic-btn ${isListening ? 'listening-pulse' : ''}`} onClick={startListening} disabled={isLoading || COMING_SOON_MODES.includes(currentMode)} title="Use Voice Input" style={{ opacity: COMING_SOON_MODES.includes(currentMode) ? 0.4 : 1 }}>
+          <button className={`mic-btn ${isListening ? 'listening-pulse' : ''}`} onClick={startListening} disabled={isLoading} title="Use Voice Input">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -473,11 +390,8 @@ Your mission: Make AI make sense to real people.`;
             </svg>
           </button>
 
-          <button id="submit-btn" onClick={handleSubmitGuard}
-            disabled={isLoading || isAnalyzing || COMING_SOON_MODES.includes(currentMode) || (!COMING_SOON_MODES.includes(currentMode) && currentMode === 'imageAnalysis' ? !uploadedImage : !inputText.trim())}
-            title={COMING_SOON_MODES.includes(currentMode) ? 'Coming Soon' : currentMode === 'imageAnalysis' ? 'Analyze Image' : 'Send'}
-            style={{ opacity: COMING_SOON_MODES.includes(currentMode) ? 0.4 : 1 }}>
-            {isLoading || isAnalyzing ? <span className="loading-dots">...</span> : (
+          <button id="submit-btn" onClick={handleSubmitGuard} disabled={isLoading || !inputText.trim()}>
+            {isLoading ? <span className="loading-dots">...</span> : (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
@@ -486,7 +400,7 @@ Your mission: Make AI make sense to real people.`;
         </div>
       </div>
 
-      {/* AI Response – always shows above the feed */}
+      {/* AI Response */}
       {response && (
         <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
           <div className="ai-response-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -504,7 +418,7 @@ Your mission: Make AI make sense to real people.`;
               </button>
             </div>
           </div>
-          {currentMode === 'generateAudio' && response && (
+          {currentMode === 'generateDesc' && response && (
             <div className="audio-player-wrapper">
               {apiFailed && <div style={{ fontSize: '0.7rem', color: '#ffaa44', textAlign: 'center', marginBottom: '0.5rem' }}>⚠️ TTS server error – using browser speech instead</div>}
               <button onClick={handleManualPlay} className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`} disabled={isAudioPlaying}>
@@ -516,10 +430,10 @@ Your mission: Make AI make sense to real people.`;
         </div>
       )}
 
-      {/* Content Feed – always below the chat & response */}
-      <ContentFeed />
+      {/* Content Feed */}
+      <ContentFeed userTier={userTier} onUpgradeClick={() => setShowAuthModal(true)} />
 
-      {!isLoading && !isAnalyzing && (
+      {!isLoading && (
         <div className="feedback-btn-wrap">
           <button className="feedback-btn" onClick={() => setShowFeedback(true)}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>

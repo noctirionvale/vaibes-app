@@ -10,111 +10,75 @@ const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
-  // Auto-redirect logged in users
   useEffect(() => {
-    if (user) {
-      navigate('/app');
-    }
+    if (user) navigate('/app');
   }, [user, navigate]);
 
   useEffect(() => {
-  // Force dark mode on landing page
-  document.body.classList.remove('light-mode');
-}, []);
-
-  // Auto-play video
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {});
-    }
+    document.body.classList.remove('light-mode');
   }, []);
 
-  const handleGetStarted = () => {
-    setShowAuthModal(true);
-  };
+  useEffect(() => {
+    videoRef.current?.play().catch(() => {});
+  }, []);
 
-  const handleTryApp = () => {
-    navigate('/app');
-  };
+  const handleGetStarted = () => setShowAuthModal(true);
+  const handleTryApp = () => navigate('/app');
 
   return (
     <div className="landing-page">
 
-      {/* ===== BACKGROUND — Massive Logo ===== */}
+      {/* Background Logo */}
       <div className="landing-bg-logo">
         <img src="hero.ai.png" alt="" className="landing-bg-img" />
       </div>
 
-      {/* ===== NAVBAR ===== */}
+      {/* Navbar */}
       <nav className="landing-nav">
         <div className="landing-nav-brand">
           <img src="hero.ai.png" alt="vAIbes" className="landing-nav-logo" />
           <span className="landing-nav-name">vAIbes</span>
         </div>
         <div className="landing-nav-actions">
-          <button className="landing-nav-signin" onClick={handleGetStarted}>
-            Sign In
-          </button>
-          <button className="landing-nav-cta" onClick={handleGetStarted}>
-            Get Started Free
-          </button>
+          <button className="landing-nav-signin" onClick={handleGetStarted}>Sign In</button>
+          <button className="landing-nav-cta" onClick={handleGetStarted}>Get Started Free</button>
         </div>
       </nav>
 
-      {/* ===== HERO SECTION ===== */}
+      {/* Hero Section */}
       <section className="landing-hero">
         <div className="landing-hero-content">
-          <div className="landing-badge">✦ AI Made Human</div>
-          
+          <div className="landing-badge">✦ AI + Focus + Media</div>
           <h1 className="landing-headline">
-            Demystify AI<br />
-            <span className="landing-headline-accent">Through Action,</span><br />
-            <span className="landing-headline-muted">Not Hype.</span>
+            Your AI‑Powered<br />
+            <span className="landing-headline-accent">Study & Chill Space</span>
           </h1>
-
           <p className="landing-desc">
-            vAIbes is your warm, caring AI guide — built to make artificial intelligence 
-            make sense to real people. Explain, summarize, analyze, generate. 
-            No jargon. No corporate speak. Just clarity.
+            vAIbes combines a warm AI guide with live cams, wallpapers, study music, 
+            and direct messages — all in one beautifully designed interface. 
+            No more switching between tabs.
           </p>
-
           <div className="landing-cta-group">
             <button className="landing-cta-primary" onClick={handleGetStarted}>
               Start for Free
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
               </svg>
             </button>
-            <button className="landing-cta-secondary" onClick={handleTryApp}>
-              Try Without Account
-            </button>
+            <button className="landing-cta-secondary" onClick={handleTryApp}>Try Without Account</button>
           </div>
-
-          <p className="landing-social-proof">
-            Free • No credit card required • 10 requests/day
-          </p>
+          <p className="landing-social-proof">Free tier • No credit card • 2 AI requests/day • Unlimited media & DMs</p>
         </div>
 
-        {/* ===== VIDEO DEMO ===== */}
+        {/* Video Demo / App Preview */}
         <div className="landing-video-wrapper">
           <div className="landing-video-glow" />
           <div className="landing-video-frame">
             <div className="landing-video-bar">
-              <span className="landing-video-dot red" />
-              <span className="landing-video-dot yellow" />
-              <span className="landing-video-dot green" />
-              <span className="landing-video-title">vAIbes — AI Tools</span>
+              <span className="landing-video-dot red" /><span className="landing-video-dot yellow" /><span className="landing-video-dot green" />
+              <span className="landing-video-title">vAIbes — Live Cams & AI Chat</span>
             </div>
-            <video
-              ref={videoRef}
-              className="landing-video"
-              autoPlay
-              muted
-              loop
-              playsInline
-              onLoadedData={() => setVideoLoaded(true)}
-            >
+            <video ref={videoRef} className="landing-video" autoPlay muted loop playsInline onLoadedData={() => setVideoLoaded(true)}>
               <source src="/demo.mp4" type="video/mp4" />
             </video>
             {!videoLoaded && (
@@ -129,107 +93,66 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== FEATURES SECTION ===== */}
+      {/* Features Grid – updated to match real features */}
       <section className="landing-features">
         <div className="landing-features-inner">
-          <h2 className="landing-section-title">
-            Six Tools. One <span className="landing-accent">vAIbes</span>.
-          </h2>
-          <p className="landing-section-desc">
-            Everything you need to interact with AI — without the overwhelm.
-          </p>
+          <h2 className="landing-section-title">Everything you need, <span className="landing-accent">all in one place</span>.</h2>
+          <p className="landing-section-desc">Study, relax, create, and connect — powered by AI.</p>
 
           <div className="landing-features-grid">
-            <div className="landing-feature-card">
-              <div className="landing-feature-icon">💡</div>
-              <h3>Explain Concept</h3>
-              <p>Get any concept broken down simply — like a trusted friend explaining it over coffee.</p>
-            </div>
-            <div className="landing-feature-card">
-              <div className="landing-feature-icon">📄</div>
-              <h3>Summarize Text/Video</h3>
-              <p>Paste any article or YouTube transcript and get the key points in seconds.</p>
-            </div>
-            <div className="landing-feature-card">
-              <div className="landing-feature-icon">🔍</div>
-              <h3>Describe Concept</h3>
-              <p>Get vivid, structured descriptions of anything — ideas, products, scenarios.</p>
-            </div>
-            <div className="landing-feature-card">
-              <div className="landing-feature-icon">📊</div>
-              <h3>Analyze Data</h3>
-              <p>Drop in text, numbers, or arguments and get sharp, honest insights back.</p>
-            </div>
-            <div className="landing-feature-card">
-              <div className="landing-feature-icon">✍️</div>
-              <h3>Generate Description</h3>
-              <p>Professional, human-sounding copy for any product, service, or idea.</p>
-            </div>
-            <div className="landing-feature-card">
-              <div className="landing-feature-icon">🔊</div>
-              <h3>Generate Audio (TTS)</h3>
-              <p>Have vAIbes speak the response out loud in a natural, warm voice.</p>
-            </div>
+            <div className="landing-feature-card"><div className="landing-feature-icon">🎧</div><h3>Study Mode</h3><p>Play lo‑fi, jazz, or deep focus music from YouTube while you work. No distractions.</p></div>
+            <div className="landing-feature-card"><div className="landing-feature-icon">📹</div><h3>Live Cams & Wallpapers</h3><p>Embed zoo, aquarium, or city live cams. Download stunning wallpapers with one click.</p></div>
+            <div className="landing-feature-card"><div className="landing-feature-icon">🤖</div><h3>AI Chat (Explain, Summarize, Analyze)</h3><p>Ask anything — get clear, human‑sounding answers. Works with text, YouTube transcripts, and images (Pro).</p></div>
+            <div className="landing-feature-card"><div className="landing-feature-icon">💬</div><h3>User‑to‑User DMs</h3><p>Real‑time messaging with other vAIbes users. Perfect for study groups or communities.</p></div>
+            <div className="landing-feature-card"><div className="landing-feature-icon">📥</div><h3>Download & Share</h3><p>One‑click download of wallpapers and video clips. Apple‑style design, zero friction.</p></div>
+            <div className="landing-feature-card"><div className="landing-feature-icon">⭐</div><h3>Featured Highlights</h3><p>Admins (or users) can promote any card to the top — live cams, trailers, wallpapers, anything.</p></div>
           </div>
         </div>
       </section>
 
-      {/* ===== PRICING TEASER ===== */}
+      {/* Pricing Section (unchanged, but note that media features are free) */}
       <section className="landing-pricing">
         <div className="landing-pricing-inner">
           <h2 className="landing-section-title">Simple, Honest Pricing</h2>
-          <p className="landing-section-desc">No tricks. No hidden fees. Just value.</p>
-
+          <p className="landing-section-desc">AI requests are limited; media & social features are unlimited for everyone.</p>
           <div className="landing-pricing-cards">
             <div className="landing-pricing-card">
               <h3>Free</h3>
               <div className="landing-price">$0 <span>/month</span></div>
               <ul>
-                <li>✅ 2 requests/day reset</li>
-                <li>✅ Study Mode with music</li>
-                <li>✅ WaveNet voice</li>
+                <li>✅ 2 AI requests/day</li>
+                <li>✅ Unlimited study music</li>
+                <li>✅ Live cams & wallpapers</li>
+                <li>✅ Direct messages</li>
+                <li>✅ Standard TTS voice</li>
               </ul>
-              <button className="landing-cta-primary" onClick={handleGetStarted}>
-                Start Free
-              </button>
+              <button className="landing-cta-primary" onClick={handleGetStarted}>Start Free</button>
             </div>
-
             <div className="landing-pricing-card pro">
               <div className="landing-pro-badge">BEST VALUE</div>
               <h3>Pro</h3>
               <div className="landing-price">$2.7 <span>/month</span></div>
               <ul>
-                <li>✅ 50 requests per day (resets at midnight)</li>
-                <li>✅ All 5 AI modes</li>
-                <li>✅ Study Mode with music</li>
-                <li>✅ Image Analysis(COMING SOON)</li>
-                <li>✅ Neural2 premium voice(COMING SOON)</li>
-                <li>✅ Priority responses</li>
+                <li>✅ 50 AI requests/day</li>
+                <li>✅ Image analysis (cloud vision)</li>
+                <li>✅ Premium Neural2 voice</li>
                 <li>✅ Early access to features</li>
+                <li>✅ All free features included</li>
               </ul>
-              <button className="landing-cta-primary" onClick={handleGetStarted}>
-                Upgrade to Pro
-              </button>
+              <button className="landing-cta-primary" onClick={handleGetStarted}>Upgrade to Pro</button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== FOOTER ===== */}
+      {/* Footer */}
       <footer className="landing-footer">
-        <div className="landing-footer-brand">
-          <img src="hero.ai.png" alt="vAIbes" style={{ width: '32px', borderRadius: '50%' }} />
-          <span>vAIbes</span>
-        </div>
-        <p className="landing-footer-tagline">Demystify AI Through Action, Not Hype.</p>
+        <div className="landing-footer-brand"><img src="hero.ai.png" alt="vAIbes" style={{ width: '32px', borderRadius: '50%' }} /><span>vAIbes</span></div>
+        <p className="landing-footer-tagline">Demystify AI Through Action, Not Hype.<br />Study. Chill. Connect. All in one tab.</p>
         <p className="landing-footer-copy">© 2026 vAIbes. Built by NoctirionVale.</p>
       </footer>
 
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
-      )}
-
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </div>
   );
 };
