@@ -90,14 +90,66 @@ const LeftSidebar = ({ onOpenDM }) => {
         </div>
 
         {/* ── BOTTOM ZONE — Logo + Tagline ── */}
-        <div className="sidebar-bottom-zone">
+<div className="sidebar-bottom-zone">
   <div className="sidebar-middle-zone">
-    <div className="brand-visual">
-      <img src="hero.ai.png" alt="vAIbes Logo" className="sidebar-logo" />
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      {/* Glow ring behind logo */}
+      <div style={{
+        position: 'absolute',
+        inset: '-6px',
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, var(--accent1), var(--accent2), var(--accent3))',
+        opacity: 0.4,
+        filter: 'blur(10px)',
+        animation: 'borderGlow 4s ease-in-out infinite alternate',
+        zIndex: 0,
+      }} />
+      <img
+        src="hero.ai.png"
+        alt="vAIbes Logo"
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          objectFit: 'cover',
+          border: '2px solid rgba(106,92,255,0.5)',
+          boxShadow: '0 8px 24px rgba(106,92,255,0.3)',
+          display: 'block',
+          animation: 'gentleFloat 10s ease-in-out infinite',
+        }}
+      />
     </div>
-    <div className="brand-text-wrapper">
-      <div className="sidebar-brand-name">vAIbes</div>
-      <div className="sidebar-tagline">AI Through Action, Not Hype</div>
+    <div className="brand-text-wrapper" style={{ textAlign: 'center' }}>
+      <div style={{
+        fontSize: '1.3rem',
+        fontWeight: 800,
+        letterSpacing: '-0.5px',
+        background: 'linear-gradient(135deg, var(--accent1), var(--accent2))',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }}>
+        vAIbes
+      </div>
+      <div style={{
+        fontSize: '0.72rem',
+        color: 'var(--muted)',
+        lineHeight: 1.4,
+        marginTop: '2px',
+        opacity: 0.8,
+      }}>
+        Demystify AI
+      </div>
+      <div style={{
+        fontSize: '0.68rem',
+        color: 'var(--muted)',
+        opacity: 0.5,
+        lineHeight: 1.3,
+      }}>
+        Through Action, Not Hype.
+      </div>
     </div>
   </div>
 </div>
