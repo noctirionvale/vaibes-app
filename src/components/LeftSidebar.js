@@ -91,20 +91,16 @@ const LeftSidebar = ({ onOpenDM }) => {
 
         {/* ── BOTTOM ZONE — Logo + Tagline ── */}
         <div className="sidebar-bottom-zone">
-          <div className="sidebar-middle-zone">
-            <div className="brand-visual">
-              <img src="hero.ai.png" alt="vAIbes Logo" className="sidebar-logo" />
-            </div>
-            <div className="brand-text-wrapper">
-              <div className="site-title sidebar-title">vAIbes</div>
-              <div className="main-headline sidebar-headline">Demystify AI</div>
-              <div className="sub-headline sidebar-sub">
-                <span className="sub-headline-line1">Through Action,</span>
-                <span className="sub-headline-line2">Not Hype.</span>
-              </div>
-            </div>
-          </div>
-        </div>
+  <div className="sidebar-middle-zone">
+    <div className="brand-visual">
+      <img src="hero.ai.png" alt="vAIbes Logo" className="sidebar-logo" />
+    </div>
+    <div className="brand-text-wrapper">
+      <div className="sidebar-brand-name">vAIbes</div>
+      <div className="sidebar-tagline">AI Through Action, Not Hype</div>
+    </div>
+  </div>
+</div>
 
       </aside>
 
