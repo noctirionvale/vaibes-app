@@ -15,11 +15,11 @@ const getYouTubeId = (url) => {
 const parseYouTubeRSS = async (channelId) => {
   try {
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(rssUrl)}`;
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
     const res = await fetch(proxyUrl);
-    const text = await res.text();
+    const json = await res.json();
     const parser = new DOMParser();
-    const xml = parser.parseFromString(text, 'text/xml');
+    const xml = parser.parseFromString(json.contents, 'text/xml');
     const entries = xml.querySelectorAll('entry');
     return Array.from(entries).slice(0, 12).map(entry => {
       const videoId = entry.querySelector('videoId')?.textContent;
@@ -152,7 +152,6 @@ const ContentFeed = ({ userTier = 'free' }) => {
     }
   };
 
-  // Drag & resize handlers (unchanged)
   const startDrag = (e) => {
     if (e.target.closest('.cf-resize-handle')) return;
     e.preventDefault();
@@ -264,18 +263,15 @@ const ContentFeed = ({ userTier = 'free' }) => {
     return url && (url.includes('youtube.com') || url.includes('youtu.be'));
   };
 
-  // FIXED: setAsFeatured without the illegal .neq('id', '')
   const setAsFeatured = async (item) => {
     setIsSettingFeatured(true);
     try {
-      // Find the currently featured card (if any)
       const { data: currentFeatured } = await supabase
         .from('content_cards')
         .select('id')
         .eq('is_featured', true)
         .maybeSingle();
 
-      // Unset current featured if exists
       if (currentFeatured) {
         await supabase
           .from('content_cards')
@@ -283,13 +279,11 @@ const ContentFeed = ({ userTier = 'free' }) => {
           .eq('id', currentFeatured.id);
       }
 
-      // Set the new card as featured
       await supabase
         .from('content_cards')
         .update({ is_featured: true })
         .eq('id', item.id);
 
-      // Optimistically update local state
       setFeaturedItems(prev =>
         prev.map(c => ({ ...c, is_featured: c.id === item.id }))
       );
@@ -470,10 +464,18 @@ const ContentFeed = ({ userTier = 'free' }) => {
       {/* YouTube Feed – now free for everyone */}
       <div className="cf-gallery-header">
         <div className="cf-video-label">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ff0000', marginRight: '0.5rem' }}>
-            <path d="M23.498 6.186... (your icon as before) ..." />
-            <polygon points="9.545 15.568 15.818 12 9.545 8.432 9.545 15.568" fill="white" />
-          </svg>
+          <span style={{
+            background: '#ff0000',
+            color: 'white',
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            padding: '2px 6px',
+            borderRadius: '3px',
+            marginRight: '0.4rem',
+            letterSpacing: '0.02em'
+          }}>
+            ▶ YouTube
+          </span>
           Latest from vAIbes
         </div>
         <div className="cf-url-input">

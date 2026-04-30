@@ -1,53 +1,82 @@
 export default async function handler(req, res) {
-  // ... CORS and method check ...
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
-  const { userId, email } = req.body;
-  if (!userId) return res.status(400).json({ error: 'Missing userId' });
+  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const apiKey = process.env.DODO_PAYMENTS_API_KEY;
-  const productId = process.env.DODO_PRODUCT_ID;
+  const { userId, email } = req.body
+  if (!userId) return res.status(400).json({ error: 'Missing userId' })
 
-  console.log('DODO_PAYMENTS_API_KEY exists?', !!apiKey);
-  console.log('DODO_PRODUCT_ID exists?', !!productId);
+  const apiKey = process.env.DODO_PAYMENTS_API_KEY
+  const productId = process.env.DODO_PRODUCT_ID
 
   if (!apiKey || !productId) {
-    console.error('Missing Dodo credentials');
-    return res.status(500).json({ error: 'Server misconfigured: missing API key or product ID' });
+    console.error('Missing Dodo credentials')
+    return res.status(500).json({ error: 'Missing Dodo credentials' })
   }
 
   try {
-    const response = await fetch('https://api.dodopayments.com/v1/checkout', {
+    // ✅ Live mode endpoint
+    const response = await fetch('https://live.dodopayments.com/payments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        product_id: productId,
-        success_url: 'https://vaibes.pro/app?upgrade=success',
-        cancel_url: 'https://vaibes.pro/app?upgrade=cancel',
-        metadata: { userId },
-        customer_email: email || undefined,
-        quantity: 1
+        payment_link: true,
+        billing: {
+          city: 'Manila',
+          country: 'PH',
+          state: 'Metro Manila',
+          street: 'N/A',
+          zipcode: 1000
+        },
+        customer: {
+          email: email || 'user@vaibes.pro',
+          name: 'vAIbes User',
+          create_new_customer: true
+        },
+        // ✅ Correct field name
+        product_cart: [
+          {
+            product_id: productId,
+            quantity: 1
+          }
+        ],
+        metadata: {
+          userId,
+          plan: 'pro'
+        },
+        return_url: 'https://vaibes.pro/app?upgrade=success'
       })
-    });
+    })
 
-    const data = await response.json();
-    console.log('Dodo response status:', response.status);
-    console.log('Dodo response body:', data);
+    const data = await response.json()
+    console.log('Dodo status:', response.status)
+    console.log('Dodo response:', JSON.stringify(data))
 
     if (!response.ok) {
-      return res.status(500).json({ error: data.message || 'Dodo API error' });
+      return res.status(500).json({
+        error: data.message || data.error || 'Dodo API error',
+        details: data
+      })
     }
 
-    const checkoutUrl = data.checkout_url || data.url;
+    // ✅ Dodo returns payment_link
+    const checkoutUrl = data.payment_link || data.checkout_url || data.url
+
     if (!checkoutUrl) {
-      return res.status(500).json({ error: 'No checkout URL returned' });
+      console.error('No checkout URL:', data)
+      return res.status(500).json({ error: 'No checkout URL returned', response: data })
     }
 
-    return res.status(200).json({ url: checkoutUrl });
+    return res.status(200).json({ url: checkoutUrl })
+
   } catch (error) {
-    console.error('Payment creation error:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('Payment error:', error)
+    return res.status(500).json({ error: error.message })
   }
 }
