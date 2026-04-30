@@ -5188,3 +5188,66 @@ body.light-mode .sidebar-user-card:hover,
 body.light-mode .sidebar-messages-btn:hover {
   background: rgba(106, 92, 255, 0.08);
 }
+/* ── Make StudyMode visually consistent with Messages ── */
+.brand-sidebar .study-mode-container {
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.brand-sidebar .study-mode-toggle {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.brand-sidebar .study-mode-toggle:hover {
+  background: rgba(106, 92, 255, 0.1);
+  border-color: rgba(106, 92, 255, 0.2);
+}
+
+.brand-sidebar .study-mode-toggle.active {
+  background: rgba(106, 92, 255, 0.1);
+  border-color: rgba(106, 92, 255, 0.25);
+}
+
+.brand-sidebar .study-mode-icon {
+  font-size: 1.2rem;
+}
+
+.brand-sidebar .study-mode-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  flex: 1;
+}
+
+.brand-sidebar .study-mode-equalizer {
+  opacity: 0.6;
+}
+
+/* Light mode overrides */
+body.light-mode .brand-sidebar .study-mode-toggle {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .brand-sidebar .study-mode-toggle:hover {
+  background: rgba(106, 92, 255, 0.08);
+  border-color: rgba(106, 92, 255, 0.2);
+}
+.brand-sidebar .study-mode-panel {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+body.light-mode .brand-sidebar .study-mode-panel {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
+}
