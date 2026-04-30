@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
 import SettingsModal from './SettingsModal';
 import StudyMode from './StudyMode';
+import './LeftSidebar.css';   // add this line
 
 const LeftSidebar = ({ onOpenDM }) => {
   const { user, profile } = useAuth();
