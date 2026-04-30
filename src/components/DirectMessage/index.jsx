@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import ConversationList from './ConversationList';
 import ChatWindow from './ChatWindow';
 import './DirectMessage.css';
@@ -6,9 +7,13 @@ import './DirectMessage.css';
 const DirectMessage = ({ onClose, userTier = 'free' }) => {
   const [activeConversation, setActiveConversation] = useState(null);
   const [activeUser, setActiveUser] = useState(null);
+  const { user } = useAuth();
 
-  // Pro paywall for free users
-  if (userTier !== 'pro') {
+  // Admin bypass – replace with your email(s)
+  const isDev = user?.email === 'noctirionvale@gmail.com';
+
+  // Paywall: only block non-pro AND non-dev users
+  if (userTier !== 'pro' && !isDev) {
     return (
       <div className="dm-container">
         <div className="dm-header">
@@ -19,13 +24,11 @@ const DirectMessage = ({ onClose, userTier = 'free' }) => {
           <div className="dm-paywall-icon">💬</div>
           <h3>Direct Messages are a Pro Feature</h3>
           <p>Upgrade to Pro to chat with other users, create study groups, and collaborate in real time.</p>
-          <button 
+          <button
             className="upgrade-btn"
             onClick={() => {
-              // Close DM modal and open settings billing tab, or redirect to upgrade page
               onClose();
-              // You can also trigger a global event or pass a callback
-              window.location.href = '/app?tab=billing'; // adjust as needed
+              window.location.href = '/app?tab=billing';
             }}
           >
             Upgrade to Pro
@@ -36,7 +39,7 @@ const DirectMessage = ({ onClose, userTier = 'free' }) => {
     );
   }
 
-  // For Pro users, show the full DM interface
+  // For Pro users (or dev), show the full DM interface
   return (
     <div className="dm-container">
       <div className="dm-header">
@@ -45,9 +48,9 @@ const DirectMessage = ({ onClose, userTier = 'free' }) => {
       </div>
       <div className="dm-body">
         <ConversationList
-          onSelect={(conv, user) => {
+          onSelect={(conv, otherUser) => {
             setActiveConversation(conv);
-            setActiveUser(user);
+            setActiveUser(otherUser);
           }}
           activeId={activeConversation?.id}
         />

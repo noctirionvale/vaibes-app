@@ -137,14 +137,24 @@ body.light-mode .mobile-icon-btn:hover {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 85vh;
+  height: 90vh;           /* taller – covers 90% of screen */
   border-radius: 16px 16px 0 0;
   overflow: hidden;
   z-index: 10000;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make the inner DirectMessage scrollable */
+.mobile-dm-sheet > div {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── AI Models bottom sheet ── */
+/* AI Models bottom sheet – full screen on small phones, large on tablets */
 .mobile-bottom-sheet {
   position: fixed;
   bottom: 0;
@@ -153,62 +163,75 @@ body.light-mode .mobile-icon-btn:hover {
   background: var(--bg);
   border-radius: 20px 20px 0 0;
   z-index: 10000;
-  max-height: 80vh;
+  height: 90vh;               /* covers 90% of screen height */
+  max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
 }
 
+/* Slightly smaller handle */
 .mobile-sheet-handle {
   width: 40px;
   height: 4px;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
-  margin: 0.75rem auto 0;
+  margin: 0.75rem auto 0.5rem;
+  flex-shrink: 0;
 }
 
-body.light-mode .mobile-sheet-handle {
-  background: rgba(0, 0, 0, 0.12);
-}
-
+/* Tighter header */
 .mobile-sheet-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.875rem 1.25rem 0.75rem;
-  font-size: 0.82rem;
+  padding: 0.5rem 1rem 0.5rem 1.25rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: var(--accent1);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
-body.light-mode .mobile-sheet-header {
-  border-bottom-color: rgba(0, 0, 0, 0.08);
-}
-
-.mobile-sheet-close {
-  background: none;
-  border: none;
-  font-size: 0.95rem;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0.2rem;
-  line-height: 1;
-  transition: color 0.2s;
-}
-
-.mobile-sheet-close:hover { color: var(--accent1); }
-
-body.light-mode .mobile-sheet-close {
-  color: rgba(0, 0, 0, 0.4);
-}
-
+/* More compact list */
 .mobile-sheet-body {
-  padding: 0.75rem 1rem 2.5rem;
+  padding: 0.5rem 1rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.35rem;
+}
+
+/* Smaller tool items */
+.mobile-tool-item {
+  display: block;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+/* Ensure scrolling is smooth on iOS */
+.mobile-bottom-sheet {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* On very small devices (height < 600px), use almost full screen */
+@media (max-height: 600px) {
+  .mobile-bottom-sheet {
+    height: 95vh;
+    max-height: 95vh;
+  }
+  .mobile-sheet-body {
+    padding-bottom: 1rem;
+  }
 }
 
 /* ── Tool items ── */

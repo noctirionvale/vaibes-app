@@ -153,9 +153,24 @@ const SettingsModal = ({ onClose }) => {
             </div>
           )}
           {activeTab === 'howto' && (
-            <div className="howto-panel">
-              {/* your instructions – keep as before */}
-            </div>
+  <div className="howto-panel">
+    <div className="instructions-grid">
+      {[
+        { n: 1, title: 'Select Your Mode', text: 'Click the + icon to switch between Explain, Summarize, Describe, Analyze, and Generate Description.' },
+        { n: 2, title: 'Type or Speak', text: 'Type your prompt or click the Mic icon. Say "send it" to auto-send hands-free!' },
+        { n: 3, title: 'Summarize YouTube Videos', text: 'Paste a YouTube link → click Get Transcript → copy from YouTube → paste back → hit Send. Works best on desktop!' },
+        { n: 4, title: 'Generate & Listen', text: 'Use Generate Description (TTS) to have vAIbes speak the response out loud!' },
+        { n: 5, title: 'Free / Pro Limits', text: 'Free gets 0 AI requests/day. Pro gets 50 requests/day. Media & DMs require Pro (except for admin).' },
+        { n: 6, title: 'AI Models & Sources', text: 'Use the right sidebar (or Models button on mobile) to visit ChatGPT, Gemini, and more!' },
+      ].map(step => (
+        <div className="instruction-step" key={step.n}>
+          <div className="step-number">{step.n}</div>
+          <div><h4>{step.title}</h4><p>{step.text}</p></div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
           )}
           {activeTab === 'socials' && (
             <div className="socials-panel">

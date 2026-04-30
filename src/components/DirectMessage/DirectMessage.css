@@ -895,3 +895,15 @@ body.light-mode .sidebar-messages-subtitle {
   margin-top: 1rem;
   opacity: 0.5;
 }
+.dm-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg);
+}
+
+.dm-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;  /* important for flex children to scroll */
+}

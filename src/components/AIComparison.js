@@ -7,7 +7,7 @@ import ContentFeed from './ContentFeed';
 
 const MOBILE_BREAKPOINT = 768;
 
-const AIComparison = () => {
+const AIComparison = ({ onOpenUpgrade }) => {
   const [inputText, setInputText] = useState('');
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -189,12 +189,14 @@ Your mission: Make AI make sense to real people.`;
   };
 
   const handleSend = async (overrideText = null) => {
-    if (!user) { setShowAuthModal(true); return; }
-    if (userTier !== 'pro') {
-      setResponse('✨ AI chat is a Pro feature. Upgrade to Pro to ask questions, summarize videos, and more.');
-      setShowAuthModal(true);
-      return;
-    }
+  if (!user) { setShowAuthModal(true); return; }
+
+  // Free users cannot use AI – show upgrade prompt
+  if (userTier !== 'pro') {
+    setResponse('✨ AI chat is a Pro feature. Please upgrade to Pro.');
+    if (onOpenUpgrade) onOpenUpgrade();  // open settings modal
+    return;
+  }
     const { allowed, remaining, isPro, hitProLimit } = await checkAndIncrementUsage();
     if (!allowed) {
       setResponse(isPro && hitProLimit
@@ -431,7 +433,7 @@ Your mission: Make AI make sense to real people.`;
       )}
 
       {/* Content Feed */}
-      <ContentFeed userTier={userTier} onUpgradeClick={() => setShowAuthModal(true)} />
+      <ContentFeed userTier={userTier} onUpgradeClick={onOpenUpgrade} />
 
       {!isLoading && (
         <div className="feedback-btn-wrap">

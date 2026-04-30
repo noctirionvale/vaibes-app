@@ -9,6 +9,7 @@ import AIComparison from './components/AIComparison';
 import MobileTopbar from './components/MobileTopbar';
 import LandingPage from './components/LandingPage';
 import DirectMessage from './components/DirectMessage';
+import SettingsModal from './components/SettingsModal'; // import SettingsModal
 import './styles/App.css';
 
 const allTools = [
@@ -24,13 +25,12 @@ const allTools = [
   { name: 'Wikipedia',  url: 'https://www.wikipedia.org',       desc: 'Established facts',          color: 'wiki' },
 ];
 
-// Inner component that has access to auth
 const AppShellContent = () => {
   const [showDM, setShowDM] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [userTier, setUserTier] = useState('free');
   const { user } = useAuth();
 
-  // Fetch user tier when user changes
   useEffect(() => {
     const fetchTier = async () => {
       if (!user?.id) {
@@ -69,7 +69,7 @@ const AppShellContent = () => {
         <LeftSidebar onOpenDM={() => setShowDM(true)} />
         <main className="content-center">
           <div className="chatbox-wrapper">
-            <AIComparison />
+            <AIComparison onOpenUpgrade={() => setShowSettings(true)} />
           </div>
         </main>
         <Sidebar items={allTools} title="AI Models & Sources" />
@@ -79,24 +79,26 @@ const AppShellContent = () => {
         <div className="modal-overlay" onClick={() => setShowDM(false)}>
           <div
             style={{
-  width: 'min(90vw, 680px)',
-  height: 'min(80vh, 520px)',
-  borderRadius: '16px',
-  overflow: 'hidden',
-}}
+              width: 'min(90vw, 680px)',
+              height: 'min(80vh, 520px)',
+              borderRadius: '16px',
+              overflow: 'hidden',
+            }}
             onClick={e => e.stopPropagation()}
           >
             <DirectMessage onClose={() => setShowDM(false)} userTier={userTier} />
           </div>
         </div>
       )}
+
+      {showSettings && (
+        <SettingsModal onClose={() => setShowSettings(false)} />
+      )}
     </>
   );
 };
 
-const AppShell = () => {
-  return <AppShellContent />;
-};
+const AppShell = () => <AppShellContent />;
 
 function App() {
   return (
