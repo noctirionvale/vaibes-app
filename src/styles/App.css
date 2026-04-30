@@ -5239,15 +5239,3 @@ body.light-mode .brand-sidebar .study-mode-toggle:hover {
   background: rgba(106, 92, 255, 0.08);
   border-color: rgba(106, 92, 255, 0.2);
 }
-.brand-sidebar .study-mode-panel {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-body.light-mode .brand-sidebar .study-mode-panel {
-  background: rgba(0, 0, 0, 0.02);
-  border-color: rgba(0, 0, 0, 0.05);
-}
