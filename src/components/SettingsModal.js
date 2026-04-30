@@ -171,7 +171,6 @@ const SettingsModal = ({ onClose }) => {
     </div>
   </div>
 )}
-          )}
           {activeTab === 'socials' && (
             <div className="socials-panel">
               <div className="socials-header"><h4>Follow NoctirionVale</h4><p>Stay updated with the latest from vAIbes and our other projects.</p></div>

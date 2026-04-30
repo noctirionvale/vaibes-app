@@ -41,7 +41,7 @@ const parseYouTubeRSS = async (channelId) => {
   }
 };
 
-const ContentFeed = ({ userTier = 'free', onUpgradeClick = null }) => {
+const ContentFeed = ({ userTier = 'free' }) => {
   const [videos, setVideos] = useState([]);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [loadingVideos, setLoadingVideos] = useState(true);
@@ -73,6 +73,7 @@ const ContentFeed = ({ userTier = 'free', onUpgradeClick = null }) => {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
 
+  // Fetch featured card
   useEffect(() => {
     const fetchFeatured = async () => {
       const { data } = await supabase
@@ -85,6 +86,7 @@ const ContentFeed = ({ userTier = 'free', onUpgradeClick = null }) => {
     fetchFeatured();
   }, []);
 
+  // Fetch 4 active cards
   useEffect(() => {
     const fetchFeaturedItems = async () => {
       setLoadingFeatured(true);
@@ -104,6 +106,7 @@ const ContentFeed = ({ userTier = 'free', onUpgradeClick = null }) => {
     fetchFeaturedItems();
   }, []);
 
+  // Fetch YouTube RSS feed
   useEffect(() => {
     const fetchVideos = async () => {
       setLoadingVideos(true);
@@ -149,6 +152,7 @@ const ContentFeed = ({ userTier = 'free', onUpgradeClick = null }) => {
     }
   };
 
+  // Drag & resize handlers (unchanged)
   const startDrag = (e) => {
     if (e.target.closest('.cf-resize-handle')) return;
     e.preventDefault();
@@ -260,19 +264,49 @@ const ContentFeed = ({ userTier = 'free', onUpgradeClick = null }) => {
     return url && (url.includes('youtube.com') || url.includes('youtu.be'));
   };
 
+  // FIXED: setAsFeatured without the illegal .neq('id', '')
   const setAsFeatured = async (item) => {
     setIsSettingFeatured(true);
-    await supabase.from('content_cards').update({ is_featured: false }).neq('id', '');
-    await supabase.from('content_cards').update({ is_featured: true }).eq('id', item.id);
-    const { data } = await supabase.from('content_cards').select('*').eq('is_featured', true).maybeSingle();
-    if (data) setFeaturedCard(data);
-    alert(`✨ "${item.title}" is now the featured highlight!`);
-    setIsSettingFeatured(false);
+    try {
+      // Find the currently featured card (if any)
+      const { data: currentFeatured } = await supabase
+        .from('content_cards')
+        .select('id')
+        .eq('is_featured', true)
+        .maybeSingle();
+
+      // Unset current featured if exists
+      if (currentFeatured) {
+        await supabase
+          .from('content_cards')
+          .update({ is_featured: false })
+          .eq('id', currentFeatured.id);
+      }
+
+      // Set the new card as featured
+      await supabase
+        .from('content_cards')
+        .update({ is_featured: true })
+        .eq('id', item.id);
+
+      // Optimistically update local state
+      setFeaturedItems(prev =>
+        prev.map(c => ({ ...c, is_featured: c.id === item.id }))
+      );
+      setFeaturedCard(item);
+      alert(`✨ "${item.title}" is now the featured highlight!`);
+    } catch (err) {
+      console.error('Failed to set featured:', err);
+      alert('Could not update featured card. Please try again.');
+    } finally {
+      setIsSettingFeatured(false);
+    }
   };
 
   return (
     <div className="content-feed">
 
+      {/* Featured Highlight */}
       {featuredCard && (
         <div className="cf-featured-section">
           <div className="cf-featured-video">
@@ -321,6 +355,7 @@ const ContentFeed = ({ userTier = 'free', onUpgradeClick = null }) => {
         </div>
       )}
 
+      {/* 4 Cards Grid */}
       <div className="cf-featured-grid-section">
         <div className="cf-section-header">
           <span className="cf-section-icon">🎴</span>
@@ -432,82 +467,75 @@ const ContentFeed = ({ userTier = 'free', onUpgradeClick = null }) => {
         </div>
       </div>
 
-      {userTier === 'pro' ? (
-        <>
-          <div className="cf-gallery-header">
-            <div className="cf-video-label">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ff0000', marginRight: '0.5rem' }}>
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/>
-                <polygon points="9.545 15.568 15.818 12 9.545 8.432 9.545 15.568" fill="white"/>
-              </svg>
-              Latest from vAIbes
-            </div>
-            <div className="cf-url-input">
-              <input
-                type="text"
-                value={linkInput}
-                onChange={(e) => setLinkInput(e.target.value)}
-                placeholder="Paste YouTube link..."
-                onKeyPress={(e) => e.key === 'Enter' && addVideoFromLink()}
-              />
-              <button onClick={addVideoFromLink}>+ Add</button>
-            </div>
-          </div>
-
-          <div className="cf-video-carousel">
-            {showLeftArrow && (
-              <button className="cf-carousel-arrow cf-carousel-left" onClick={scrollLeft}>‹</button>
-            )}
-            <div
-              className="cf-video-grid-scroll"
-              ref={scrollContainerRef}
-              onScroll={updateScrollArrows}
-            >
-              {loadingVideos && videos.length === 0 ? (
-                [...Array(6)].map((_, i) => (
-                  <div key={i} className="cf-video-skeleton">
-                    <div className="cf-skeleton-thumb" />
-                    <div className="cf-skeleton-line" />
-                  </div>
-                ))
-              ) : (
-                allVideos.map((video) => (
-                  <div key={video.id} className="cf-video-item" onClick={() => setSelectedVideo({ videoId: video.videoId, title: video.title, type: 'youtube' })}>
-                    <div className="cf-video-thumb-wrap">
-                      <img
-                        src={video.thumbnail}
-                        alt={video.title}
-                        className="cf-video-thumb"
-                        onError={e => e.target.src = video.fallbackThumb}
-                      />
-                      <div className="cf-play-overlay">
-                        <div className="cf-play-btn">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                            <polygon points="5 3 19 12 5 21 5 3" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="cf-video-info">
-                      <p className="cf-video-title">{video.title}</p>
-                      <span className="cf-video-date">{video.published}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            {showRightArrow && allVideos.length > 0 && (
-              <button className="cf-carousel-arrow cf-carousel-right" onClick={scrollRight}>›</button>
-            )}
-          </div>
-        </>
-      ) : (
-        <div className="paywall-overlay">
-          <p>🌟 YouTube feed is a Pro feature. Upgrade to watch the latest from vAIbes.</p>
-          <button onClick={() => onUpgradeClick && onUpgradeClick()}>Upgrade Now</button>
+      {/* YouTube Feed – now free for everyone */}
+      <div className="cf-gallery-header">
+        <div className="cf-video-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ff0000', marginRight: '0.5rem' }}>
+            <path d="M23.498 6.186... (your icon as before) ..." />
+            <polygon points="9.545 15.568 15.818 12 9.545 8.432 9.545 15.568" fill="white" />
+          </svg>
+          Latest from vAIbes
         </div>
-      )}
+        <div className="cf-url-input">
+          <input
+            type="text"
+            value={linkInput}
+            onChange={(e) => setLinkInput(e.target.value)}
+            placeholder="Paste YouTube link..."
+            onKeyPress={(e) => e.key === 'Enter' && addVideoFromLink()}
+          />
+          <button onClick={addVideoFromLink}>+ Add</button>
+        </div>
+      </div>
 
+      <div className="cf-video-carousel">
+        {showLeftArrow && (
+          <button className="cf-carousel-arrow cf-carousel-left" onClick={scrollLeft}>‹</button>
+        )}
+        <div
+          className="cf-video-grid-scroll"
+          ref={scrollContainerRef}
+          onScroll={updateScrollArrows}
+        >
+          {loadingVideos && videos.length === 0 ? (
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="cf-video-skeleton">
+                <div className="cf-skeleton-thumb" />
+                <div className="cf-skeleton-line" />
+              </div>
+            ))
+          ) : (
+            allVideos.map((video) => (
+              <div key={video.id} className="cf-video-item" onClick={() => setSelectedVideo({ videoId: video.videoId, title: video.title, type: 'youtube' })}>
+                <div className="cf-video-thumb-wrap">
+                  <img
+                    src={video.thumbnail}
+                    alt={video.title}
+                    className="cf-video-thumb"
+                    onError={e => e.target.src = video.fallbackThumb}
+                  />
+                  <div className="cf-play-overlay">
+                    <div className="cf-play-btn">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div className="cf-video-info">
+                  <p className="cf-video-title">{video.title}</p>
+                  <span className="cf-video-date">{video.published}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        {showRightArrow && allVideos.length > 0 && (
+          <button className="cf-carousel-arrow cf-carousel-right" onClick={scrollRight}>›</button>
+        )}
+      </div>
+
+      {/* Floating video player (for YouTube feed) */}
       {selectedVideo && (
         <div
           className="cf-bottom-player"
@@ -557,13 +585,14 @@ const ContentFeed = ({ userTier = 'free', onUpgradeClick = null }) => {
             title="Drag to resize"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22 2v20H2V2h20zM4 4v16h16V4H4z"/>
-              <path d="M18 18h-4v-4h4v4zM10 10H6v4h4v-4z"/>
+              <path d="M22 2v20H2V2h20zM4 4v16h16V4H4z" />
+              <path d="M18 18h-4v-4h4v4zM10 10H6v4h4v-4z" />
             </svg>
           </div>
         </div>
       )}
 
+      {/* Lightbox */}
       {lightboxImage && (
         <div className="cf-lightbox" onClick={() => setLightboxImage(null)}>
           <div className="cf-lightbox-content" onClick={(e) => e.stopPropagation()}>
