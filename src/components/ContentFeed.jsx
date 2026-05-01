@@ -15,9 +15,9 @@ const getYouTubeId = (url) => {
 const parseYouTubeRSS = async (channelId) => {
   try {
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+    const proxyUrl = `https://api.everyorigin.com/get?url=${encodeURIComponent(rssUrl)}`;
     const res = await fetch(proxyUrl);
-    const json = await res.json();
+    const json = const json = await res.json()
     const parser = new DOMParser();
     const xml = parser.parseFromString(json.contents, 'text/xml');
     const entries = xml.querySelectorAll('entry');
