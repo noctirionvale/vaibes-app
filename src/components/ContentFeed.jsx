@@ -15,11 +15,11 @@ const getYouTubeId = (url) => {
 const parseYouTubeRSS = async (channelId) => {
   try {
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-    const proxyUrl = `https://everyorigin.com/get?url=${encodeURIComponent(rssUrl)}`;
+    const proxyUrl = `/api/youtube-proxy?url=${encodeURIComponent(rssUrl)}`;
     const res = await fetch(proxyUrl);
-    const json = await res.json();
+    const xmlText = await res.text();
     const parser = new DOMParser();
-    const xml = parser.parseFromString(json.contents, 'text/xml');
+    const xml = parser.parseFromString(xmlText, 'text/xml');
     const entries = xml.querySelectorAll('entry');
     return Array.from(entries).slice(0, 12).map(entry => {
       const videoId = entry.querySelector('videoId')?.textContent;
