@@ -737,23 +737,23 @@ body::after {
 }
 
 #submit-btn {
-  display: block;
-  width: 100%;
-  margin-top: 1rem;
-  background: linear-gradient(135deg, #6a5cff 0%, #00e5ff 100%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
   border: none;
-  padding: 1rem;
-  border-radius: 50px;
-  color: #ffffff;
-  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 1rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-#submit-btn:hover {
+#submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(106, 92, 255, 0.4);
+  filter: drop-shadow(0 8px 20px rgba(106, 92, 255, 0.4));
 }
 
 #submit-btn:disabled {
