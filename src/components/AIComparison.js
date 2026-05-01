@@ -396,16 +396,7 @@ Your mission: Make AI make sense to real people.`;
   {isLoading ? (
     <span className="loading-dots">...</span>
   ) : (
-    <img
-      src="/hero.ai.png"
-      alt="vAIbes"
-      style={{
-        width: '24px',
-        height: '24px',
-        borderRadius: '50%',
-        objectFit: 'cover',
-      }}
-    />
+    <img src="/hero.ai.png" alt="vAIbes" />
   )}
 </button>
         </div>
