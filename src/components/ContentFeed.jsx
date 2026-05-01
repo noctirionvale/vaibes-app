@@ -15,10 +15,11 @@ const getYouTubeId = (url) => {
 const parseYouTubeRSS = async (channelId) => {
   try {
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(rssUrl)}`
-const res = await fetch(proxyUrl)
-const text = await res.text()
-const xml = parser.parseFromString(text, 'text/xml')
+    const proxyUrl = `https://everyorigin.com/get?url=${encodeURIComponent(rssUrl)}`;
+    const res = await fetch(proxyUrl);
+    const json = await res.json();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(json.contents, 'text/xml');
     const entries = xml.querySelectorAll('entry');
     return Array.from(entries).slice(0, 12).map(entry => {
       const videoId = entry.querySelector('videoId')?.textContent;
@@ -35,7 +36,8 @@ const xml = parser.parseFromString(text, 'text/xml')
         url: `https://www.youtube.com/watch?v=${videoId}`,
       };
     });
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch YouTube feed:', error);
     return [];
   }
 };
