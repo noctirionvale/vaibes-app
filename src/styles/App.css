@@ -5419,4 +5419,162 @@ body.light-mode .sidebar-bottom-zone {
 
 body.light-mode .sidebar-tagline {
   color: #555;
+}/* ═══════════ VAIBES INTRO ANIMATION ═══════════ */
+.vaibes-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #050505;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+.vaibes-intro.intro-done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.vaibes-intro-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 50%, rgba(106,92,255,0.18) 0%, transparent 55%),
+    radial-gradient(circle at 70% 50%, rgba(0,229,255,0.1) 0%, transparent 55%);
+  animation: introBgPulse 2.8s ease-in-out forwards;
+}
+
+@keyframes introBgPulse {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.vaibes-intro-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.vaibes-intro-logo {
+  animation: introLogoIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes introLogoIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.vaibes-intro-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  box-shadow: 0 0 40px rgba(106,92,255,0.5);
+}
+
+/* Letter-by-letter animation */
+.vaibes-intro-word {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.vaibes-intro-char {
+  font-size: clamp(3rem, 10vw, 5.5rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: introCharIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  display: inline-block;
+
+  /* Gradient text */
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    var(--accent1) 40%,
+    var(--accent2) 70%,
+    #ffffff 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: introCharIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             introShimmer 1.5s linear 0.8s forwards;
+}
+
+@keyframes introCharIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes introShimmer {
+  from { background-position: 0% center; }
+  to { background-position: 200% center; }
+}
+
+.vaibes-intro-tagline {
+  font-size: clamp(0.75rem, 2.5vw, 0.95rem);
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0;
+  animation: introTaglineIn 0.5s ease forwards 0.7s;
+}
+
+@keyframes introTaglineIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Loading bar */
+.vaibes-intro-bar {
+  width: 120px;
+  height: 2px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  opacity: 0;
+  animation: introTaglineIn 0.3s ease forwards 0.9s;
+}
+
+.vaibes-intro-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  border-radius: 2px;
+  animation: introBarFill 1.6s ease forwards 1s;
+}
+
+@keyframes introBarFill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+/* ═══════════ LANDING REVEAL ═══════════ */
+.landing-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.landing-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
 }
