@@ -126,10 +126,11 @@ const SettingsModal = ({ onClose }) => {
                 <div className={`billing-tier ${userTier === 'free' ? 'current-tier' : ''}`}>
                   <div className="tier-header"><span className="tier-name">Free</span><span className="tier-price">$0 <small>/month</small></span></div>
                   <ul className="tier-features">
-                    <li>❌ No AI chat</li>
                     <li>✅ Study Mode (music)</li>
                     <li>✅ Media gallery (wallpapers, live cams)</li>
-                    <li>✅ User DMs</li>
+                    <li>✅ YouTube feed</li>
+                    <li>❌ User DMs</li>
+                    <li>❌ No AI chat</li>
                   </ul>
                   {userTier === 'free' && <div className="tier-current-label">Your current plan</div>}
                 </div>

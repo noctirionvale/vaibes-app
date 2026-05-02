@@ -196,7 +196,6 @@ const LandingPage = () => {
                 <ul>
                   <li>✅ 50 AI requests/day</li>
                   <li>✅ All AI modes (Explain, Summarize, Analyze, Generate)</li>
-                  <li>✅ Photo to Text (OCR)</li>
                   <li>✅ Direct messages</li>
                   <li>✅ YouTube feed</li>
                   <li>✅ All free features</li>
