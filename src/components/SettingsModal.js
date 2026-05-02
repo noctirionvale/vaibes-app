@@ -74,27 +74,27 @@ const SettingsModal = ({ onClose }) => {
   };
 
   const handleUpgrade = async () => {
-    if (!user) return;
-    setUpgrading(true);
-    try {
-      const response = await fetch('/api/create-dodo-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, email: user.email })
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.open(data.url, '_blank');
-      } else {
-        alert('Could not create payment link. Please try again.');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      alert('Something went wrong. Please try again.');
-    } finally {
-      setUpgrading(false);
+  if (!user) return;
+  setUpgrading(true);
+  try {
+    const response = await fetch('/api/create-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, email: user.email })
+    });
+    const data = await response.json();
+    if (data.url) {
+      window.open(data.url, '_blank');
+    } else {
+      alert('Could not create payment link: ' + (data.error || 'Unknown error'));
     }
-  };
+  } catch (error) {
+    console.error('Payment error:', error);
+    alert('Something went wrong. Please try again.');
+  } finally {
+    setUpgrading(false);
+  }
+};
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -144,7 +144,7 @@ const SettingsModal = ({ onClose }) => {
                   </ul>
                   {userTier !== 'pro' && (
                     <button className="upgrade-btn" onClick={handleUpgrade} disabled={upgrading}>
-                      {upgrading ? '⏳ Creating payment...' : '💳 Upgrade to Pro (Dodo Payments)'}
+                      {upgrading ? '⏳ Creating payment...' : '💳 Pay via PayMongo'}
                     </button>
                   )}
                   {userTier === 'pro' && <div className="tier-current-label" style={{ color: 'var(--accent1)' }}>✅ You are on Pro</div>}
