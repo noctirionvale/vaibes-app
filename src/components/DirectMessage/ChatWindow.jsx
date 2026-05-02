@@ -14,6 +14,7 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
   const bottomRef = useRef(null)
   const fileInputRef = useRef(null)
 
+  // Fetch messages (excluding soft-deleted)
   useEffect(() => {
     if (!conversation?.id || !user) return
     const fetchMessages = async () => {
@@ -21,11 +22,13 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
         .from('dm_messages')
         .select('*')
         .eq('conversation_id', conversation.id)
+        .is('deleted_at', null)
         .order('created_at', { ascending: true })
       setMessages(data || [])
     }
     fetchMessages()
 
+    // Real-time: handle INSERT and UPDATE (for deletions)
     const channel = supabase
       .channel(`dm_messages_${conversation.id}`)
       .on('postgres_changes', {
@@ -34,10 +37,23 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
         table: 'dm_messages',
         filter: `conversation_id=eq.${conversation.id}`
       }, (payload) => {
-        setMessages(prev => {
-          if (prev.some(m => m.id === payload.new?.id)) return prev
-          return [...prev, payload.new]
-        })
+        setMessages(prev => [...prev, payload.new])
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'dm_messages',
+        filter: `conversation_id=eq.${conversation.id}`
+      }, (payload) => {
+        // If soft-deleted, remove from UI
+        if (payload.new.deleted_at !== null) {
+          setMessages(prev => prev.filter(msg => msg.id !== payload.new.id))
+        } else {
+          // Optionally handle edits (not implemented)
+          setMessages(prev => prev.map(msg => 
+            msg.id === payload.new.id ? payload.new : msg
+          ))
+        }
       })
       .subscribe()
 
@@ -48,6 +64,35 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Delete message handler
+  const handleDeleteMessage = useCallback(async (messageId) => {
+    const { error } = await supabase
+      .from('dm_messages')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', messageId);
+    if (error) console.error('Delete failed:', error);
+  }, []);
+
+  // Download image handler
+  const handleDownloadImage = useCallback(async (url) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = url.split('/').pop() || 'image.jpg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert('Could not download image');
+    }
+  }, []);
+
+  // Image selection
   const handleImageSelect = useCallback((e) => {
     const file = e.target.files?.[0]
     if (!file || !file.type.startsWith('image/')) return
@@ -153,6 +198,8 @@ const ChatWindow = ({ conversation, otherUser, onBack }) => {
               key={msg.id}
               message={msg}
               isOwn={msg.sender_id === user?.id}
+              onDelete={handleDeleteMessage}
+              onDownload={handleDownloadImage}
             />
           ))
         )}

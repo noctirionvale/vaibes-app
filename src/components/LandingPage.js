@@ -63,7 +63,7 @@ const LandingPage = () => {
             </button>
             <button className="landing-cta-secondary" onClick={handleTryApp}>Try Without Account</button>
           </div>
-          <p className="landing-social-proof">Free tier • No credit card • 2 AI requests/day • Unlimited media & DMs</p>
+          <p className="landing-social-proof">Free tier • No credit card • 0 AI requests/day • Unlimited media & DMs (Pro only)</p>
         </div>
 
         <div className="landing-video-wrapper">
@@ -95,8 +95,8 @@ const LandingPage = () => {
           <div className="landing-features-grid">
             <div className="landing-feature-card"><div className="landing-feature-icon">🎧</div><h3>Study Mode</h3><p>Play lo‑fi, jazz, or deep focus music from YouTube while you work. No distractions.</p></div>
             <div className="landing-feature-card"><div className="landing-feature-icon">📹</div><h3>Live Cams & Wallpapers</h3><p>Embed zoo, aquarium, or city live cams. Download stunning wallpapers with one click.</p></div>
-            <div className="landing-feature-card"><div className="landing-feature-icon">🤖</div><h3>AI Chat (Explain, Summarize, Analyze)</h3><p>Ask anything — get clear, human‑sounding answers. Works with text, YouTube transcripts, and images (Pro).</p></div>
-            <div className="landing-feature-card"><div className="landing-feature-icon">💬</div><h3>User‑to‑User DMs</h3><p>Real‑time messaging with other vAIbes users. Perfect for study groups or communities.</p></div>
+            <div className="landing-feature-card"><div className="landing-feature-icon">🤖</div><h3>AI Chat <span style={{ fontSize: '0.7rem', background: 'var(--accent1)', padding: '2px 6px', borderRadius: '20px', color: 'white', marginLeft: '6px' }}>Pro</span></h3><p>Ask anything — get clear, human‑sounding answers. Works with text, YouTube transcripts.</p></div>
+            <div className="landing-feature-card"><div className="landing-feature-icon">💬</div><h3>User‑to‑User DMs <span style={{ fontSize: '0.7rem', background: 'var(--accent1)', padding: '2px 6px', borderRadius: '20px', color: 'white', marginLeft: '6px' }}>Pro</span></h3><p>Real‑time messaging with other vAIbes users. Perfect for study groups or communities.</p></div>
             <div className="landing-feature-card"><div className="landing-feature-icon">📥</div><h3>Download & Share</h3><p>One‑click download of wallpapers and video clips. Apple‑style design, zero friction.</p></div>
             <div className="landing-feature-card"><div className="landing-feature-icon">⭐</div><h3>Featured Highlights</h3><p>Admins (or users) can promote any card to the top — live cams, trailers, wallpapers, anything.</p></div>
           </div>
@@ -106,17 +106,17 @@ const LandingPage = () => {
       <section className="landing-pricing">
         <div className="landing-pricing-inner">
           <h2 className="landing-section-title">Simple, Honest Pricing</h2>
-          <p className="landing-section-desc">AI requests are limited; media & social features are unlimited for everyone.</p>
+          <p className="landing-section-desc">AI requests and DMs require Pro; all media features are free.</p>
           <div className="landing-pricing-cards">
             <div className="landing-pricing-card">
               <h3>Free</h3>
-              <div className="landing-price">$0 <span>/month</span></div>
+              <div className="landing-price">₱0 <span>/month</span></div>
               <ul>
-                <li>✅ 2 AI requests/day</li>
-                <li>✅ Unlimited study music</li>
+                <li>❌ No AI chat</li>
+                <li>❌ No direct messages</li>
+                <li>✅ YouTube feed</li>
+                <li>✅ Study Mode (music)</li>
                 <li>✅ Live cams & wallpapers</li>
-                <li>✅ Direct messages</li>
-                <li>✅ Standard TTS voice</li>
               </ul>
               <button className="landing-cta-primary" onClick={handleGetStarted}>Start Free</button>
             </div>
@@ -126,10 +126,11 @@ const LandingPage = () => {
               <div className="landing-price">₱199 <span>/month</span></div>
               <ul>
                 <li>✅ 50 AI requests/day</li>
-                <li>✅ Image analysis (cloud vision)</li>
-                <li>✅ Premium Neural2 voice</li>
-                <li>✅ Early access to features</li>
-                <li>✅ All free features included</li>
+                <li>✅ All AI modes (Explain, Summarize, Analyze, Generate)</li>
+                <li>✅ Direct messages</li>
+                <li>✅ YouTube feed</li>
+                <li>✅ All free features (unlimited media & study mode)</li>
+                <li>✅ Early access to new AI tools</li>
               </ul>
               <button className="landing-cta-primary" onClick={handleGetStarted}>Upgrade to Pro</button>
             </div>

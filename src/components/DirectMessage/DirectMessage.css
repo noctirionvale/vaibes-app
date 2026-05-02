@@ -907,3 +907,42 @@ body.light-mode .sidebar-messages-subtitle {
   overflow-y: auto;
   min-height: 0;  /* important for flex children to scroll */
 }
+/* New bottom row with time + action buttons */
+.dm-bubble-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  gap: 8px;
+}
+
+.dm-bubble-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dm-bubble-wrap:hover .dm-bubble-actions {
+  opacity: 1;
+}
+
+.dm-download-btn,
+.dm-delete-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.dm-download-btn:hover {
+  background: rgba(0, 229, 255, 0.2);
+}
+
+.dm-delete-btn:hover {
+  background: rgba(255, 75, 75, 0.2);
+}

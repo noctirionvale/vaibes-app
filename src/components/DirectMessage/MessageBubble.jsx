@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-const MessageBubble = ({ message, isOwn }) => {
+const MessageBubble = ({ message, isOwn, onDelete, onDownload }) => {
   const [lightbox, setLightbox] = useState(false)
 
   const time = new Date(message.created_at).toLocaleTimeString([], {
@@ -11,7 +11,6 @@ const MessageBubble = ({ message, isOwn }) => {
   return (
     <div className={`dm-bubble-wrap ${isOwn ? 'own' : 'other'}`}>
       <div className={`dm-bubble ${isOwn ? 'own' : 'other'}`}>
-
         {message.image_url && (
           <>
             <img
@@ -29,7 +28,6 @@ const MessageBubble = ({ message, isOwn }) => {
               onClick={() => setLightbox(true)}
             />
 
-            {/* ✅ Lightbox — view full image in-app */}
             {lightbox && (
               <div
                 onClick={() => setLightbox(false)}
@@ -85,7 +83,30 @@ const MessageBubble = ({ message, isOwn }) => {
           <span>{message.content}</span>
         )}
       </div>
-      <div className="dm-bubble-time">{time}</div>
+
+      <div className="dm-bubble-bottom">
+        <div className="dm-bubble-time">{time}</div>
+        <div className="dm-bubble-actions">
+          {message.image_url && (
+            <button
+              className="dm-download-btn"
+              onClick={() => onDownload?.(message.image_url)}
+              title="Download image"
+            >
+              📥
+            </button>
+          )}
+          {isOwn && (
+            <button
+              className="dm-delete-btn"
+              onClick={() => onDelete?.(message.id)}
+              title="Delete message"
+            >
+              🗑️
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
