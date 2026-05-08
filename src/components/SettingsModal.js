@@ -179,12 +179,12 @@ const SettingsModal = ({ onClose }) => {
                 {SOCIALS.map(social => (
                   <a key={social.name} href={social.url} target="_blank" rel="noopener noreferrer" className="social-card" style={{ '--social-color': social.color }}>
                     <div className="social-card-icon" style={{ color: social.color }}>{social.icon}</div>
-                    <div className="social-card-info"><div className="social-card-name">{social.name}</div><div className="social-card-handle">{social.name === 'Facebook' && 'NoctirionVale'}{social.name === 'X (Twitter)' && '@vAIbeshub'}{social.name === 'YouTube' && '@v-ai-bes'}{social.name === 'GitHub' && 'noctirionvale'}</div></div>
+                    <div className="social-card-info"><div className="social-card-name">{social.name}</div><div className="social-card-handle">{social.name === 'Website' && 'noctirionvaleport.vercel.app'}{social.name === 'X (Twitter)' && '@vAIbeshub'}{social.name === 'YouTube' && '@v-ai-bes'}{social.name === 'GitHub' && 'noctirionvale'}</div></div>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="social-card-arrow"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                   </a>
                 ))}
               </div>
-              <div className="socials-footer"><p>Built by <strong>NoctirionVale</strong></p><p style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: '0.25rem' }}>vAIbes · Knovia ·</p></div>
+              <div className="socials-footer"><p>Built by <strong>NoctirionVale</strong></p><p style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: '0.25rem' }}>vAIbes ·</p></div>
             </div>
           )}
         </div>
