@@ -1192,7 +1192,16 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   }
   /* Find this inside @media (min-width: 769px) and delete the aspect-ratio/max-height override: */
 .edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
-  flex: 1; min-height: 0; aspect-ratio: auto; max-height: none; border-radius: 0;
+  flex: 1; min-height: 0;
+  border-radius: 0;
+}
+
+@media (min-width: 769px) {
+  .edufeed-wrapper .edufeed-attachments-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
   .edufeed-wrapper .ef-card-preview {
     flex: 0 0 auto; max-height: 100%;
@@ -1214,9 +1223,9 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   pointer-events: auto;
 }
 
-.edufeed-snap-slide .ef-card-preview-cta,
-.edufeed-snap-slide .community-join-btn,
-.edufeed-snap-slide .community-race-btn {
+.ef-card-preview-cta,
+.community-join-btn,
+.community-race-btn {
   touch-action: manipulation !important;
   -webkit-tap-highlight-color: transparent;
   position: relative;
