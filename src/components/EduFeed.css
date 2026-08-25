@@ -1094,7 +1094,7 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   text-align: center;
 }
 
-.edufeed-portal-overlay { z-index: 100000 !important; }
+.edufeed-portal-overlay { z-index: 100000; }
 
 .edufeed-snap-slide .edufeed-community-body.ef-community-inprogress {
   justify-content: center;
