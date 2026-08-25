@@ -1,0 +1,136 @@
+/* ═══════════════════════════════════════════════════════════════
+   LampToggle.css — Theme Toggle (Lamp Icon)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Container ── */
+.lamp-toggle-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lamp-toggle-btn:hover { transform: scale(1.05); }
+.lamp-toggle-btn:active { transform: scale(0.98); }
+
+.lamp-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* ── Lamp Parts ── */
+.lamp-base {
+  fill: var(--lamp-base);
+  transition: fill 0.3s ease;
+}
+
+.lamp-stem {
+  fill: var(--lamp-stem);
+  transition: fill 0.3s ease;
+}
+
+.lamp-arm {
+  fill: none;
+  stroke: var(--lamp-arm);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke 0.3s ease;
+}
+
+.lamp-shade {
+  fill: var(--lamp-shade);
+  transition: fill 0.3s ease;
+}
+
+.lamp-bulb {
+  fill: var(--lamp-bulb);
+  transition: fill 0.3s ease;
+}
+
+.lamp-halo {
+  fill: none;
+  stroke: var(--lamp-halo);
+  stroke-width: 1.5;
+  opacity: var(--lamp-halo-opacity, 0);
+  transition: opacity 0.3s ease;
+}
+
+.lamp-beam {
+  fill: var(--lamp-beam-fill, transparent);
+  stroke: var(--lamp-beam-stroke, transparent);
+  stroke-width: 0.5;
+  opacity: var(--lamp-beam-opacity, 0);
+  transition: opacity 0.3s ease;
+}
+
+.lamp-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--lamp-label);
+  transition: color 0.3s ease;
+  line-height: 1;
+}
+
+/* ── State: OFF (Dark Mode) ── */
+.lamp-off {
+  --lamp-base: #3a3a50;
+  --lamp-stem: #3a3a50;
+  --lamp-arm: #3a3a50;
+  --lamp-shade: #2e2e40;
+  --lamp-bulb: #5a5a70;
+  --lamp-halo: #fff4b0;
+  --lamp-halo-opacity: 0;
+  --lamp-beam-fill: transparent;
+  --lamp-beam-stroke: transparent;
+  --lamp-beam-opacity: 0;
+  --lamp-label: var(--text-muted);
+}
+
+/* ── State: ON (Light Mode) ── */
+.lamp-on {
+  --lamp-base: #1a1a22;
+  --lamp-stem: #1a1a22;
+  --lamp-arm: #1a1a22;
+  --lamp-shade: #111118;
+  --lamp-bulb: #fff4b0;
+  --lamp-halo: #fff4b0;
+  --lamp-halo-opacity: 1;
+  --lamp-beam-fill: rgba(255, 244, 176, 0.15);
+  --lamp-beam-stroke: rgba(255, 244, 176, 0.3);
+  --lamp-beam-opacity: 1;
+  --lamp-label: #d4940a;
+}
+
+.lamp-on .lamp-halo {
+  animation: halo-pulse 2s ease-in-out infinite;
+}
+
+@keyframes halo-pulse {
+  0%, 100% { opacity: 0.9; r: 6; }
+  50% { opacity: 0.5; r: 7; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .lamp-toggle-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .lamp-label {
+    font-size: 0.5rem;
+  }
+}

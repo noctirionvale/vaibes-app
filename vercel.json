@@ -1,0 +1,49 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "vaibes.pro"
+        }
+      ],
+      "destination": "https://www.vaibes.pro/$1",
+      "permanent": true
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/award-badges",
+      "schedule": "5 0 * * *"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/share/quiz/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|Bot|crawler|spider|facebook|twitter|linkedin|slack|discord|whatsapp|telegram|pinterest|reddit|embedly|curl|wget|python).*"
+        }
+      ],
+      "destination": "/api/share-meta?type=quiz&id=:id"
+    },
+    {
+      "source": "/share/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|Bot|crawler|spider|facebook|twitter|linkedin|slack|discord|whatsapp|telegram|pinterest|reddit|embedly|curl|wget|python).*"
+        }
+      ],
+      "destination": "/api/share-meta?type=wall&id=:id"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

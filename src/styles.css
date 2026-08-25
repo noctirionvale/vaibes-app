@@ -1,0 +1,35 @@
+/* Import all style modules */
+@import './styles/globals.css';
+@import './styles/variables.css';
+@import './styles/animations.css';
+@import './styles/layout.css';
+
+/* Component-specific styles */
+@import './styles/components/sidebar.css';
+@import './styles/components/hero.css';
+@import './styles/components/cards.css';
+@import './styles/components/tools.css';
+@import './styles/components/ai-comparison.css';
+@import './styles/components/footer.css';
+
+/* ═══════════════════════════════════════════════════
+   RESTORED: Midnight Blue Ambient Glow & Grid
+   ═══════════════════════════════════════════════════ */
+body {
+  background:
+    linear-gradient(color-mix(in srgb, var(--text) 1.5%, transparent) 1px, transparent 1px) 0 0 / 50px 50px,
+    linear-gradient(90deg, color-mix(in srgb, var(--text) 1.5%, transparent) 1px, transparent 1px) 0 0 / 50px 50px,
+    radial-gradient(ellipse 55% 75% at 90% 95%, var(--accent-12) 0%, transparent 60%),
+    radial-gradient(ellipse 35% 40% at 10% 20%, color-mix(in srgb, var(--glow) 5%, transparent) 0%, transparent 60%),
+    var(--bg) !important;
+  background-attachment: fixed;
+}
+
+body.light-mode {
+  background:
+    linear-gradient(color-mix(in srgb, var(--text) 3%, transparent) 1px, transparent 1px) 0 0 / 50px 50px,
+    linear-gradient(90deg, color-mix(in srgb, var(--text) 3%, transparent) 1px, transparent 1px) 0 0 / 50px 50px,
+    radial-gradient(ellipse 55% 75% at 90% 95%, color-mix(in srgb, var(--accent) 8%, transparent) 0%, transparent 60%),
+    var(--bg) !important;
+  background-attachment: fixed;
+}

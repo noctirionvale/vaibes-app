@@ -1,0 +1,307 @@
+/* ═══════════════════════════════════════════════════════════════
+   LiveChallengeBanner.css — LED Dot-Matrix Sign
+   Note: Font import moved to index.html or fonts.css
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── LED Hardware Tokens (intentionally distinct from theme) ── */
+:root {
+  --led-blue: var(--glow);   /* was var(--accent-3) — token never existed */
+  --led-blue-bright: #7dd3fc;
+  --led-off: color-mix(in srgb, var(--led-blue) 9%, transparent);
+  --led-screen: #020305;
+  --led-bezel: color-mix(in srgb, var(--text) 25%, transparent);
+  --led-glow-soft: color-mix(in srgb, var(--led-blue) 35%, transparent);
+  --led-glow-strong: color-mix(in srgb, var(--led-blue) 70%, transparent);
+  --led-green: var(--success);
+  --led-amber: var(--warning);
+}
+
+/* ── Animations ── */
+@keyframes lcb-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes lcb-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.6; }
+  94% { opacity: 1; }
+  97% { opacity: 0.8; }
+}
+
+@keyframes lcb-dot-glow {
+  0%, 100% { box-shadow: 0 0 4px 1px var(--led-green), 0 0 10px var(--led-green); }
+  50% { box-shadow: 0 0 6px 2px var(--led-green), 0 0 16px var(--led-green); }
+}
+
+@keyframes lcb-border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes lcb-toast-slide {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes lcb-progress-flow {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* ── Persistent Ticker (LED Screen) ── */
+.lcb-ticker {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 1px 1px, var(--led-off) 1px, transparent 1.4px) 0 0 / 4px 4px,
+    linear-gradient(145deg, var(--led-screen), #000);
+  border: 1px solid var(--led-bezel);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.6),
+    0 0 28px var(--led-glow-soft)
+    var(--glow-frame);
+  padding: 0.6rem 0;
+  margin: 0 0 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Bezel edge ring */
+.lcb-ticker::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  padding: 1px;
+  background: linear-gradient(90deg, #0ea5e9, var(--led-blue), var(--led-blue-bright), var(--led-blue), #0ea5e9);
+  background-size: 300% 100%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: lcb-border-flow 5s ease infinite;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Fade edges for clean marquee disappear */
+.lcb-ticker::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--led-screen) 0%, transparent 8%, transparent 92%, var(--led-screen) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.lcb-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: lcb-scroll 37s linear infinite;   /* was 35s */
+}
+
+.lcb-ticker:hover .lcb-ticker-track { animation-play-state: paused; }
+
+.lcb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1.5rem;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.lcb-item:hover { transform: scale(1.02); }
+
+/* Live dot — lit LED cell */
+.lcb-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--led-green);
+  animation: lcb-dot-glow 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.lcb-label {
+  text-transform: uppercase;
+  color: var(--led-green);
+  text-shadow: 0 0 4px var(--led-green), 0 0 10px color-mix(in srgb, var(--led-green) 60%, transparent);
+  font-size: 0.78rem;
+  font-weight: 400;
+  animation: lcb-flicker 6s linear infinite;
+}
+
+.lcb-sep { color: color-mix(in srgb, var(--led-blue) 30%, transparent); }
+
+.lcb-title {
+  color: var(--led-blue-bright);
+  text-shadow: 0 0 4px var(--led-blue), 0 0 12px var(--led-glow-strong), 0 0 22px color-mix(in srgb, var(--led-blue) 40%, transparent);
+}
+
+.lcb-host {
+  color: color-mix(in srgb, var(--led-blue-bright) 55%, transparent);
+  font-size: 0.8rem;
+}
+
+.lcb-cta {
+  color: var(--led-blue-bright);
+  text-shadow: 0 0 4px var(--led-blue), 0 0 14px var(--led-glow-strong);
+  margin-left: 0.2rem;
+  animation: lcb-flicker 4.5s linear infinite;
+}
+
+.lcb-gap { color: color-mix(in srgb, var(--led-blue) 25%, transparent); margin-left: 0.3rem; font-size: 0.55rem; }
+
+/* ── Flash Toast ── */
+.lcb-toast-stack {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.75rem;
+  max-width: min(380px, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.lcb-toast {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem 1.25rem 1.25rem;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 1px 1px, var(--led-off) 1px, transparent 1.4px) 0 0 / 4px 4px,
+    linear-gradient(145deg, var(--led-screen), #000);
+  border: 1px solid var(--led-bezel);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 40px var(--led-glow-soft), inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent)
+  var(--glow-frame);
+  display: flex;
+  gap: 0.85rem;
+  animation: lcb-toast-slide 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: auto;
+  backdrop-filter: blur(12px);
+}
+
+.lcb-toast::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #0ea5e9, var(--led-blue), var(--led-blue-bright));
+}
+
+.lcb-toast-icon { font-size: 1.5rem; line-height: 1; filter: drop-shadow(0 0 8px var(--led-glow-soft)); }
+.lcb-toast-body { flex: 1; min-width: 0; }
+
+.lcb-toast-title {
+  font-family: 'DotGothic16', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--led-blue-bright);
+  text-shadow: 0 0 4px var(--led-blue), 0 0 10px var(--led-glow-strong);
+  margin-bottom: 0.3rem;
+}
+
+.lcb-toast-text {
+  font-size: 0.82rem;
+  color: color-mix(in srgb, var(--text) 80%, transparent);
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+}
+.lcb-toast-text strong { color: var(--text); font-weight: 700; }
+
+.lcb-toast-join {
+  padding: 0.5rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--led-blue) 50%, transparent);
+  background: color-mix(in srgb, var(--led-blue) 12%, transparent);
+  color: var(--led-blue-bright);
+  font-family: 'DotGothic16', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  text-shadow: 0 0 6px var(--led-blue);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--led-blue) 25%, transparent), inset 0 0 8px color-mix(in srgb, var(--led-blue) 10%, transparent);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.lcb-toast-join:hover {
+  background: color-mix(in srgb, var(--led-blue) 22%, transparent);
+  transform: translateY(-2px);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--led-blue) 40%, transparent), inset 0 0 10px color-mix(in srgb, var(--led-blue) 15%, transparent);
+}
+
+.lcb-toast-close {
+  position: absolute;
+  top: 0.65rem; right: 0.65rem;
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--led-blue) 15%, transparent);
+  background: var(--field-bg);
+  color: var(--muted);
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.lcb-toast-close:hover { background: var(--danger-15); color: var(--danger); transform: rotate(90deg); }
+
+.lcb-toast-progress {
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 3px;
+  background: var(--led-blue);
+  box-shadow: 0 0 8px var(--led-blue);
+  animation: lcb-progress-flow 8s linear forwards;
+}
+
+/* ── Light Mode: LED screen stays dark (hardware aesthetic) ──
+   Only the ambient glow softens so it doesn't sit like a hole on white pages */
+body.light-mode .lcb-ticker,
+body.light-mode .lcb-toast {
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.6),
+    0 0 20px color-mix(in srgb, var(--led-blue) 25%, transparent);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .lcb-ticker { border-radius: 12px; padding: 0.5rem 0; }
+  .lcb-item { font-size: 0.8rem; padding: 0.4rem 1rem; gap: 0.4rem; }
+  .lcb-label { font-size: 0.68rem; }
+  .lcb-host { font-size: 0.75rem; }
+}
+
+@media (max-width: 480px) {
+  .lcb-item { font-size: 0.75rem; padding: 0.35rem 0.85rem; gap: 0.35rem; }
+  .lcb-pulse-dot { width: 7px; height: 7px; }
+  .lcb-sep, .lcb-gap { display: none; }
+  .lcb-toast-stack { left: 1rem; right: 1rem; max-width: none; bottom: 1rem; }
+  .lcb-toast { padding: 0.9rem 1rem 1.1rem; }
+  .lcb-toast-text { font-size: 0.78rem; }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .lcb-ticker-track { animation: none; }
+  .lcb-pulse-dot { animation: none; box-shadow: 0 0 6px 2px var(--led-green), 0 0 16px var(--led-green); }
+  .lcb-label, .lcb-cta { animation: none; }
+  .lcb-ticker::before { animation: none; }
+  .lcb-toast { animation: lcb-toast-slide 0.3s ease; }
+  .lcb-toast-progress { animation: lcb-progress-flow 8s linear forwards; }
+}

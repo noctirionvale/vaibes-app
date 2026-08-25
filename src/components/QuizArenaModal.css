@@ -1,0 +1,69 @@
+/* ════════════════════════════════════════════════════════════════
+   QuizArenaModal.css — Backdrop + panel shell only.
+   CommunityRoomPlay fills 100% of .qam-panel.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Backdrop ──
+   Intentionally dark in both themes — the modal backdrop should
+   always recede, regardless of the surrounding surface color. */
+.qam-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: qam-fade-in 0.18s ease-out;
+}
+
+@keyframes qam-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Panel ──
+   Height: viewport minus top nav (~56px) and breathing room.
+   Width: comfortable reading width, never wider than viewport. */
+.qam-panel {
+  width: min(900px, 100%);
+  height: calc(100vh - 80px);
+  max-height: 780px;
+
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 24px 64px rgba(0, 0, 0, 0.6);
+
+  animation: qam-slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes qam-slide-up {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Mobile: nearly full-screen ── */
+@media (max-width: 600px) {
+  .qam-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .qam-panel {
+    width: 100%;
+    height: 96dvh;  /* dynamic viewport — handles mobile chrome bar */
+    max-height: none;
+    border-radius: 16px 16px 0 0;
+    animation: qam-slide-up-mobile 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes qam-slide-up-mobile {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+}

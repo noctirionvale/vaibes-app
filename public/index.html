@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Favicons / App Icons (single source of truth — do not duplicate elsewhere) -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- SEO & Canonical -->
+    <title>vAIbes — Learn Smarter, Create Freely</title>
+    <meta name="description" content="AI study assistant, creative workspace, and community quizzes — all in one place." />
+    <link rel="canonical" href="https://www.vaibes.pro/" />
+
+    <!-- Open Graph / Facebook / Discord -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.vaibes.pro/" />
+    <meta property="og:title" content="vAIbes — Learn Smarter, Create Freely" />
+    <meta property="og:description" content="AI study assistant, creative workspace, and community quizzes — all in one place." />
+    <meta property="og:image" content="https://www.vaibes.pro/og-default.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@vaibes" />
+    <meta name="twitter:url" content="https://www.vaibes.pro/" />
+    <meta name="twitter:title" content="vAIbes — Learn Smarter, Create Freely" />
+    <meta name="twitter:description" content="AI study assistant, creative workspace, and community quizzes — all in one place." />
+    <meta name="twitter:image" content="https://www.vaibes.pro/og-default.png" />
+
+    <!-- Theme & color-scheme (prevents FOUC, matches native controls) -->
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#02060e" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f5f7ff" media="(prefers-color-scheme: light)" />
+
+    <!-- Security: Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:* https://api.openai.com https://*.openai.com https://*.supabase.co wss://*.supabase.co https://texttospeech.googleapis.com https://vision.googleapis.com https://api.deepseek.com https://api.paymongo.com https://api.dodopayments.com https://*.lemonsqueezy.com https://www.youtube.com https://img.youtube.com https://*.googlevideo.com; img-src 'self' data: blob: https://*.supabase.co https: https://img.youtube.com https://i.ytimg.com; media-src 'self' blob: https://*.supabase.co https://*.googlevideo.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com;" />
+
+    <link rel="preconnect" href="https://img.youtube.com" />
+    <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+
+    <!-- Prevent FOUC + set initial background (before CSS loads) -->
+    <style>
+      html {
+        background: #02060e;
+      }
+
+      /* Loading spinner before React mounts */
+      #root:empty::after {
+        content: "";
+        display: block;
+        width: 40px;
+        height: 40px;
+        margin: 100px auto;
+        border: 3px solid #0c1b36;
+        border-top-color: #1e88ff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

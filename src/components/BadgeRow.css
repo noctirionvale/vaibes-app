@@ -1,0 +1,20 @@
+.badge-row { display: inline-flex; align-items: center; gap: 3px; vertical-align: middle; }
+.badge-row-clickable { cursor: pointer; }
+
+.badge-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  font-size: 0.62rem; line-height: 1;
+  background: color-mix(in srgb, var(--badge-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 45%, transparent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--badge-color) 35%, transparent);
+}
+.badge-row-lg .badge-chip { width: 26px; height: 26px; font-size: 0.9rem; }
+
+.badge-chip-more {
+  background: var(--field-bg);
+  border-color: var(--line-strong);
+  color: var(--muted);
+  font-size: 0.55rem; font-weight: 700;
+  box-shadow: none;
+}

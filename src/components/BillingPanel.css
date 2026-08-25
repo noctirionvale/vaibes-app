@@ -1,0 +1,177 @@
+/* ══════════════════════════════════════════════
+   Billing.css — Billing panel, tiers, GCash manual
+   Midnight Blue theme
+   ══════════════════════════════════════════════ */
+
+.billing-panel-modal {
+  display: flex; flex-direction: column;
+  height: 100%;
+  background: var(--surface-1);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  width: 100%; max-width: 560px; max-height: 85vh;
+}
+
+.billing-panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.billing-panel-header h3 {
+  font-size: 1rem; font-weight: 700;
+  background: var(--grad-cta);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.billing-close-btn {
+  background: none; border: none;
+  color: var(--muted); cursor: pointer;
+  font-size: 1rem; transition: color 0.2s;
+  width: auto; height: auto; border-radius: 0;
+}
+.billing-close-btn:hover { background: none; color: var(--danger); }
+
+.billing-panel-content {
+  flex: 1; overflow-y: auto; padding: 1.25rem;
+  display: flex; flex-direction: column; gap: 1.25rem;
+}
+
+/* ── Current plan ── */
+.billing-current-section {
+  background: var(--accent-08);
+  border: 1px solid var(--accent-12);
+  border-radius: 12px; padding: 1rem;
+}
+.billing-current {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;
+}
+.billing-current-label {
+  font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.billing-badge {
+  padding: 0.2rem 0.75rem; border-radius: 50px;
+  font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.billing-badge.free { background: var(--field-bg); color: var(--muted); border: 1px solid var(--line); }
+.billing-badge.pro  { background: var(--grad-cta); color: var(--on-accent); }
+.billing-usage { font-size: 0.78rem; color: var(--muted); margin-bottom: 0; line-height: 1.4; }
+
+/* ── Tiers ── */
+.billing-tiers { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.billing-tier {
+  background: var(--card-bg); border: 1px solid var(--line);
+  border-radius: 12px; padding: 1rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+  position: relative; transition: all 0.2s ease;
+}
+.billing-tier:hover { border-color: var(--accent-25); background: color-mix(in srgb, var(--glow) 4%, transparent); }
+.current-tier { border-color: var(--accent-25); background: var(--accent-08); }
+
+.tier-badge-pro {
+  position: absolute; top: 0.75rem; right: 0.75rem;
+  background: var(--grad-cta); color: var(--on-accent);
+  font-size: 0.6rem; font-weight: 700;
+  padding: 0.2rem 0.6rem; border-radius: 50px; letter-spacing: 0.05em;
+}
+
+.tier-header { display: flex; flex-direction: column; gap: 0.25rem; }
+.tier-name, .tier-price {
+  background: var(--grad-cta);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.tier-name  { font-size: 1rem; font-weight: 700; }
+.tier-price { font-size: 1.25rem; font-weight: 800; }
+.tier-price small {
+  font-size: 0.7rem; font-weight: 400;
+  -webkit-text-fill-color: color-mix(in srgb, var(--text) 40%, transparent);
+  color: color-mix(in srgb, var(--text) 40%, transparent);
+}
+
+.tier-features { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; flex: 1; margin: 0; padding: 0; }
+.tier-features li {
+  font-size: 0.72rem; color: var(--muted); line-height: 1.4;
+  display: flex; align-items: center; gap: 0.35rem;
+}
+.tier-features li::before { content: "✓"; color: var(--glow); font-size: 0.65rem; }
+
+.tier-current-label {
+  font-size: 0.7rem; text-align: center; padding: 0.35rem;
+  border: 1px solid var(--line); border-radius: 8px;
+  margin-top: 0.25rem; background: var(--accent-08); color: var(--glow);
+}
+.tier-current-label.pro { border-color: var(--accent-25); }
+
+/* ── Buttons ─ */
+.upgrade-btn {
+  width: 100%; padding: 0.6rem;
+  background: var(--grad-cta);
+  border: none; border-radius: 50px;
+  color: var(--on-accent); font-weight: 600; font-size: 0.8rem;
+  cursor: pointer; transition: all 0.2s ease; margin-top: 0.5rem;
+}
+.upgrade-btn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 4px 15px var(--accent-40); }
+.upgrade-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Ghost variant — keeps manual GCash visually secondary to the real
+   gateways (slower, manual review; shouldn't look like the default) */
+.upgrade-btn-ghost {
+  background: none; border: 1px solid var(--line-strong);
+  color: var(--muted); box-shadow: none;
+}
+.upgrade-btn-ghost:hover:not(:disabled) {
+  border-color: var(--accent-40); color: var(--text);
+  box-shadow: none; background: var(--accent-08);
+}
+.upgrade-btn-alt { margin-top: 0.5rem; }
+
+/* ── GCash manual QR claim ── */
+.gcash-manual {
+  margin-top: 0.75rem; padding: 0.85rem;
+  background: var(--card-bg); border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.6rem; text-align: center;
+}
+.gcash-manual-qr {
+  width: 140px; height: 140px; border-radius: 8px;
+  border: 1px solid var(--line);
+  object-fit: contain;
+  background: #fff; /* QR scannability — intentional constant */
+}
+.gcash-manual-steps {
+  width: 100%; text-align: left; margin: 0;
+  padding-left: 1.1rem; font-size: 0.72rem;
+  color: var(--muted); line-height: 1.5;
+}
+.gcash-manual-form { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
+.gcash-manual-form input {
+  width: 100%; box-sizing: border-box;
+  padding: 0.55rem 0.85rem; border-radius: 50px;
+  border: 1px solid var(--line-strong);
+  background: var(--field-bg);
+  color: var(--text); font-size: 0.78rem;
+}
+.gcash-manual-form input:focus { outline: none; border-color: var(--glow); }
+.gcash-manual-form input::placeholder { color: color-mix(in srgb, var(--text) 35%, transparent); }
+.gcash-manual-error   { font-size: 0.7rem; color: var(--danger); margin: 0; }
+.gcash-manual-success { font-size: 0.78rem; color: var(--text); margin: 0; line-height: 1.5; }
+.gcash-manual-note    { font-size: 0.68rem; color: var(--muted); margin: 0; }
+
+.billing-note { font-size: 0.72rem; color: var(--muted); text-align: center; margin: 0; }
+
+/* ── Embedded variant (Settings modal) ── */
+.billing-panel-content.is-embedded { flex: initial; overflow: visible; padding: 0; gap: 1rem; }
+.billing-panel-content.is-embedded .billing-tiers { grid-template-columns: 1fr; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .billing-tiers { grid-template-columns: 1fr; gap: 0.75rem; }
+  .billing-panel-content { padding: 1rem; }
+}

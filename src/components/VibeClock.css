@@ -1,0 +1,379 @@
+/* ═══════════════════════════════════════════════════════════════
+   VibeClock.css — Analog-style clock + alarm mode
+   Midnight Blue Theme
+   ═══════════════════════════════════════════════════════════════ */
+
+.vibe-clock {
+  --font-clock: 'Barlow Condensed', 'Inter', monospace;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.clock-face {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, var(--surface-2), var(--surface-1));
+  border: 2px solid color-mix(in srgb, var(--glow) 35%, transparent);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 6px var(--accent-08),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.clock-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0 12px;
+}
+
+/* ── Toggle ─ */
+.clock-toggle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.15rem;
+}
+
+.clock-toggle {
+  width: 28px;
+  height: 14px;
+  border-radius: 7px;
+  position: relative;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  transition: background 0.3s ease;
+  display: block;
+}
+
+.clock-toggle.mode-clock {
+  background: color-mix(in srgb, var(--text) 15%, transparent);
+}
+
+.clock-toggle.mode-alarm {
+  background: var(--grad-cta);
+  box-shadow: 0 1px 6px color-mix(in srgb, var(--glow) 55%, transparent);
+}
+
+.clock-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff; /* knob sits on a colored track in both themes */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.clock-toggle.mode-clock::after { left: 2px; }
+.clock-toggle.mode-alarm::after { left: 16px; }
+
+.clock-toggle-label { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   CLOCK MODE
+   ═══════════════════════════════════════════════════════════════ */
+
+.clock-display {
+  text-align: center;
+  line-height: 1.2;
+  margin-top: 0.2rem;
+}
+
+.clock-time-big {
+  font-size: 1.55rem;
+  font-weight: 800;
+  font-family: var(--font-clock);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--text);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--glow) 30%, transparent);
+}
+
+.clock-ampm-big {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--text) 65%, transparent);
+  margin-left: 0.2rem;
+  vertical-align: super;
+}
+
+.clock-date-big {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin-top: 0.25rem;
+}
+
+.clock-seconds-tick {
+  font-size: 0.48rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--text) 18%, transparent);
+  letter-spacing: 0.1em;
+  margin-top: 0.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ALARM MODE
+   ═══════════════════════════════════════════════════════════════ */
+
+.alarm-display {
+  text-align: center;
+  line-height: 1.2;
+  margin-top: 0.2rem;
+  width: 100%;
+  position: relative;
+}
+
+.alarm-time-big,
+.alarm-digit,
+.alarm-colon,
+.alarm-active-time {
+  font-family: var(--font-clock);
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--text);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--glow) 30%, transparent);
+}
+
+.alarm-time-big {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+
+.alarm-digit {
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s;
+  border-bottom: 1px dashed color-mix(in srgb, var(--glow) 45%, transparent);
+  padding-bottom: 1px;
+}
+
+.alarm-digit:hover,
+.alarm-digit.active {
+  color: var(--accent-text);
+  border-bottom-color: color-mix(in srgb, var(--glow) 90%, transparent);
+}
+
+.alarm-colon { margin: 0 0.1rem; }
+
+.alarm-period-pill {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--glow);
+  background: var(--accent-12);
+  padding: 0.1rem 0.35rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-block;
+  margin-left: 0.25rem;
+  vertical-align: super;
+  line-height: 1.4;
+}
+
+.alarm-period-pill:hover {
+  background: color-mix(in srgb, var(--glow) 30%, transparent);
+}
+
+.alarm-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin-top: 0.25rem;
+}
+
+.alarm-action { margin-top: 0.15rem; }
+
+.alarm-set-btn {
+  background: var(--grad-cta);
+  background-size: 200% auto;
+  animation: shimmer-slow 3s linear infinite;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--glow) 45%, transparent);
+  border: none;
+  border-radius: 20px;
+  padding: 0.15rem 0.8rem;
+  font-size: 0.48rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--on-accent);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.alarm-set-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--glow) 60%, transparent);
+}
+
+.alarm-cancel-btn {
+  background: var(--danger-18);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  color: var(--danger);
+  border-radius: 20px;
+  padding: 0.15rem 0.8rem;
+  font-size: 0.48rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.alarm-cancel-btn:hover {
+  background: var(--danger-28);
+  transform: scale(1.05);
+}
+
+/* ── Custom dropdown picker ──
+   Intentionally dark in both themes — floating pickers must keep
+   contrast against any page behind them (same rule as modals). */
+.alarm-picker-anchor {
+  position: relative;
+  display: inline-block;
+}
+
+.alarm-picker-portal {
+  background: #16162a;
+  border: 1px solid color-mix(in srgb, var(--glow) 50%, transparent);
+  border-radius: 8px;
+  padding: 2px 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+  max-height: 160px;
+  overflow-y: auto;
+  min-width: 42px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-25) transparent;
+}
+
+.alarm-picker-option {
+  font-family: var(--font-clock);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 1px 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.1s, color 0.1s;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.alarm-picker-option:hover {
+  background: var(--accent-20);
+  color: #fff;
+}
+
+.alarm-picker-option.selected {
+  color: var(--accent-text);
+  background: var(--accent-12);
+}
+
+/* ── Ringing overlay ── */
+.alarm-ringing-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+.alarm-ringing {
+  text-align: center;
+  color: var(--danger);
+  animation: pulse 0.8s infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+}
+
+.alarm-ringing span { font-size: 1.1rem; }
+
+.stop-alarm-btn {
+  background: var(--danger);
+  border: none;
+  border-radius: 20px;
+  padding: 0.25rem 0.8rem;
+  font-size: 0.6rem;
+  cursor: pointer;
+  color: #fff;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.stop-alarm-btn:hover {
+  background: color-mix(in srgb, var(--danger) 85%, black);
+  transform: scale(1.02);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECONDS PROGRESS RING
+   ═══════════════════════════════════════════════════════════════ */
+
+.clock-progress-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform: rotate(-90deg); /* sweep starts at 12 o'clock */
+}
+
+.clock-progress-track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text) 6%, transparent);
+  stroke-width: 1.6;
+}
+
+.clock-progress-fill {
+  fill: none;
+  stroke: var(--glow);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--glow) 65%, transparent));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .clock-face { width: 190px; height: 190px; }
+  .clock-time-big,
+  .alarm-digit,
+  .alarm-colon,
+  .alarm-active-time { font-size: 1.35rem; }
+  .alarm-period-pill { font-size: 0.55rem; }
+}

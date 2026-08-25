@@ -1,0 +1,131 @@
+/* ═══════════════════════════════════════════════════════════════
+   PanelSwitcher.css — Swappable right-panel slot
+   Midnight Blue Theme
+   ═══════════════════════════════════════════════════════════════ */
+
+.panel-switcher {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+/* ── Tabs ── */
+.panel-switcher-tabs {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.6rem 0.6rem 0.5rem;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.panel-switcher-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.panel-switcher-tab {
+  flex: 0 1 auto;
+  min-width: fit-content;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--field-bg);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  letter-spacing: 0.01em;
+  position: relative;
+}
+
+.panel-switcher-tab:hover {
+  background: var(--accent-08);
+  color: var(--text);
+  border-color: var(--accent-20);
+  transform: translateY(-1px);
+}
+
+.panel-switcher-tab.active {
+  border-color: var(--glow);
+  background: var(--accent-20);
+  color: var(--on-accent);
+  font-weight: 700;
+  box-shadow: 0 0 12px var(--accent-40), inset 0 0 8px var(--accent-12);
+}
+
+.panel-switcher-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow: 0 0 6px var(--glow);
+}
+
+/* ── Body ── */
+.panel-switcher-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-switcher-body > .creative-editor {
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+/* ── Content Wrapper ── */
+.panel-content-wrapper {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.75rem;
+  padding-top: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-25) transparent;
+}
+
+.panel-content-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-content-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-content-wrapper::-webkit-scrollbar-thumb {
+  background: var(--accent-25);
+  border-radius: 3px;
+}
+
+.panel-content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-40);
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .panel-switcher-tabs {
+    padding: 0.5rem 0.5rem 0.4rem;
+  }
+  .panel-switcher-tab {
+    font-size: 0.65rem;
+    padding: 0.35rem 0.55rem;
+  }
+}
