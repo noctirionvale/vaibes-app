@@ -169,17 +169,8 @@
 /* Replace the aspect-ratio/max-height rule from last time with this: */
 .edufeed-attachments-top.is-quiz .edufeed-att-frame,
 .edufeed-attachments-top.is-community .edufeed-att-frame {
-  aspect-ratio: 4 / 5;
-  max-height: 480px;
-}
-
-/* Add this — it wasn't targeted specifically before */
-.edufeed-attachments-top.is-quiz .edufeed-att-frame .edufeed-att-media,
-.edufeed-attachments-top.is-community .edufeed-att-frame .edufeed-att-media {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 20%;
+  aspect-ratio: auto;
+  max-height: 520px;
 }
 iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto; }
 
