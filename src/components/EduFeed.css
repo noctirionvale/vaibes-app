@@ -140,9 +140,6 @@
   border-radius: 10px;
   border: 1px solid var(--line);
   height: auto; /* Allow frame to collapse/expand to content */
-  display: flex;              /* ← add */
-  align-items: center;        /* ← add */
-  justify-content: center;    /* ← add */
 }
 
 .edufeed-att-frame-bg {
