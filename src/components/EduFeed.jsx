@@ -1173,17 +1173,8 @@ const CommunityBody = ({ post, user, isPro, onOpenRacePlay }) => {
   }, [user?.id, community, post.id])
 
   const handleJoin = () => {
-  if (!user) { 
-    alert('Please sign in to join the quiz!'); 
-    return 
-  }
-  if (soloCompletion) return // locked — badge shown instead of the button
-  
-  // Remove this line — it was preventing direct opening
-  // setHasOpenedQuiz(true) 
-  // setShowQuizModal(true)
-  
-  // Instead, directly open the quiz modal
+  if (!user) { alert('Please sign in to join the quiz!'); return }
+  if (soloCompletion) return
   setHasOpenedQuiz(true)
   setShowQuizModal(true)
 }
