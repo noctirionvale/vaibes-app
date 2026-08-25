@@ -1211,14 +1211,6 @@ const CommunityBody = ({ post, user, isPro, onOpenRacePlay }) => {
   <div
     className={`modal-overlay edufeed-portal-overlay ${showQuizModal ? '' : 'ef-quiz-play-hidden'}`}
     onClick={() => setShowQuizModal(false)}
-    style={{ 
-      position: 'fixed', 
-      inset: 0, 
-      zIndex: 9999,
-      display: showQuizModal ? 'flex' : 'none',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
   >
     <div className="modal-content ef-quiz-play-modal" onClick={e => e.stopPropagation()}>
       <button className="ef-quiz-play-close" onClick={() => setShowQuizModal(false)} aria-label="Close">✕</button>
