@@ -156,8 +156,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  height: auto;
-  max-height: 500px;
+  height: 100%;
   object-fit: contain;
   background: transparent;
   border: none;
@@ -169,8 +168,10 @@
 /* Replace the aspect-ratio/max-height rule from last time with this: */
 .edufeed-attachments-top.is-quiz .edufeed-att-frame,
 .edufeed-attachments-top.is-community .edufeed-att-frame {
-  aspect-ratio: auto;
-  max-height: 520px;
+  aspect-ratio: 16 / 10;
+  height: auto;
+  max-height: 420px;
+  flex: 0 0 auto;
 }
 iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto; }
 
@@ -1214,20 +1215,10 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   }
   .edufeed-wrapper .edufeed-attachments-top {
     flex: 1; min-height: 0; margin-bottom: 0;
-  }
-  /* Find this inside @media (min-width: 769px) and delete the aspect-ratio/max-height override: */
-.edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
-  flex: 1; min-height: 0;
-  border-radius: 0;
-}
-
-@media (min-width: 769px) {
-  .edufeed-wrapper .edufeed-attachments-top {
     display: flex;
     align-items: center;
     justify-content: center;
   }
-}
   .edufeed-wrapper .ef-card-preview {
     flex: 0 0 auto; max-height: 100%;
   }
