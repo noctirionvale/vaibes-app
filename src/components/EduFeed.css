@@ -1222,9 +1222,33 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   .edufeed-wrapper .ef-card-preview {
     flex: 0 0 auto; max-height: 100%;
   }
-  .edufeed-wrapper .ef-card-preview-scroll {
-    justify-content: flex-start;
+  /* justify-content:center on .ef-card-preview-scroll pushes its first
+   children (the top-row badges + title) up toward the image when the
+   box has little vertical slack — exactly what was happening here.
+   Forcing flex-start keeps content anchored to the top of its own box,
+   directly under the image, matching the mobile layout. The background
+   is a second line of defense: even if a box ever ends up flush against
+   the image, solid backgrounds mean text can't visually blend into it. */
+.edufeed-wrapper .ef-card-preview-scroll {
+  justify-content: flex-start !important;
+  background: var(--card-bg);
+}
+
+.edufeed-wrapper .ef-card-preview {
+  background: var(--card-bg);
+  position: relative;
+  z-index: 2;
+}
+
+.edufeed-wrapper .edufeed-attachments-top {
+  overflow: hidden; /* defensive — nothing from the frame/backdrop should bleed past its own box */
+}
+
+@media (min-width: 769px) {
+  .edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
+    max-height: 320px; /* leaves guaranteed room below for badges + title on shorter panels */
   }
+}
 }
 
 /* ══════════════════════════════════════════════
