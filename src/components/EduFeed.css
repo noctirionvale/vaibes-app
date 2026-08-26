@@ -1094,7 +1094,32 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   text-align: center;
 }
 
-.edufeed-portal-overlay { z-index: 100000 !important; }
+/* Quiz-play modals are createPortal'd straight to document.body, so they're
+   never real DOM descendants of .edufeed-wrapper — meaning
+   ".edufeed-wrapper .modal-overlay" (which does the centering) never
+   applied to them, on desktop OR mobile. The removed inline style used to
+   paper over this by hardcoding position/display/centering directly on the
+   element (along with the bad z-index). Now that it's gone, this class has
+   to carry ALL of that itself — not just z-index — or the overlay falls
+   back to the generic .modal-overlay definition, which isn't centering/
+   containing it, hence the clipped modal on desktop. */
+.modal-overlay.edufeed-portal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 100000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.5rem !important;
+  background: rgba(6, 4, 15, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  animation: ef-fade-in 0.25s ease !important;
+}
+
+.modal-overlay.edufeed-portal-overlay.ef-quiz-play-hidden {
+  display: none !important;
+}
 
 .edufeed-snap-slide .edufeed-community-body.ef-community-inprogress {
   justify-content: center;
