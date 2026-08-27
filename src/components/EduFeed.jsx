@@ -164,6 +164,7 @@ const CommentsSection = ({ post, user }) => {
 }
 
 // ── Card Header ──
+// ── Card Header ──
 const CardHeader = ({ post, locked, onToggleLock, badges, onOpenDashboard }) => {
   const isCommunity = post.type === 'community' || post.community_data?.is_community
   
@@ -189,16 +190,13 @@ const CardHeader = ({ post, locked, onToggleLock, badges, onOpenDashboard }) => 
             {post.profiles?.display_name?.[0]?.toUpperCase() || '?'}
           </div>}
       <div className="edufeed-user-info">
-        <div className="edufeed-username">
-          {post.profiles?.display_name || post.profiles?.username || 'Student'}
-          {post.is_pro_only && <span className="edufeed-pro-badge">PRO</span>}
-          {badges?.length > 0 && <BadgeRow badges={badges} onClick={onOpenDashboard} />}
-        </div>
-        <div className="edufeed-meta">
+        <div className="edufeed-meta" style={{ marginTop: 0, gap: '0.5rem', flexWrap: 'wrap' }}>
           <span className={`edufeed-type-badge ${displayClass}`}>
             {displayLabel}
           </span>
           <span>{new Date(post.created_at).toLocaleDateString()}</span>
+          {post.is_pro_only && <span className="edufeed-pro-badge">PRO</span>}
+          {badges?.length > 0 && <BadgeRow badges={badges} onClick={onOpenDashboard} />}
         </div>
       </div>
       <button
@@ -341,6 +339,8 @@ const CardPreview = ({ post, onPlay, completion }) => {
     ? post.attachments?.find(a => a.type?.startsWith('image/'))
     : null
 
+  const creatorName = post.profiles?.display_name || post.profiles?.username || 'Student'
+
   return (
     <div className="ef-card-preview">
       <div className="ef-card-preview-scroll">
@@ -350,6 +350,13 @@ const CardPreview = ({ post, onPlay, completion }) => {
             <img src={previewImage.url} alt="" />
           </div>
         )}
+        
+        {/* ── NEW: Title and Creator placed here instead of the top header ── */}
+        <div className="ef-card-preview-title-row">
+          <h3 className="ef-card-preview-title">{post.title || 'Untitled Quiz'}</h3>
+          <span className="ef-card-preview-creator">by {creatorName}</span>
+        </div>
+
         {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
         <div className="ef-card-preview-teaser">{teaser}</div>
         <div className="ef-card-preview-meta">
@@ -362,15 +369,15 @@ const CardPreview = ({ post, onPlay, completion }) => {
           <div className="ef-card-preview-done-badge">✅ Already taken — {completion.points} pts earned</div>
         ) : (
           <button
-  className="ef-card-preview-cta"
-  onClick={(e) => {
-    e.stopPropagation(); // Prevent snap-scroll from hijacking the mobile tap
-    onPlay();
-  }}
-  type="button"
->
-  {ctaLabel}
-</button>
+            className="ef-card-preview-cta"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent snap-scroll from hijacking the mobile tap
+              onPlay();
+            }}
+            type="button"
+          >
+            {ctaLabel}
+          </button>
         )}
       </div>
     </div>
