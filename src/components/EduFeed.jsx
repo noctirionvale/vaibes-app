@@ -290,13 +290,30 @@ const CardAttachments = ({ attachments, variant = 'quiz' }) => {
         if (att.type === 'youtube')
           return (
             <div key={idx} className="edufeed-att-frame">
-              <iframe src={att.embedUrl} width="100%" height="200" frameBorder="0" allowFullScreen className="edufeed-att-media" title={att.name} />
+              <iframe 
+                src={att.embedUrl} 
+                width="100%" 
+                height="200" 
+                frameBorder="0" 
+                allowFullScreen 
+                className="edufeed-att-media" 
+                title={att.name}
+                allow="autoplay; encrypted-media"
+              />
             </div>
           )
         if (att.type?.startsWith('video/'))
           return (
             <div key={idx} className="edufeed-att-frame">
-              <video src={att.url} controls className="edufeed-att-media" />
+              <video 
+                src={att.url} 
+                controls 
+                autoPlay 
+                muted 
+                loop
+                playsInline
+                className="edufeed-att-media" 
+              />
             </div>
           )
         if (att.type?.startsWith('image/'))
@@ -306,7 +323,7 @@ const CardAttachments = ({ attachments, variant = 'quiz' }) => {
               <img src={att.url} alt={att.name} className="edufeed-att-media" />
             </div>
           )
-        return <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" className="edufeed-att-file">📎 {att.name}</a>
+        return <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" className="edufeed-att-file"> {att.name}</a>
       })}
     </div>
   )
