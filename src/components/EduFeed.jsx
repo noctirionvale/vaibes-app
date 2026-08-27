@@ -367,30 +367,30 @@ const CardPreview = ({ post, onPlay, completion }) => {
             <img src={previewImage.url} alt="" />
           </div>
         )}
-        
-        {/* ── NEW: Title and Creator placed here instead of the top header ── */}
-        <div className="ef-card-preview-title-row">
-          <h3 className="ef-card-preview-title">{post.title || 'Untitled Quiz'}</h3>
-          <span className="ef-card-preview-creator">by {creatorName}</span>
+        <div className="ef-card-preview-teaser">{teaser}</div>
+      </div>
+
+      {/* title/creator/labels live here now — flex-shrink:0 means they
+          never get squeezed out, even when the video above grows tall */}
+      <div className="ef-card-preview-footer">
+        <div className="ef-card-preview-footer-info">
+          <div className="ef-card-preview-title-row">
+            <h3 className="ef-card-preview-title">{post.title || 'Untitled Quiz'}</h3>
+            <span className="ef-card-preview-creator">by {creatorName}</span>
+          </div>
+          <div className="ef-card-preview-meta">
+            {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
+            <span className="ef-card-preview-badge">{icon} {typeLabel}</span>
+            <span className="ef-card-preview-count">{meta}</span>
+          </div>
         </div>
 
-        {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
-        <div className="ef-card-preview-teaser">{teaser}</div>
-        <div className="ef-card-preview-meta">
-          <span className="ef-card-preview-badge">{icon} {typeLabel}</span>
-          <span className="ef-card-preview-count">{meta}</span>
-        </div>
-      </div>
-      <div className="ef-card-preview-footer">
         {completion ? (
           <div className="ef-card-preview-done-badge">✅ Already taken — {completion.points} pts earned</div>
         ) : (
           <button
             className="ef-card-preview-cta"
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent snap-scroll from hijacking the mobile tap
-              onPlay();
-            }}
+            onClick={(e) => { e.stopPropagation(); onPlay(); }}
             type="button"
           >
             {ctaLabel}
@@ -406,35 +406,36 @@ const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => 
   return (
     <div className="ef-card-preview ef-community-preview">
       <div className="ef-card-preview-scroll">
-        <div className="ef-card-preview-top-row">
-          {isRace && <span className="community-race-badge">🏁 LIVE RACE</span>}
-          <span className="community-subject-tag">{community.subject}</span>
-          <span className={`community-status ${community.status}`}>
-            {community.status === 'live' ? '🟢 Live' : '🔴 Ended'}
-          </span>
-        </div>
         <div className="ef-card-preview-teaser">{community.title}</div>
-        <div className="ef-card-preview-meta">
-          <span className="ef-card-preview-badge">👥 {community.max_players || 15}</span>
-          <span className="ef-card-preview-badge">⏱️ {community.time_limit_minutes ?? '∞'}m</span>
-          <span className="ef-card-preview-badge capitalize">📊 {community.difficulty || 'medium'}</span>
-        </div>
       </div>
+
       <div className="ef-card-preview-footer">
+        <div className="ef-card-preview-footer-info">
+          <div className="ef-card-preview-top-row">
+            {isRace && <span className="community-race-badge">🏁 LIVE RACE</span>}
+            <span className="community-subject-tag">{community.subject}</span>
+            <span className={`community-status ${community.status}`}>
+              {community.status === 'live' ? '🟢 Live' : '🔴 Ended'}
+            </span>
+          </div>
+          <div className="ef-card-preview-meta">
+            <span className="ef-card-preview-badge">👥 {community.max_players || 15}</span>
+            <span className="ef-card-preview-badge">⏱️ {community.time_limit_minutes ?? '∞'}m</span>
+            <span className="ef-card-preview-badge capitalize">📊 {community.difficulty || 'medium'}</span>
+          </div>
+        </div>
+
         {completion ? (
           <div className="ef-card-preview-done-badge">✅ Already taken — {completion.points} pts earned</div>
         ) : (
           <button
-  className="ef-card-preview-cta"
-  onClick={(e) => {
-    e.stopPropagation(); // Prevent snap-scroll from hijacking the mobile tap
-    onPrimaryClick(e);
-  }}
-  disabled={ended}
-  type="button"
->
-  {ended ? '🔒 Room Ended' : isRace ? '🏁 Join Live Race' : '🎮 Join Quiz'}
-</button>
+            className="ef-card-preview-cta"
+            onClick={(e) => { e.stopPropagation(); onPrimaryClick(e); }}
+            disabled={ended}
+            type="button"
+          >
+            {ended ? '🔒 Room Ended' : isRace ? '🏁 Join Live Race' : '🎮 Join Quiz'}
+          </button>
         )}
       </div>
     </div>

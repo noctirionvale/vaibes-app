@@ -181,8 +181,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 .ef-card-preview-title {
   font-size: 1.05rem;
@@ -1098,7 +1097,18 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   display: flex; flex-direction: column; justify-content: center; gap: 0.5rem;
 }
 .ef-card-preview-scroll::-webkit-scrollbar { display: none; }
-.ef-card-preview-footer { flex-shrink: 0; padding-top: 0.5rem; }
+.ef-card-preview-footer {
+  flex-shrink: 0;
+  padding-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ef-card-preview-footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
 .ef-card-preview-thumb {
   position: relative; width: 100%; aspect-ratio: 16 / 9;
   max-height: 260px; border-radius: 10px; overflow: hidden;
