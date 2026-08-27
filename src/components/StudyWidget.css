@@ -910,3 +910,55 @@
 
   .study-widget--mobile-fullscreen .sw-upload-row { margin-top: 0.5rem; }
 }
+
+.sw-camera-toolbar {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  right: 36px; /* leaves room for the existing top-right close button's column */
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.sw-camera-tool-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.85);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.sw-camera-tool-btn:hover { background: rgba(0, 0, 0, 0.75); color: #fff; }
+.sw-camera-tool-btn.sw-camera-tool-active {
+  border-color: var(--glow);
+  color: var(--glow);
+  box-shadow: 0 0 6px var(--accent-25);
+}
+
+.sw-camera-select {
+  max-width: 130px;
+  padding: 3px 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.6rem;
+  outline: none;
+  backdrop-filter: blur(4px);
+}
+
+.sw-camera-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0.85;
+  animation: sw-flash-fade 0.3s ease forwards;
+  pointer-events: none;
+}
+@keyframes sw-flash-fade { from { opacity: 0.85; } to { opacity: 0; } }

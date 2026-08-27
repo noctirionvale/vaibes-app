@@ -21,10 +21,16 @@ const StudyWidget = ({ userTier = 'free' }) => {
   } = useMusicPlayer();
 
   const [customUrl, setCustomUrl] = useState('');
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraStream, setCameraStream] = useState(null);
   const [showClock, setShowClock] = useState(true);
   const videoRef = useRef(null);
+  const canvasRef = useRef(null); // hidden canvas used only for snapshot capture
+
+const [cameraActive, setCameraActive] = useState(false);
+const [cameraStream, setCameraStream] = useState(null);
+const [cameraDevices, setCameraDevices] = useState([]);
+const [activeDeviceId, setActiveDeviceId] = useState(null);
+const [mirrorEnabled, setMirrorEnabled] = useState(true);
+const [snapshotFlash, setSnapshotFlash] = useState(false);
 
   // ── Gesture + playback settings ──
   const [gesturesEnabled, setGesturesEnabled] = useState(() => {
@@ -46,21 +52,75 @@ const StudyWidget = ({ userTier = 'free' }) => {
     setCustomUrl('');
   };
 
-  const toggleCamera = async () => {
-    if (cameraActive) {
-      cameraStream?.getTracks().forEach(t => t.stop());
-      setCameraStream(null);
-      setCameraActive(false);
-    } else {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        setCameraStream(stream);
-        setCameraActive(true);
-      } catch (e) {
-        alert('Camera access denied or unavailable.');
-      }
-    }
-  };
+  // Shared by open / device-switch / flip — always tears down the previous
+// track before requesting a new one, and (re)builds the device list right
+// after, since device labels are only populated post-permission.
+const startCameraStream = async (constraints) => {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: constraints, audio: false });
+  setCameraStream(prev => {
+    prev?.getTracks().forEach(t => t.stop());
+    return stream;
+  });
+  setCameraActive(true);
+
+  try {
+    const all = await navigator.mediaDevices.enumerateDevices();
+    const videoInputs = all.filter(d => d.kind === 'videoinput');
+    setCameraDevices(videoInputs);
+    const settings = stream.getVideoTracks()[0]?.getSettings() || {};
+    setActiveDeviceId(settings.deviceId || videoInputs[0]?.deviceId || null);
+    if (settings.facingMode) setMirrorEnabled(settings.facingMode !== 'environment');
+  } catch {
+    // Some browsers/permission states can reject enumerateDevices — camera
+    // still works fine, it just won't offer a device switcher.
+  }
+};
+
+const toggleCamera = async () => {
+  if (cameraActive) {
+    cameraStream?.getTracks().forEach(t => t.stop());
+    setCameraStream(null);
+    setCameraActive(false);
+    setCameraDevices([]);
+  } else {
+    try { await startCameraStream(true); }
+    catch (e) { alert('Camera access denied or unavailable.'); }
+  }
+};
+
+const switchToDevice = async (deviceId) => {
+  try { await startCameraStream({ deviceId: { exact: deviceId } }); }
+  catch (e) { alert('Could not switch to that camera.'); }
+};
+
+// Front/back toggle for phones — reads whichever facingMode the current
+// track reports and requests the opposite. Desktop webcams usually don't
+// report a facingMode at all, so this just alerts gracefully there instead
+// of pretending to switch to a camera that doesn't exist.
+const flipCamera = async () => {
+  const current = cameraStream?.getVideoTracks()[0]?.getSettings().facingMode;
+  const next = current === 'environment' ? 'user' : 'environment';
+  try { await startCameraStream({ facingMode: next }); }
+  catch (e) { alert('No other camera found to switch to.'); }
+};
+
+const takeSnapshot = () => {
+  const video = videoRef.current, canvas = canvasRef.current;
+  if (!video || !canvas) return;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  if (mirrorEnabled) { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `study-snapshot-${Date.now()}.png`; a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+  setSnapshotFlash(true);
+  setTimeout(() => setSnapshotFlash(false), 300);
+};
 
   useEffect(() => {
     if (videoRef.current && cameraStream) videoRef.current.srcObject = cameraStream;
@@ -376,11 +436,59 @@ const StudyWidget = ({ userTier = 'free' }) => {
   );
 
   const CameraPreview = () => cameraActive && (
-    <div className="sw-camera-preview">
-      <video ref={videoRef} autoPlay muted playsInline className="sw-camera-video" />
-      <button className="sw-camera-close" onClick={toggleCamera}>✕</button>
+  <div className="sw-camera-preview">
+    <video
+      ref={videoRef}
+      autoPlay muted playsInline
+      className="sw-camera-video"
+      style={{ transform: mirrorEnabled ? 'scaleX(-1)' : 'none' }}
+    />
+    <canvas ref={canvasRef} style={{ display: 'none' }} />
+    {snapshotFlash && <div className="sw-camera-flash" />}
+
+    <div className="sw-camera-toolbar">
+      <button className="sw-camera-tool-btn" onClick={flipCamera} title="Flip camera">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M17 2.1l4 4-4 4"/><path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8"/>
+          <path d="M7 21.9l-4-4 4-4"/><path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"/>
+        </svg>
+      </button>
+
+      <button className="sw-camera-tool-btn" onClick={takeSnapshot} title="Take snapshot">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </button>
+
+      {cameraDevices.length > 1 && (
+        <select
+          className="sw-camera-select"
+          value={activeDeviceId || ''}
+          onChange={e => switchToDevice(e.target.value)}
+          title="Choose camera"
+        >
+          {cameraDevices.map((d, i) => (
+            <option key={d.deviceId} value={d.deviceId}>{d.label || `Camera ${i + 1}`}</option>
+          ))}
+        </select>
+      )}
+
+      <button
+        className={`sw-camera-tool-btn ${mirrorEnabled ? 'sw-camera-tool-active' : ''}`}
+        onClick={() => setMirrorEnabled(m => !m)}
+        title={mirrorEnabled ? 'Mirror on' : 'Mirror off'}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="12" y1="3" x2="12" y2="21"/>
+          <polyline points="8 8 4 12 8 16"/><polyline points="16 8 20 12 16 16"/>
+        </svg>
+      </button>
     </div>
-  );
+
+    <button className="sw-camera-close" onClick={toggleCamera}>✕</button>
+  </div>
+);
 
   if (!isPro) {
     return (
