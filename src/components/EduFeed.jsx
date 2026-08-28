@@ -597,6 +597,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
   const [pointsEarned, setPointsEarned] = useState(0)
   const [showPointsAnimation, setShowPointsAnimation] = useState(false)
   const recordedRef = useRef(false)
+  const reviewScrollRef = useRef(null)
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_LIMIT)
 
   const totalQuestions = questions.length
@@ -663,11 +664,15 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
     }
   }
 
-  const handleReviewQuestion = (index) => {
+    const handleReviewQuestion = (index) => {
     setCurrentQuestionIndex(index)
     setSelected(answers[index]?.selected ?? null)
     setAnswered(true)
     setShowSummary(false)
+  }
+
+  const scrollReview = (dir) => {
+    reviewScrollRef.current?.scrollBy({ left: dir * 180, behavior: 'smooth' })
   }
 
   // Fires once per finished attempt. Only the solo-post path passes
@@ -719,8 +724,16 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
           </div>
         </div>
         <div className="quiz-review-section">
-          <h4>Review Answers</h4>
-          <div className="review-questions-scroll">
+          <div className="quiz-review-header-row">
+            <h4>Review Answers</h4>
+            {answers.length > 2 && (
+              <div className="review-scroll-nav">
+                <button type="button" className="review-scroll-btn" onClick={() => scrollReview(-1)} aria-label="Scroll left">‹</button>
+                <button type="button" className="review-scroll-btn" onClick={() => scrollReview(1)} aria-label="Scroll right">›</button>
+              </div>
+            )}
+          </div>
+          <div className="review-questions-scroll" ref={reviewScrollRef}>
             {answers.map((answer, idx) => (
               <button
                 key={idx}

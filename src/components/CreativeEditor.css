@@ -2161,7 +2161,9 @@
   border-radius: 12px; 
   box-shadow: 0 12px 32px rgba(0,0,0,0.45); 
   box-sizing: border-box; 
+  scrollbar-width: none; /* Firefox */
 }
+.ai-tool-dropdown::-webkit-scrollbar { display: none; } /* Chrome/Safari/Edge */
 
 .ai-tool-item { 
   display: flex; 
