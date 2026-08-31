@@ -68,7 +68,7 @@ const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
   const [pdfError, setPdfError] = useState('');
   const pdfInputRef = useRef(null);
 
-  // ── THREAD STATES (replaces conversationHistory) ──
+  // ── THREAD STATES ──
   const [threads, setThreads] = useState([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
@@ -77,10 +77,9 @@ const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
   const [deletingId, setDeletingId] = useState(null);
   const [activeThread, setActiveThread] = useState(null); // {id, mode, title, messages, readOnly}
   
-  // ── NEW PREVIEW & COPY STATES ──
-  const [previewThread, setPreviewThread] = useState(null); // independent of activeThread — opening it never disturbs the conversation you're currently reading
+  // ── PREVIEW & COPY STATES ──
+  const [previewThread, setPreviewThread] = useState(null);
   const [previewCopiedIdx, setPreviewCopiedIdx] = useState(null);
-  const [chipCopiedId, setChipCopiedId] = useState(null);
 
   const dropdownRef = useRef(null);
   const textareaRef = useRef(null);
@@ -393,13 +392,6 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleChipCopy = async (thread) => {
-    const last = thread.messages?.[thread.messages.length - 1]?.content || '';
-    await copyTextToClipboard(last);
-    setChipCopiedId(thread.id);
-    setTimeout(() => setChipCopiedId(null), 1500);
-  };
-
   const copyMessage = async (text, idx) => {
     await copyTextToClipboard(text);
     setPreviewCopiedIdx(idx);
@@ -591,33 +583,15 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
 
             {pdfFile && (
               <>
-                <button
-                  className="pdf-analyze-btn"
-                  onClick={sendPdfToAI}
-                  disabled={pdfLoading}
-                >
-                  {pdfLoading ? (
-                    <>
-                      <span className="spinner"></span> Analyzing...
-                    </>
-                  ) : (
-                    '🔍 Analyze PDF'
-                  )}
+                <button className="pdf-analyze-btn" onClick={sendPdfToAI} disabled={pdfLoading}>
+                  {pdfLoading ? (<><span className="spinner"></span> Analyzing...</>) : '🔍 Analyze PDF'}
                 </button>
                 <button
                   className="pdf-clear-btn"
-                  onClick={() => {
-                    setPdfFile(null);
-                    setPdfError('');
-                    if (pdfInputRef.current) pdfInputRef.current.value = '';
-                  }}
+                  onClick={() => { setPdfFile(null); setPdfError(''); if (pdfInputRef.current) pdfInputRef.current.value = ''; }}
                   title="Remove PDF"
-                >
-                  ✕
-                </button>
-                <span className="pdf-status-text">
-                  ✓ Loaded <span className="file-size">({(pdfFile.size / 1024).toFixed(1)} KB)</span>
-                </span>
+                >✕</button>
+                <span className="pdf-status-text">✓ Loaded <span className="file-size">({(pdfFile.size / 1024).toFixed(1)} KB)</span></span>
               </>
             )}
           </div>
@@ -628,11 +602,6 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
             <span className="error-icon">⚠️</span> {pdfError}
           </div>
         )}
-
-        <button className="history-icon-btn" onClick={() => { setShowHistoryModal(true); setHistorySearchQuery(''); setHistorySearchResults([]); }} title="Conversation History">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span className="history-badge">{threads.length}</span>
-        </button>
       </div>
 
       <div className="ai-chat-scroll-area">
@@ -694,194 +663,136 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
         )}
       </div>
 
-      {threads.filter(t => t.id !== activeThread?.id).length > 0 && (
-        <div className="recent-threads-row">
-          {threads.filter(t => t.id !== activeThread?.id).slice(0, 3).map(t => (
-            <div key={t.id} className="thread-chip">
-              <button className="thread-chip-main" onClick={() => setPreviewThread(t)} title="Read this thread">
-                <span className="thread-chip-icon">{modeIcons[t.mode] || '💬'}</span>
-                <span className="thread-chip-title">{t.title || 'Untitled'}</span>
-              </button>
-              <button className="thread-chip-copy" onClick={() => handleChipCopy(t)} title="Copy last answer">
-                {chipCopiedId === t.id ? '✓' : '📋'}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="chat-input-container chat-composer-footer">
-        <LampToggle isDark={isDark} onClick={toggleTheme} size={28} />
-
-        {activeVideoId && currentMode === 'summarize' && !summarizeDone && !isTranscriptPasted && (
-          <div className="youtube-preview-section">
-            <div className="youtube-thumb-row">
-              <img
-                src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`}
-                alt="thumbnail"
-                className="youtube-thumb"
-                onClick={() => setShowVideoPreview(!showVideoPreview)}
-              />
-              <div className="youtube-thumb-info">
-                <span className="youtube-thumb-label">🎬 YouTube Video Detected</span>
-                <span className="youtube-thumb-hint">
-                  {showVideoPreview ? '▲ Hide preview' : '▼ Click to preview'}
-                </span>
-              </div>
-              <button
-                className="fetch-transcript-btn"
-                onClick={() => fetchTranscript(activeVideoId)}
-                disabled={transcriptLoading}
-              >
-                {transcriptLoading ? '⏳ Fetching...' : '📝 Fetch Transcript'}
-              </button>
-            </div>
-            {transcriptError && (
-              <div className="transcript-error">
-                ⚠️ {transcriptError} —
-                <a href={`https://www.youtube.com/watch?v=${activeVideoId}`} target="_blank" rel="noopener noreferrer">
-                  open on YouTube
-                </a> to copy manually.
-                <button
-                  className="link-clear-btn transcript-error-clear"
-                  onClick={() => {
-                    setInputText('');
-                    setPersistedVideoId(null);
-                    setShowVideoPreview(false);
-                    setTranscriptError('');
-                    setIsTranscriptPasted(false);
-                  }}
-                >
-                  ✕ Clear
-                </button>
-              </div>
-            )}
-            {showVideoPreview && (
-              <iframe
-                width="100%"
-                height="200"
-                src={`https://www.youtube-nocookie.com/embed/${activeVideoId}`}
-                title="YouTube video player"
-                frameBorder="0"
-                allowFullScreen
-                className="youtube-iframe"
-              />
-            )}
-          </div>
-        )}
-
-        {currentMode === 'summarize' && isUrl(inputText) && !activeVideoId && !isTranscriptPasted && inputText.trim() && (
-          <div className="summarize-link-preview">
-            <div className="link-preview-card">
-              <div className="link-preview-icon">🔗</div>
-              <div className="link-preview-info">
-                <div className="link-preview-url">{inputText.length > 60 ? inputText.substring(0, 60) + '...' : inputText}</div>
-                <div className="link-preview-label">Webpage Link Detected</div>
-              </div>
-              <div className="link-preview-actions">
-                <button
-                  className="link-fetch-btn"
-                  onClick={() => fetchUrl(inputText)}
-                  disabled={urlLoading}
-                >
-                  {urlLoading ? '⏳ Fetching...' : '🌐 Fetch Content'}
-                </button>
-                <button
-                  className="link-clear-btn"
-                  onClick={() => setInputText('')}
-                >
-                  ✕ Clear
-                </button>
-              </div>
-            </div>
-            {urlError && <div className="transcript-error" style={{ marginTop: '0.5rem' }}>⚠️ {urlError}</div>}
-          </div>
-        )}
-
-        {currentMode === 'summarize' && isTranscriptPasted && !summarizeDone && (
-          <div className="summarize-link-preview">
-            <div className="link-preview-card" style={{ background: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-              <div className="link-preview-icon">{fetchedUrl ? '🌐' : '📄'}</div>
-              <div className="link-preview-info">
-                <div className="link-preview-url">
-                  {fetchedUrl ? 'Content fetched from webpage' : activeVideoId ? 'Transcript loaded' : 'Text ready to summarize'}
-                </div>
-                <div className="transcript-ready-badge" style={{ marginTop: '0.25rem', display: 'inline-flex' }}>
-                  <span>✓</span> Ready to summarize
-                  <span className="transcript-word-count">
-                    ({inputText.split(/\s+/).filter(w => w).length.toLocaleString()} words)
-                  </span>
-                </div>
-              </div>
-              <div className="link-preview-actions">
-                <button
-                  className="link-clear-btn"
-                  onClick={() => {
-                    setInputText('');
-                    setIsTranscriptPasted(false);
-                    setSummarizeDone(false);
-                    setPersistedVideoId(null);
-                    setFetchedUrl('');
-                    if (textareaRef.current) textareaRef.current.style.height = 'auto';
-                  }}
-                >
-                  ✕ Clear
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className={`chat-input-row ${!isMobile && ((activeVideoId && currentMode === 'summarize' && !summarizeDone && !isTranscriptPasted) || (currentMode === 'summarize' && isUrl(inputText) && !activeVideoId && !isTranscriptPasted && inputText.trim())) ? 'chat-input-row-hidden' : ''}`}>
-          <div className="mode-selector-wrapper" ref={dropdownRef}>
-            <button className="plus-icon-btn" onClick={() => setIsDropdownOpen(d => !d)} title="Switch Mode">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <div className="chat-bottom-sticky-group">
+        <div className="chat-sticky-controls-row">
+          {!isLoading && (
+            <button className="feedback-btn" onClick={() => setShowFeedback(true)}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Send Feedback
             </button>
-            {isDropdownOpen && (
-              <div className="mode-dropdown-menu">
-                {Object.entries(modeLabels).map(([key, label]) => (
-                  <div key={key} className={`dropdown-item ${currentMode === key ? 'active' : ''}`} onClick={() => { setCurrentMode(key); setIsDropdownOpen(false); }}>
-                    {modeIcons[key]} {label}
-                  </div>
-                ))}
+          )}
+          <button
+            className="history-icon-btn"
+            onClick={() => { setShowHistoryModal(true); setHistorySearchQuery(''); setHistorySearchResults([]); }}
+            title="Conversation History"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span className="history-badge">{threads.length}</span>
+          </button>
+        </div>
+
+        <div className="chat-input-container chat-composer-footer">
+          <LampToggle isDark={isDark} onClick={toggleTheme} size={28} />
+
+          {activeVideoId && currentMode === 'summarize' && !summarizeDone && !isTranscriptPasted && (
+            <div className="youtube-preview-section">
+              <div className="youtube-thumb-row">
+                <img src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`} alt="thumbnail" className="youtube-thumb" onClick={() => setShowVideoPreview(!showVideoPreview)} />
+                <div className="youtube-thumb-info">
+                  <span className="youtube-thumb-label">🎬 YouTube Video Detected</span>
+                  <span className="youtube-thumb-hint">{showVideoPreview ? '▲ Hide preview' : '▼ Click to preview'}</span>
+                </div>
+                <button className="fetch-transcript-btn" onClick={() => fetchTranscript(activeVideoId)} disabled={transcriptLoading}>
+                  {transcriptLoading ? '⏳ Fetching...' : '📝 Fetch Transcript'}
+                </button>
               </div>
-            )}
+              {transcriptError && (
+                <div className="transcript-error">
+                  ⚠️ {transcriptError} — <a href={`https://www.youtube.com/watch?v=${activeVideoId}`} target="_blank" rel="noopener noreferrer">open on YouTube</a> to copy manually.
+                  <button className="link-clear-btn transcript-error-clear" onClick={() => { setInputText(''); setPersistedVideoId(null); setShowVideoPreview(false); setTranscriptError(''); setIsTranscriptPasted(false); }}>✕ Clear</button>
+                </div>
+              )}
+              {showVideoPreview && (
+                <iframe width="100%" height="200" src={`https://www.youtube-nocookie.com/embed/${activeVideoId}`} title="YouTube video player" frameBorder="0" allowFullScreen className="youtube-iframe" />
+              )}
+            </div>
+          )}
+
+          {currentMode === 'summarize' && isUrl(inputText) && !activeVideoId && !isTranscriptPasted && inputText.trim() && (
+            <div className="summarize-link-preview">
+              <div className="link-preview-card">
+                <div className="link-preview-icon">🔗</div>
+                <div className="link-preview-info">
+                  <div className="link-preview-url">{inputText.length > 60 ? inputText.substring(0, 60) + '...' : inputText}</div>
+                  <div className="link-preview-label">Webpage Link Detected</div>
+                </div>
+                <div className="link-preview-actions">
+                  <button className="link-fetch-btn" onClick={() => fetchUrl(inputText)} disabled={urlLoading}>{urlLoading ? '⏳ Fetching...' : '🌐 Fetch Content'}</button>
+                  <button className="link-clear-btn" onClick={() => setInputText('')}>✕ Clear</button>
+                </div>
+              </div>
+              {urlError && <div className="transcript-error" style={{ marginTop: '0.5rem' }}>⚠️ {urlError}</div>}
+            </div>
+          )}
+
+          {currentMode === 'summarize' && isTranscriptPasted && !summarizeDone && (
+            <div className="summarize-link-preview">
+              <div className="link-preview-card" style={{ background: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                <div className="link-preview-icon">{fetchedUrl ? '🌐' : '📄'}</div>
+                <div className="link-preview-info">
+                  <div className="link-preview-url">{fetchedUrl ? 'Content fetched from webpage' : activeVideoId ? 'Transcript loaded' : 'Text ready to summarize'}</div>
+                  <div className="transcript-ready-badge" style={{ marginTop: '0.25rem', display: 'inline-flex' }}>
+                    <span>✓</span> Ready to summarize
+                    <span className="transcript-word-count">({inputText.split(/\s+/).filter(w => w).length.toLocaleString()} words)</span>
+                  </div>
+                </div>
+                <div className="link-preview-actions">
+                  <button className="link-clear-btn" onClick={() => { setInputText(''); setIsTranscriptPasted(false); setSummarizeDone(false); setPersistedVideoId(null); setFetchedUrl(''); if (textareaRef.current) textareaRef.current.style.height = 'auto'; }}>✕ Clear</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={`chat-input-row ${!isMobile && ((activeVideoId && currentMode === 'summarize' && !summarizeDone && !isTranscriptPasted) || (currentMode === 'summarize' && isUrl(inputText) && !activeVideoId && !isTranscriptPasted && inputText.trim())) ? 'chat-input-row-hidden' : ''}`}>
+            <div className="mode-selector-wrapper" ref={dropdownRef}>
+              <button className="plus-icon-btn" onClick={() => setIsDropdownOpen(d => !d)} title="Switch Mode">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              {isDropdownOpen && (
+                <div className="mode-dropdown-menu">
+                  {Object.entries(modeLabels).map(([key, label]) => (
+                    <div key={key} className={`dropdown-item ${currentMode === key ? 'active' : ''}`} onClick={() => { setCurrentMode(key); setIsDropdownOpen(false); }}>
+                      {modeIcons[key]} {label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <textarea
+              ref={textareaRef}
+              id="question-input"
+              placeholder={isListening ? 'Listening...' : inputPlaceholder}
+              value={(isTranscriptPasted || (activeVideoId && currentMode === 'summarize' && !summarizeDone)) ? '' : inputText}
+              onChange={handleTextareaChange}
+              rows="1"
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            />
+
+            <button id="submit-btn" onClick={() => handleSend()} disabled={isLoading || (!inputText.trim() && !isTranscriptPasted)}>
+              {isLoading ? <span className="loading-dots">...</span> : <img src="/hero.ai.png" alt="vAIbes" />}
+            </button>
+
+            <button className={`mic-btn ${isListening ? 'listening-pulse' : ''}`} onClick={startListening} disabled={isLoading} aria-label="Voice Input">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
           </div>
 
-          <textarea
-            ref={textareaRef}
-            id="question-input"
-            placeholder={isListening ? 'Listening...' : inputPlaceholder}
-            value={(isTranscriptPasted || (activeVideoId && currentMode === 'summarize' && !summarizeDone)) ? '' : inputText}
-            onChange={handleTextareaChange}
-            rows="1"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-          />
-
-          <button id="submit-btn" onClick={() => handleSend()} disabled={isLoading || (!inputText.trim() && !isTranscriptPasted)}>
-            {isLoading ? <span className="loading-dots">...</span> : <img src="/hero.ai.png" alt="vAIbes" />}
-          </button>
-
-          <button className={`mic-btn ${isListening ? 'listening-pulse' : ''}`} onClick={startListening} disabled={isLoading} aria-label="Voice Input">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-          </button>
+          {urlError && <div className="transcript-error" style={{ marginTop: '0.5rem' }}>⚠️ {urlError}</div>}
         </div>
 
-        {urlError && <div className="transcript-error" style={{ marginTop: '0.5rem' }}>⚠️ {urlError}</div>}
+        {threads.filter(t => t.id !== activeThread?.id).length > 0 && (
+          <div className="recent-threads-row">
+            {threads.filter(t => t.id !== activeThread?.id).slice(0, 3).map(t => (
+              <div key={t.id} className="thread-chip">
+                <button className="thread-chip-main" onClick={() => setPreviewThread(t)} title="Read this thread">
+                  <span className="thread-chip-icon">{modeIcons[t.mode] || '💬'}</span>
+                  <span className="thread-chip-title">{t.title || 'Untitled'}</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {!isLoading && (
-        <div className="feedback-btn-wrap">
-          <button className="feedback-btn" onClick={() => setShowFeedback(true)}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Send Feedback
-          </button>
-        </div>
-      )}
 
       {previewThread && createPortal(
         <div className="thread-preview-overlay" onClick={() => setPreviewThread(null)}>
@@ -905,9 +816,7 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
               ))}
             </div>
             <div className="thread-preview-footer">
-              <button className="thread-preview-continue-btn" onClick={() => { openThread(previewThread, false); setPreviewThread(null); }}>
-                ↺ Continue This Thread
-              </button>
+              <button className="thread-preview-continue-btn" onClick={() => { openThread(previewThread, false); setPreviewThread(null); }}>↺ Continue This Thread</button>
             </div>
           </div>
         </div>,
@@ -955,45 +864,27 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
                 <button className="history-clear-search" onClick={() => { setHistorySearchQuery(''); setHistorySearchResults([]); }}>Clear</button>
               </div>
             )}
-           <div className="history-list">
-  {(historySearchResults.length > 0 ? historySearchResults : threads).length === 0 ? (
-    <div className="history-empty"><span>📭</span><p>No conversations yet</p><small>Your AI interactions will appear here</small></div>
-  ) : (
-    (historySearchResults.length > 0 ? historySearchResults : threads).map(item => (
-      <div key={item.id} className="history-item">
-        <div className="history-item-header">
-          <span className="history-item-mode">{modeIcons[item.mode] || '💬'} {modeLabels[item.mode] || item.mode}</span>
-          <span className="history-item-date">{new Date(item.updated_at || item.created_at).toLocaleString()}</span>
-        </div>
-        <div className="history-item-question"><strong>Q:</strong> {item.title || (item.messages?.[0]?.content?.substring(0, 200) || 'No title')}</div>
-        <div className="history-item-answer-preview"><strong>A:</strong> {item.messages?.[item.messages.length - 1]?.content?.substring(0, 100) || '...'}</div>
-        <div className="history-item-actions">
-          <button
-            className="history-continue-btn"
-            onClick={() => openThread(item, false)}
-            title="Continue this thread"
-          >
-            ↺ Restore
-          </button>
-          <button
-            className="history-restore-btn"
-            onClick={() => openThread(item, true)}
-            title="Read only"
-          >
-            👁 Read
-          </button>
-          <button
-            className="history-delete-btn"
-            onClick={() => deleteThread(item.id)}
-            disabled={deletingId === item.id}
-          >
-            {deletingId === item.id ? '...' : '🗑 Delete'}
-          </button>
-        </div>
-      </div>
-    ))
-  )}
-</div>
+            <div className="history-list">
+              {(historySearchResults.length > 0 ? historySearchResults : threads).length === 0 ? (
+                <div className="history-empty"><span>📭</span><p>No conversations yet</p><small>Your AI interactions will appear here</small></div>
+              ) : (
+                (historySearchResults.length > 0 ? historySearchResults : threads).map(item => (
+                  <div key={item.id} className="history-item">
+                    <div className="history-item-header">
+                      <span className="history-item-mode">{modeIcons[item.mode] || '💬'} {modeLabels[item.mode] || item.mode}</span>
+                      <span className="history-item-date">{new Date(item.updated_at || item.created_at).toLocaleString()}</span>
+                    </div>
+                    <div className="history-item-question"><strong>Q:</strong> {item.title || (item.messages?.[0]?.content?.substring(0, 200) || 'No title')}</div>
+                    <div className="history-item-answer-preview"><strong>A:</strong> {item.messages?.[item.messages.length - 1]?.content?.substring(0, 100) || '...'}</div>
+                    <div className="history-item-actions">
+                      <button className="history-continue-btn" onClick={() => openThread(item, false)} title="Continue this thread">↺ Restore</button>
+                      <button className="history-restore-btn" onClick={() => openThread(item, true)} title="Read only">👁 Read</button>
+                      <button className="history-delete-btn" onClick={() => deleteThread(item.id)} disabled={deletingId === item.id}>{deletingId === item.id ? '...' : '🗑 Delete'}</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>,
         document.body
