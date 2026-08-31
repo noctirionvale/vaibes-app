@@ -17,7 +17,7 @@
 .ai-utility-section {
   max-width: 800px;
   margin: 0 auto 4rem;
-  padding-bottom: 8rem; /* Increased from 3rem to accommodate fixed input */
+  padding-bottom: 3rem;  /* was bumped to 8rem to clear the fixed input — no longer needed */
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -116,12 +116,9 @@
 
 /* Change .sticky-chatbox from sticking to top to fixing at bottom */
 .sticky-chatbox {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(800px, calc(100vw - 2rem));
-  z-index: 100;
+  position: relative;   /* was: fixed */
+  width: 100%;
+  z-index: 20;           /* no longer needs 100 — it's not fighting the viewport */
   background: var(--glass);
   backdrop-filter: blur(20px);
   border-radius: 16px;
