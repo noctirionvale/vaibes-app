@@ -20,6 +20,7 @@ const PanelSwitcher = ({
       {PANEL_TABS.map((tab) => (
         <button
           key={tab.key}
+          data-tour={`panel-tab-${tab.key}`}
           className={`panel-switcher-tab ${centerActiveKey === tab.key ? 'active' : ''}`}
           onClick={() => onViewChange(tab.key)}
           title={`${tab.title}${centerActiveKey === tab.key ? ' (in center)' : ''}`}

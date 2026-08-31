@@ -281,12 +281,13 @@ const MobileTopbar = ({
         onTouchCancel={handleTouchEnd}
       >
         {orderedTabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`bottom-nav-item ${activeTab === tab.id ? 'active' : ''} ${reorderMode ? 'reorder-jiggle' : ''} ${draggingId === tab.id ? 'dragging' : ''}`}
-            onTouchStart={handleTouchStart(tab.id)}
-            onClick={() => { if (!reorderMode) tab.action(); }}
-          >
+  <button
+    key={tab.id}
+    data-tour={`nav-${tab.id}`}
+    className={`bottom-nav-item ${activeTab === tab.id ? 'active' : ''} ${reorderMode ? 'reorder-jiggle' : ''} ${draggingId === tab.id ? 'dragging' : ''}`}
+    onTouchStart={handleTouchStart(tab.id)}
+    onClick={() => { if (!reorderMode) tab.action(); }}
+  >
             <span className="bottom-nav-icon">{tab.icon}</span>
             <span className="bottom-nav-label">{tab.label}</span>
           </button>

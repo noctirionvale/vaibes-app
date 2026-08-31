@@ -24,10 +24,16 @@ import { VaibeyProvider } from './context/VaibeyContext';
 import EduFeed from './components/EduFeed';
 import VidFeed from './components/VidFeed';
 import { MusicPlayerProvider } from './context/MusicPlayerContext';
+import { useOnboardingTour } from './hooks/useOnboardingTour';
 import './styles/App.css';
 
 const AppShellContent = () => {
   const isMobile = useIsMobile();
+  const { user, profile } = useAuth(); // Single source of truth for auth state
+  
+  // Wire onboarding tour at the top level (Rules of Hooks)
+  useOnboardingTour(user, profile, isMobile);
+
   const [showSettings, setShowSettings] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
   const [showRoomPlay, setShowRoomPlay] = useState(false);
@@ -46,8 +52,6 @@ const AppShellContent = () => {
   const [centerView, setCenterView] = useState('userwall');
   const [forceCreativeEditorInCenter, setForceCreativeEditorInCenter] = useState(false);
 
-  const { user } = useAuth();
-
   // ── Live slots: VidFeed & EduFeed mount ONCE and stay mounted regardless
   // of whether they're currently shown center or right — swapping only
   // repositions a fixed overlay onto the active placeholder. ──
@@ -59,10 +63,16 @@ const AppShellContent = () => {
   // ── Fetch user tier ──
   useEffect(() => {
     const fetchTier = async () => {
-      if (!user?.id) { setUserTier('free'); return; }
+      if (!user?.id) { 
+        setUserTier('free'); 
+        return; 
+      }
       try {
         const { data, error } = await supabase
-          .from('profiles').select('plan').eq('id', user.id).maybeSingle();
+          .from('profiles')
+          .select('plan')
+          .eq('id', user.id)
+          .maybeSingle();
         if (!error && data?.plan) setUserTier(data.plan);
         else setUserTier('free');
       } catch (err) {
@@ -74,18 +84,18 @@ const AppShellContent = () => {
   }, [user]);
 
   useEffect(() => {
-  const handleOpenBilling = () => setShowBilling(true);
-  window.addEventListener('open-billing', handleOpenBilling);
-  return () => window.removeEventListener('open-billing', handleOpenBilling);
-}, []);
+    const handleOpenBilling = () => setShowBilling(true);
+    window.addEventListener('open-billing', handleOpenBilling);
+    return () => window.removeEventListener('open-billing', handleOpenBilling);
+  }, []);
 
-const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
-useEffect(() => {
-  const handleOpenAuth = () => setShowAuthModal(true);
-  window.addEventListener('open-auth', handleOpenAuth);
-  return () => window.removeEventListener('open-auth', handleOpenAuth);
-}, []);
+  useEffect(() => {
+    const handleOpenAuth = () => setShowAuthModal(true);
+    window.addEventListener('open-auth', handleOpenAuth);
+    return () => window.removeEventListener('open-auth', handleOpenAuth);
+  }, []);
 
   // ── Service worker cleanup ──
   useEffect(() => {
@@ -102,7 +112,10 @@ useEffect(() => {
   const handleInjectToCanvas = (content) => console.log('Inject to canvas:', content);
 
   const handleEditItem = (item) => {
-    if (isMobile) { setMobileEditItem(item); return; }
+    if (isMobile) { 
+      setMobileEditItem(item); 
+      return; 
+    }
     setWallEditItem(item);
     setForceCreativeEditorInCenter(true);
   };
@@ -132,7 +145,10 @@ useEffect(() => {
         .select('*')
         .eq('id', post.community_id)
         .single();
-      if (error || !data) { console.error('Failed to load room for editing:', error); return; }
+      if (error || !data) { 
+        console.error('Failed to load room for editing:', error); 
+        return; 
+      }
       setCommunityEditItem(data);
       setShowCommunityEditor(true);
       return;
@@ -173,11 +189,11 @@ useEffect(() => {
     const currentCenterKey = forceCreativeEditorInCenter ? 'creative' : centerView;
 
     if (view === currentCenterKey) {
-  setCenterView('userwall');
-  setForceCreativeEditorInCenter(false);
-  setRightPanelView('creative');   // restore the default pairing every time userwall becomes center
-  return;
-}
+      setCenterView('userwall');
+      setForceCreativeEditorInCenter(false);
+      setRightPanelView('creative'); // restore the default pairing every time userwall becomes center
+      return;
+    }
 
     // Wherever the CreativeEditor currently sits, clear its edit-item —
     // it's about to be displaced and the in-progress edit doesn't follow it.
@@ -256,8 +272,9 @@ useEffect(() => {
     ? 'creative'
     : (centerView === 'userwall' ? null : centerView);
 
-    const vidfeedLocation = centerActiveKey === 'vidfeed' ? 'center' : (rightPanelView === 'vidfeed' ? 'right' : null);
+  const vidfeedLocation = centerActiveKey === 'vidfeed' ? 'center' : (rightPanelView === 'vidfeed' ? 'right' : null);
   const edufeedLocation = centerActiveKey === 'edufeed' ? 'center' : (rightPanelView === 'edufeed' ? 'right' : null);
+  
   // Reuses the exact same wrapper classes the old single-instance render
   // used, so all existing .center-view-wrapper--X / .panel-content-wrapper
   // CSS (clipping, layout) still applies to the live component's subtree.
@@ -293,7 +310,6 @@ useEffect(() => {
   // ── Main app layout ──
   return (
     <>
-    
       {isMobile && (
         <MobileTopbar
           userTier={userTier}
@@ -306,55 +322,54 @@ useEffect(() => {
       )}
 
       {!isMobile && (
-
         <>
-        <div className="main-wrapper">
-          <LeftSidebar />
-         <main className="content-center">
-            <div className="chatbox-wrapper">
-              <div
-                className={
-                  !forceCreativeEditorInCenter && (centerView === 'vidfeed' || centerView === 'edufeed')
-                    ? `center-view-wrapper center-view-wrapper--feed center-view-wrapper--${centerView}`
-                    : 'center-view-wrapper'
-                }
-              >
-                {centerColumnContent}
+          <div className="main-wrapper">
+            <LeftSidebar />
+            <main className="content-center">
+              <div className="chatbox-wrapper">
+                <div
+                  className={
+                    !forceCreativeEditorInCenter && (centerView === 'vidfeed' || centerView === 'edufeed')
+                      ? `center-view-wrapper center-view-wrapper--feed center-view-wrapper--${centerView}`
+                      : 'center-view-wrapper'
+                  }
+                >
+                  {centerColumnContent}
+                </div>
               </div>
+            </main>
+
+            <div className="right-panel">
+              <PanelSwitcher
+                activeView={rightPanelView}
+                centerActiveKey={centerActiveKey}
+                onViewChange={switchRightPanel}
+                creativeEditorProps={rightCreativeEditorProps}
+                aiComparisonProps={aiComparisonProps}
+                userTier={userTier}
+                vidSlotRef={rightVidSlotRef}
+                eduSlotRef={rightEduSlotRef}
+              />
             </div>
-          </main>
-
-          <div className="right-panel">
-            <PanelSwitcher
-              activeView={rightPanelView}
-              centerActiveKey={centerActiveKey}
-              onViewChange={switchRightPanel}
-              creativeEditorProps={rightCreativeEditorProps}
-              aiComparisonProps={aiComparisonProps}
-              userTier={userTier}
-              vidSlotRef={rightVidSlotRef}
-              eduSlotRef={rightEduSlotRef}
-            />
           </div>
-        </div>
 
-      {vidfeedLocation && (
-          <LiveSlot
-            slotRef={vidfeedLocation === 'center' ? centerVidSlotRef : rightVidSlotRef}
-            hostClassName={feedHostClass(vidfeedLocation, 'vidfeed')}
-          >
-            <VidFeed compact={vidfeedLocation === 'right'} />
-          </LiveSlot>
-        )}
+          {vidfeedLocation && (
+            <LiveSlot
+              slotRef={vidfeedLocation === 'center' ? centerVidSlotRef : rightVidSlotRef}
+              hostClassName={feedHostClass(vidfeedLocation, 'vidfeed')}
+            >
+              <VidFeed compact={vidfeedLocation === 'right'} />
+            </LiveSlot>
+          )}
 
-        {edufeedLocation && (
-          <LiveSlot
-            slotRef={edufeedLocation === 'center' ? centerEduSlotRef : rightEduSlotRef}
-            hostClassName={feedHostClass(edufeedLocation, 'edufeed')}
-          >
-            <EduFeed userTier={userTier} onEditPost={handleEditEduPost} />
-          </LiveSlot>
-        )}
+          {edufeedLocation && (
+            <LiveSlot
+              slotRef={edufeedLocation === 'center' ? centerEduSlotRef : rightEduSlotRef}
+              hostClassName={feedHostClass(edufeedLocation, 'edufeed')}
+            >
+              <EduFeed userTier={userTier} onEditPost={handleEditEduPost} />
+            </LiveSlot>
+          )}
         </>
       )}
 
@@ -388,13 +403,13 @@ function App() {
         <AuthProvider>
           <VaibeyProvider>
             <MusicPlayerProvider>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/app" element={<AppShellContent />} />
-              <Route path="/share/:id" element={<SharedCreative />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-              <Route path="/share/quiz/:id" element={<SharedQuiz />} />
-            </Routes>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/app" element={<AppShellContent />} />
+                <Route path="/share/:id" element={<SharedCreative />} />
+                <Route path="/share/quiz/:id" element={<SharedQuiz />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
             </MusicPlayerProvider>
           </VaibeyProvider>
         </AuthProvider>
