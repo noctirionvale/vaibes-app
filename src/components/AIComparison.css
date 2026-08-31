@@ -115,10 +115,19 @@
 }
 
 /* Change .sticky-chatbox from sticking to top to fixing at bottom */
+.ai-input-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  background: var(--bg);
+  padding-top: .5rem;
+  margin-top: auto;   /* keeps it settled near the bottom when there's little content */
+}
+
 .sticky-chatbox {
-  position: relative;   /* was: fixed */
+  position: relative;  /* dock handles staying visible now, not this */
   width: 100%;
-  z-index: 20;           /* no longer needs 100 — it's not fighting the viewport */
+  z-index: 20;
   background: var(--glass);
   backdrop-filter: blur(20px);
   border-radius: 16px;
