@@ -10,6 +10,12 @@ import './AIComparison.css';
 
 const MOBILE_BREAKPOINT = 768;
 
+const copyTextToClipboard = async (text) => {
+  try { await navigator.clipboard.writeText(text); return; } catch {}
+  const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+};
+
 const LampToggle = ({ isDark, onClick, size = 28 }) => (
   <button onClick={onClick} className={`lamp-toggle-btn ${isDark ? 'lamp-dark' : 'lamp-light'}`} title="Toggle theme" aria-label="Toggle theme" style={{ width: size, height: size }}>
     <span style={{ fontSize: size * 0.52 }} aria-hidden="true">{isDark ? '💡' : '☀️'}</span>
@@ -70,6 +76,11 @@ const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
   const [historySearching, setHistorySearching] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [activeThread, setActiveThread] = useState(null); // {id, mode, title, messages, readOnly}
+  
+  // ── NEW PREVIEW & COPY STATES ──
+  const [previewThread, setPreviewThread] = useState(null); // independent of activeThread — opening it never disturbs the conversation you're currently reading
+  const [previewCopiedIdx, setPreviewCopiedIdx] = useState(null);
+  const [chipCopiedId, setChipCopiedId] = useState(null);
 
   const dropdownRef = useRef(null);
   const textareaRef = useRef(null);
@@ -156,7 +167,6 @@ const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
 
   const closeThread = () => setActiveThread(null);
 
-  // ✅ UPDATED: Get system prompt WITH Vaibey context (no more "continuing" hack)
   const getSystemPromptWithContext = (mode) => {
     let prompt = systemPrompts[mode];
     const vaibeyContext = getContextForVaibey();
@@ -311,33 +321,33 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
   };
 
   const sendPdfToAI = async () => {
-  if (!pdfFile || !user) { if (!user) setShowAuthModal(true); return; }
-  setPdfLoading(true); setResponse(''); setPdfError('');
-  try {
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(pdfFile);
-    });
-    const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch('/api/ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
-      body: JSON.stringify({
-        action: 'analyze-pdf',      // was 'ai' — router only knows 'chat' | 'fetch-content' | 'analyze-pdf'
-        pdfBase64: base64,          // was the undefined var `pdfBase64`
-        filename: pdfFile.name,     // was the undefined var `filename`
-        mode: currentMode,          // was the undefined var `mode`
-      }),
-    });
-    const data = await res.json().catch(() => ({ error: 'Server returned invalid response' }));
-    if (!res.ok) throw new Error(data.error || 'PDF analysis failed');
-    const text = data.choices?.[0]?.message?.content;
-    if (text) setResponse(text); else throw new Error('No response from AI');
-  } catch (err) { setPdfError(err.message); }
-  finally { setPdfLoading(false); }
-};
+    if (!pdfFile || !user) { if (!user) setShowAuthModal(true); return; }
+    setPdfLoading(true); setResponse(''); setPdfError('');
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(pdfFile);
+      });
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({
+          action: 'analyze-pdf',
+          pdfBase64: base64,
+          filename: pdfFile.name,
+          mode: currentMode,
+        }),
+      });
+      const data = await res.json().catch(() => ({ error: 'Server returned invalid response' }));
+      if (!res.ok) throw new Error(data.error || 'PDF analysis failed');
+      const text = data.choices?.[0]?.message?.content;
+      if (text) setResponse(text); else throw new Error('No response from AI');
+    } catch (err) { setPdfError(err.message); }
+    finally { setPdfLoading(false); }
+  };
 
   const handleAudioPlayback = async (textToSpeak) => {
     if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); }
@@ -374,14 +384,27 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
   };
 
   const handleCopy = async (text) => {
-  const toCopy = text ?? response;
-  try { await navigator.clipboard.writeText(toCopy); }
-  catch {
-    const ta = document.createElement('textarea'); ta.value = toCopy; ta.style.cssText = 'position:fixed;opacity:0';
-    document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-  }
-  setCopied(true); setTimeout(() => setCopied(false), 2000);
-};
+    const toCopy = text ?? response;
+    try { await navigator.clipboard.writeText(toCopy); }
+    catch {
+      const ta = document.createElement('textarea'); ta.value = toCopy; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    }
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleChipCopy = async (thread) => {
+    const last = thread.messages?.[thread.messages.length - 1]?.content || '';
+    await copyTextToClipboard(last);
+    setChipCopiedId(thread.id);
+    setTimeout(() => setChipCopiedId(null), 1500);
+  };
+
+  const copyMessage = async (text, idx) => {
+    await copyTextToClipboard(text);
+    setPreviewCopiedIdx(idx);
+    setTimeout(() => setPreviewCopiedIdx(null), 1500);
+  };
 
   const resetAll = () => {
     setResponse(''); setSummarizeDone(false); setIsTranscriptPasted(false);
@@ -424,18 +447,18 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
         : [];
 
       const apiResponse = await fetch('/api/ai', {
-  method: 'POST',
-  headers,   // the headers const you already built above with session.access_token
-  body: JSON.stringify({
-    action: 'chat',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      ...priorMessages,
-      { role: 'user', content: userContent },
-    ],
-    thread_id: activeThread?.id,
-  }),
-});
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...priorMessages,
+            { role: 'user', content: userContent },
+          ],
+          thread_id: activeThread?.id,
+        }),
+      });
 
       if (apiResponse.status === 402) { setResponse('✨ AI chat is a Pro feature. Please upgrade to Pro.'); if (onOpenUpgrade) onOpenUpgrade(); setIsLoading(false); return; }
       if (apiResponse.status === 429) { const d = await apiResponse.json(); setResponse(`⚠️ ${d.error}`); setIsLoading(false); return; }
@@ -514,8 +537,7 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
   };
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
-  // add near isMobile, right before the return statement
-const showThreadView = !!activeThread && (activeThread.readOnly !== undefined || activeThread.messages.length > 2);
+  const showThreadView = !!activeThread && (activeThread.readOnly !== undefined || activeThread.messages.length > 2);
 
   let inputPlaceholder;
   if (activeThread && !activeThread.readOnly) {
@@ -538,75 +560,74 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
 
   return (
     <div className="ai-utility-section">
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+      <div className="ai-chat-header-row" style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
         <TypingCat mode={currentMode} isDark={isDark} onResponse={!!response && !isLoading} size={4} showBadge={true} showQuip={true} peekBounce={true} />
       </div>
 
       <div className="vaibey-wrapper" style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}></div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem', paddingRight: '0.25rem', marginBottom: '0.5rem' }}>
+      <div className="ai-chat-controls-row" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem', paddingRight: '0.25rem', marginBottom: '0.5rem' }}>
         {currentMode === 'analyze' && (
-  <div className="pdf-controls-wrapper">
-    <input 
-      ref={pdfInputRef} 
-      type="file" 
-      accept="application/pdf" 
-      style={{ display: 'none' }} 
-      onChange={handlePdfUpload} 
-    />
-    <button 
-      className={`pdf-upload-btn ${pdfFile ? 'has-file' : ''}`} 
-      onClick={() => pdfInputRef.current?.click()} 
-      disabled={pdfLoading}
-      title={pdfFile ? pdfFile.name : 'Upload PDF'}
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-      </svg>
-      {pdfFile ? pdfFile.name.slice(0, 12) + (pdfFile.name.length > 12 ? '…' : '') : 'Upload PDF'}
-    </button>
-    
-    {pdfFile && (
-      <>
-        <button 
-          className="pdf-analyze-btn" 
-          onClick={sendPdfToAI} 
-          disabled={pdfLoading}
-        >
-          {pdfLoading ? (
-            <>
-              <span className="spinner"></span> Analyzing...
-            </>
-          ) : (
-            '🔍 Analyze PDF'
-          )}
-        </button>
-        <button 
-          className="pdf-clear-btn" 
-          onClick={() => { 
-            setPdfFile(null); 
-            setPdfError(''); 
-            if (pdfInputRef.current) pdfInputRef.current.value = '';
-          }} 
-          title="Remove PDF"
-        >
-          ✕
-        </button>
-        <span className="pdf-status-text">
-          ✓ Loaded <span className="file-size">({(pdfFile.size / 1024).toFixed(1)} KB)</span>
-        </span>
-      </>
-    )}
-  </div>
-)}
+          <div className="pdf-controls-wrapper">
+            <input
+              ref={pdfInputRef}
+              type="file"
+              accept="application/pdf"
+              style={{ display: 'none' }}
+              onChange={handlePdfUpload}
+            />
+            <button
+              className={`pdf-upload-btn ${pdfFile ? 'has-file' : ''}`}
+              onClick={() => pdfInputRef.current?.click()}
+              disabled={pdfLoading}
+              title={pdfFile ? pdfFile.name : 'Upload PDF'}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              {pdfFile ? pdfFile.name.slice(0, 12) + (pdfFile.name.length > 12 ? '…' : '') : 'Upload PDF'}
+            </button>
 
-{/* Show error outside the wrapper for better visibility */}
-{pdfError && (
-  <div className="pdf-error-msg">
-    <span className="error-icon">⚠️</span> {pdfError}
-  </div>
-)}
+            {pdfFile && (
+              <>
+                <button
+                  className="pdf-analyze-btn"
+                  onClick={sendPdfToAI}
+                  disabled={pdfLoading}
+                >
+                  {pdfLoading ? (
+                    <>
+                      <span className="spinner"></span> Analyzing...
+                    </>
+                  ) : (
+                    '🔍 Analyze PDF'
+                  )}
+                </button>
+                <button
+                  className="pdf-clear-btn"
+                  onClick={() => {
+                    setPdfFile(null);
+                    setPdfError('');
+                    if (pdfInputRef.current) pdfInputRef.current.value = '';
+                  }}
+                  title="Remove PDF"
+                >
+                  ✕
+                </button>
+                <span className="pdf-status-text">
+                  ✓ Loaded <span className="file-size">({(pdfFile.size / 1024).toFixed(1)} KB)</span>
+                </span>
+              </>
+            )}
+          </div>
+        )}
+
+        {pdfError && (
+          <div className="pdf-error-msg">
+            <span className="error-icon">⚠️</span> {pdfError}
+          </div>
+        )}
 
         <button className="history-icon-btn" onClick={() => { setShowHistoryModal(true); setHistorySearchQuery(''); setHistorySearchResults([]); }} title="Conversation History">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -614,17 +635,92 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
         </button>
       </div>
 
-      <div className="chat-input-container sticky-chatbox">
+      <div className="ai-chat-scroll-area">
+        {showThreadView ? (
+          <div className="ai-response-card thread-view" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
+            <div className="ai-response-header">
+              <div className="response-header-left">
+                <span className="current-mode-badge">{modeIcons[activeThread.mode]} {modeLabels[activeThread.mode]}</span>
+              </div>
+              <div className="response-actions">
+                {activeThread.readOnly && <span className="usage-badge">👁 Read only</span>}
+                <button
+                  className={`action-btn action-btn-copy ${copied ? 'copied' : ''}`}
+                  onClick={() => handleCopy(activeThread.messages[activeThread.messages.length - 1]?.content || '')}
+                >
+                  {copied ? '✓ Copied' : 'Copy'}
+                </button>
+                <button className="action-btn action-btn-reset" onClick={closeThread} title="Close thread">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            </div>
+            <div className="thread-messages">
+              {activeThread.messages.map((m, i) => (
+                <div key={i} className={`thread-msg thread-msg-${m.role}`}>
+                  <span className="thread-msg-label">{m.role === 'user' ? 'You' : 'Vaibey'}</span>
+                  <div className="thread-msg-text">{m.content}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : response && (
+          <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
+            <div className="ai-response-header">
+              <div className="response-header-left">
+                <span className="current-mode-badge">{modeIcons[currentMode]} {modeLabels[currentMode]}</span>
+              </div>
+              <div className="response-actions">
+                <button className={`action-btn action-btn-copy ${copied ? 'copied' : ''}`} onClick={handleCopy}>
+                  {copied ? '✓ Copied' : 'Copy'}
+                </button>
+                <button className="action-btn action-btn-reset" onClick={resetAll}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            </div>
+
+            {currentMode === 'writeDraft' && (
+              <div className="audio-player-wrapper">
+                {apiFailed && <div className="tts-fallback-msg">⚠️ TTS error — using browser speech</div>}
+                <button onClick={handleManualPlay} className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`} disabled={isAudioPlaying}>
+                  {isAudioPlaying ? <><span className="waveform"><span/><span/><span/><span/></span><span>Playing...</span></> : <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play Audio</span></>}
+                </button>
+              </div>
+            )}
+
+            <div className="ai-response-text">{response}</div>
+          </div>
+        )}
+      </div>
+
+      {threads.filter(t => t.id !== activeThread?.id).length > 0 && (
+        <div className="recent-threads-row">
+          {threads.filter(t => t.id !== activeThread?.id).slice(0, 3).map(t => (
+            <div key={t.id} className="thread-chip">
+              <button className="thread-chip-main" onClick={() => setPreviewThread(t)} title="Read this thread">
+                <span className="thread-chip-icon">{modeIcons[t.mode] || '💬'}</span>
+                <span className="thread-chip-title">{t.title || 'Untitled'}</span>
+              </button>
+              <button className="thread-chip-copy" onClick={() => handleChipCopy(t)} title="Copy last answer">
+                {chipCopiedId === t.id ? '✓' : '📋'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="chat-input-container chat-composer-footer">
         <LampToggle isDark={isDark} onClick={toggleTheme} size={28} />
 
         {activeVideoId && currentMode === 'summarize' && !summarizeDone && !isTranscriptPasted && (
           <div className="youtube-preview-section">
             <div className="youtube-thumb-row">
-              <img 
-                src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`} 
-                alt="thumbnail" 
-                className="youtube-thumb" 
-                onClick={() => setShowVideoPreview(!showVideoPreview)} 
+              <img
+                src={`https://img.youtube.com/vi/${activeVideoId}/mqdefault.jpg`}
+                alt="thumbnail"
+                className="youtube-thumb"
+                onClick={() => setShowVideoPreview(!showVideoPreview)}
               />
               <div className="youtube-thumb-info">
                 <span className="youtube-thumb-label">🎬 YouTube Video Detected</span>
@@ -632,9 +728,9 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
                   {showVideoPreview ? '▲ Hide preview' : '▼ Click to preview'}
                 </span>
               </div>
-              <button 
-                className="fetch-transcript-btn" 
-                onClick={() => fetchTranscript(activeVideoId)} 
+              <button
+                className="fetch-transcript-btn"
+                onClick={() => fetchTranscript(activeVideoId)}
                 disabled={transcriptLoading}
               >
                 {transcriptLoading ? '⏳ Fetching...' : '📝 Fetch Transcript'}
@@ -642,12 +738,12 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
             </div>
             {transcriptError && (
               <div className="transcript-error">
-                ⚠️ {transcriptError} — 
+                ⚠️ {transcriptError} —
                 <a href={`https://www.youtube.com/watch?v=${activeVideoId}`} target="_blank" rel="noopener noreferrer">
                   open on YouTube
                 </a> to copy manually.
-                <button 
-                  className="link-clear-btn transcript-error-clear" 
+                <button
+                  className="link-clear-btn transcript-error-clear"
                   onClick={() => {
                     setInputText('');
                     setPersistedVideoId(null);
@@ -661,14 +757,14 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
               </div>
             )}
             {showVideoPreview && (
-              <iframe 
-                width="100%" 
-                height="200" 
-                src={`https://www.youtube-nocookie.com/embed/${activeVideoId}`} 
-                title="YouTube video player" 
-                frameBorder="0" 
-                allowFullScreen 
-                className="youtube-iframe" 
+              <iframe
+                width="100%"
+                height="200"
+                src={`https://www.youtube-nocookie.com/embed/${activeVideoId}`}
+                title="YouTube video player"
+                frameBorder="0"
+                allowFullScreen
+                className="youtube-iframe"
               />
             )}
           </div>
@@ -683,15 +779,15 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
                 <div className="link-preview-label">Webpage Link Detected</div>
               </div>
               <div className="link-preview-actions">
-                <button 
-                  className="link-fetch-btn" 
-                  onClick={() => fetchUrl(inputText)} 
+                <button
+                  className="link-fetch-btn"
+                  onClick={() => fetchUrl(inputText)}
                   disabled={urlLoading}
                 >
                   {urlLoading ? '⏳ Fetching...' : '🌐 Fetch Content'}
                 </button>
-                <button 
-                  className="link-clear-btn" 
+                <button
+                  className="link-clear-btn"
                   onClick={() => setInputText('')}
                 >
                   ✕ Clear
@@ -718,8 +814,8 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
                 </div>
               </div>
               <div className="link-preview-actions">
-                <button 
-                  className="link-clear-btn" 
+                <button
+                  className="link-clear-btn"
                   onClick={() => {
                     setInputText('');
                     setIsTranscriptPasted(false);
@@ -752,19 +848,19 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
             )}
           </div>
 
-          <textarea 
-            ref={textareaRef} 
-            id="question-input" 
-            placeholder={isListening ? 'Listening...' : inputPlaceholder} 
-            value={(isTranscriptPasted || (activeVideoId && currentMode === 'summarize' && !summarizeDone)) ? '' : inputText} 
-            onChange={handleTextareaChange} 
-            rows="1" 
-            onKeyDown={(e) => { 
-              if (e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault(); 
-                handleSend(); 
-              } 
-            }} 
+          <textarea
+            ref={textareaRef}
+            id="question-input"
+            placeholder={isListening ? 'Listening...' : inputPlaceholder}
+            value={(isTranscriptPasted || (activeVideoId && currentMode === 'summarize' && !summarizeDone)) ? '' : inputText}
+            onChange={handleTextareaChange}
+            rows="1"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
           />
 
           <button id="submit-btn" onClick={() => handleSend()} disabled={isLoading || (!inputText.trim() && !isTranscriptPasted)}>
@@ -779,70 +875,43 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
         {urlError && <div className="transcript-error" style={{ marginTop: '0.5rem' }}>⚠️ {urlError}</div>}
       </div>
 
-      {showThreadView ? (
-  <div className="ai-response-card thread-view" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
-    <div className="ai-response-header">
-      <div className="response-header-left">
-        <span className="current-mode-badge">{modeIcons[activeThread.mode]} {modeLabels[activeThread.mode]}</span>
-      </div>
-      <div className="response-actions">
-        {activeThread.readOnly && <span className="usage-badge">👁 Read only</span>}
-        <button
-          className={`action-btn action-btn-copy ${copied ? 'copied' : ''}`}
-          onClick={() => handleCopy(activeThread.messages[activeThread.messages.length - 1]?.content || '')}
-        >
-          {copied ? '✓ Copied' : 'Copy'}
-        </button>
-        <button className="action-btn action-btn-reset" onClick={closeThread} title="Close thread">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>
-    <div className="thread-messages">
-      {activeThread.messages.map((m, i) => (
-        <div key={i} className={`thread-msg thread-msg-${m.role}`}>
-          <span className="thread-msg-label">{m.role === 'user' ? 'You' : 'Vaibey'}</span>
-          <div className="thread-msg-text">{m.content}</div>
-        </div>
-      ))}
-    </div>
-  </div>
-) : response && (
-  // ...unchanged plain response card...
-        <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
-          <div className="ai-response-header">
-            <div className="response-header-left">
-              <span className="current-mode-badge">{modeIcons[currentMode]} {modeLabels[currentMode]}</span>
-            </div>
-            <div className="response-actions">
-              <button className={`action-btn action-btn-copy ${copied ? 'copied' : ''}`} onClick={handleCopy}>
-                {copied ? '✓ Copied' : 'Copy'}
-              </button>
-              <button className="action-btn action-btn-reset" onClick={resetAll}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-          </div>
-
-          {currentMode === 'writeDraft' && (
-            <div className="audio-player-wrapper">
-              {apiFailed && <div className="tts-fallback-msg">⚠️ TTS error — using browser speech</div>}
-              <button onClick={handleManualPlay} className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`} disabled={isAudioPlaying}>
-                {isAudioPlaying ? <><span className="waveform"><span/><span/><span/><span/></span><span>Playing...</span></> : <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play Audio</span></>}
-              </button>
-            </div>
-          )}
-
-          <div className="ai-response-text">{response}</div>
-        </div>
-      )}
-
       {!isLoading && (
         <div className="feedback-btn-wrap">
           <button className="feedback-btn" onClick={() => setShowFeedback(true)}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Send Feedback
           </button>
         </div>
+      )}
+
+      {previewThread && createPortal(
+        <div className="thread-preview-overlay" onClick={() => setPreviewThread(null)}>
+          <div className="thread-preview-modal" onClick={e => e.stopPropagation()}>
+            <div className="thread-preview-header">
+              <span className="thread-preview-mode-badge">{modeIcons[previewThread.mode] || '💬'} {modeLabels[previewThread.mode] || previewThread.mode}</span>
+              <span className="thread-preview-title">{previewThread.title || 'Untitled'}</span>
+              <button className="thread-preview-close" onClick={() => setPreviewThread(null)}>✕</button>
+            </div>
+            <div className="thread-preview-messages">
+              {previewThread.messages.map((m, i) => (
+                <div key={i} className={`thread-preview-msg thread-preview-msg-${m.role}`}>
+                  <div className="thread-preview-msg-top">
+                    <span className="thread-preview-msg-label">{m.role === 'user' ? 'You' : 'Vaibey'}</span>
+                    <button className="thread-preview-msg-copy" onClick={() => copyMessage(m.content, i)}>
+                      {previewCopiedIdx === i ? '✓ Copied' : '📋 Copy'}
+                    </button>
+                  </div>
+                  <div className="thread-preview-msg-text">{m.content}</div>
+                </div>
+              ))}
+            </div>
+            <div className="thread-preview-footer">
+              <button className="thread-preview-continue-btn" onClick={() => { openThread(previewThread, false); setPreviewThread(null); }}>
+                ↺ Continue This Thread
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {showFeedback && createPortal(
@@ -899,23 +968,23 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
         <div className="history-item-question"><strong>Q:</strong> {item.title || (item.messages?.[0]?.content?.substring(0, 200) || 'No title')}</div>
         <div className="history-item-answer-preview"><strong>A:</strong> {item.messages?.[item.messages.length - 1]?.content?.substring(0, 100) || '...'}</div>
         <div className="history-item-actions">
-          <button 
-            className="history-continue-btn" 
+          <button
+            className="history-continue-btn"
             onClick={() => openThread(item, false)}
             title="Continue this thread"
           >
             ↺ Restore
           </button>
-          <button 
-            className="history-restore-btn" 
+          <button
+            className="history-restore-btn"
             onClick={() => openThread(item, true)}
             title="Read only"
           >
             👁 Read
           </button>
-          <button 
-            className="history-delete-btn" 
-            onClick={() => deleteThread(item.id)} 
+          <button
+            className="history-delete-btn"
+            onClick={() => deleteThread(item.id)}
             disabled={deletingId === item.id}
           >
             {deletingId === item.id ? '...' : '🗑 Delete'}

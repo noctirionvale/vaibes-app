@@ -111,16 +111,61 @@
 }
 
 /* ── Sticky chatbox ── */
-.sticky-chatbox {
-  position: sticky; top: 1.5rem; z-index: 100;
-  background: var(--glass); backdrop-filter: blur(20px);
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  box-shadow: var(--glow-frame);
-  transition: box-shadow .3s ease;
-  overflow: visible;
+/* ── Chat shell: header → scrolling conversation → recent-threads strip
+   → composer. Nothing here uses position:sticky, so there's no scroll-
+   context/z-index fight left — the composer is just the last flex child. ── */
+.ai-utility-section { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.ai-chat-header-row, .vaibey-wrapper, .ai-chat-controls-row,
+.recent-threads-row, .chat-composer-footer, .feedback-btn-wrap { flex-shrink: 0; }
+.ai-chat-scroll-area {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--accent-25) transparent;
 }
-.sticky-chatbox:focus-within { box-shadow: var(--glow-frame-hover); }
+.ai-chat-scroll-area::-webkit-scrollbar { width: 5px; }
+.ai-chat-scroll-area::-webkit-scrollbar-thumb { background: var(--accent-25); border-radius: 3px; }
+
+/* Composer — was .sticky-chatbox */
+.chat-composer-footer {
+  position: relative; /* anchors LampToggle's absolute positioning, same as before */
+  background: var(--glass); backdrop-filter: blur(20px);
+  border-radius: 16px; border: 1px solid var(--line);
+  box-shadow: var(--glow-frame); transition: box-shadow .3s ease;
+  overflow: visible; margin-top: 0.5rem;
+}
+.chat-composer-footer:focus-within { box-shadow: var(--glow-frame-hover); }
+
+/* ── Recent threads: peek without losing your place. Opens a modal
+   instead of swapping activeThread — closing it drops you back exactly
+   where you were, no navigation, no lost scroll position. ── */
+.recent-threads-row { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.1rem 0.1rem 0.4rem; scrollbar-width: none; }
+.recent-threads-row::-webkit-scrollbar { display: none; }
+.thread-chip { display: flex; align-items: center; flex-shrink: 0; background: var(--card-bg); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; transition: border-color .2s; }
+.thread-chip:hover { border-color: var(--accent-25); }
+.thread-chip-main { display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.7rem; background: none; border: none; cursor: pointer; font-family: inherit; max-width: 180px; }
+.thread-chip-icon { font-size: 0.85rem; flex-shrink: 0; }
+.thread-chip-title { font-size: 0.72rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.thread-chip-copy { flex-shrink: 0; padding: 0.4rem 0.55rem; background: none; border: none; border-left: 1px solid var(--line); color: var(--muted); cursor: pointer; font-size: 0.78rem; transition: color .2s; }
+.thread-chip-copy:hover { color: var(--glow); }
+
+/* ── Thread preview modal ── */
+.thread-preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
+.thread-preview-modal { background: var(--surface-1); border: 1px solid var(--line); border-radius: 20px; width: 100%; max-width: 520px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; animation: pop .25s ease; }
+.thread-preview-header { display: flex; align-items: center; gap: 0.6rem; padding: 1rem 1.1rem; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.thread-preview-mode-badge { font-size: 0.68rem; font-weight: 600; color: var(--glow); background: var(--accent-08); padding: 0.2rem 0.6rem; border-radius: 20px; flex-shrink: 0; }
+.thread-preview-title { flex: 1; font-size: 0.85rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-preview-close { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 8px; flex-shrink: 0; transition: all .2s; }
+.thread-preview-close:hover { color: var(--glow); background: var(--accent-08); }
+.thread-preview-messages { flex: 1; overflow-y: auto; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.thread-preview-msg { display: flex; flex-direction: column; gap: 0.3rem; }
+.thread-preview-msg-top { display: flex; align-items: center; justify-content: space-between; }
+.thread-preview-msg-label { font-size: 0.68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.thread-preview-msg-copy { background: none; border: 1px solid var(--line); border-radius: 12px; padding: 0.15rem 0.55rem; font-size: 0.65rem; color: var(--muted); cursor: pointer; transition: all .2s; }
+.thread-preview-msg-copy:hover { border-color: var(--glow); color: var(--glow); }
+.thread-preview-msg-text { font-size: 0.85rem; line-height: 1.55; color: var(--text); white-space: pre-wrap; }
+.thread-preview-msg-user .thread-preview-msg-text { color: var(--muted); }
+.thread-preview-footer { padding: 0.85rem 1.1rem; border-top: 1px solid var(--line); flex-shrink: 0; }
+.thread-preview-continue-btn { width: 100%; padding: 0.6rem; border-radius: 10px; border: 1px solid var(--accent-25); background: var(--accent-08); color: var(--accent-text); font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+.thread-preview-continue-btn:hover { background: var(--accent-12); border-color: var(--accent-40); }
 
 /* ── AI response card ── */
 .ai-response-card {
