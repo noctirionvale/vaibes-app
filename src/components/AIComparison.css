@@ -31,11 +31,6 @@
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 1.5rem;
-  margin-top: 0; /* Remove top margin */
-  flex: 1; /* Takes all available space */
-  overflow-y: auto; /* Scroll internally */
-  min-height: 0; /* Critical for flex child */
-  margin-bottom: 1rem; /* Space before chat input */
 }
 
 /* ── Chat input container (fixed at bottom) ── */
@@ -492,7 +487,9 @@
 
 /* ── Panel switcher overrides ── */
 .panel-switcher-body .vaibey-wrapper img, .panel-switcher-body .vaibey-wrapper svg { max-height: 90px; }
-.panel-switcher-body .ai-response-card { max-height: 50vh; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: var(--accent-25) transparent; }
+.panel-switcher-body .ai-chat-stream {
+  max-height: 50vh;
+}
 .panel-switcher-body .ai-response-card::-webkit-scrollbar { width: 5px; }
 .panel-switcher-body .ai-response-card::-webkit-scrollbar-thumb { background: var(--accent-25); border-radius: 3px; }
 .panel-switcher-body .ai-response-header { position: sticky; top: 0; background: var(--card-bg); z-index: 2; margin-bottom: 0; padding-bottom: .75rem; }
@@ -544,3 +541,21 @@
 }
 .continuing-indicator:hover { border-color: var(--accent-40); }
 .continuing-icon { font-size: 1.1rem; filter: drop-shadow(0 0 6px var(--glow)); }
+
+/* ── Chat feed scrolls; dock stays pinned ── */
+.ai-chat-stream {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: .75rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-25) transparent;
+}
+.ai-chat-stream::-webkit-scrollbar { width: 5px; }
+.ai-chat-stream::-webkit-scrollbar-thumb { background: var(--accent-25); border-radius: 3px; }
+
+.ai-input-dock {
+  flex-shrink: 0;
+  margin-top: auto; /* pins it to the bottom even before there's any output */
+}
