@@ -14,15 +14,31 @@
                         50%      { box-shadow: 0 0 0 4px var(--accent-08), 0 4px 24px var(--accent-25); } }
 
 /* ── Main section ── */
-/* ── Main section ── */
 .ai-utility-section {
   max-width: 800px;
   margin: 0 auto;
-  padding-bottom: 0; /* Remove bottom padding */
+  padding-bottom: 0;
   display: flex;
   flex-direction: column;
-  gap: 0; /* Remove gap, we'll handle spacing internally */
-  height: calc(100vh - 140px); /* Adjust based on your header height */
+  gap: 0;
+  /* no fixed height here anymore — panel-content-wrapper (or the page,
+     when used standalone) owns the real height and the scrolling */
+}
+
+.ai-chat-stream {
+  display: flex;
+  flex-direction: column;
+  /* plain in-flow content now — no flex:1 / overflow here */
+}
+
+.ai-input-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: var(--bg);
+  padding-top: .5rem;
+  margin-top: 1rem;
+  flex-shrink: 0;
 }
 
 /* ── AI response card (scrollable area) ── */
@@ -487,11 +503,6 @@
 
 /* ── Panel switcher overrides ── */
 .panel-switcher-body .vaibey-wrapper img, .panel-switcher-body .vaibey-wrapper svg { max-height: 90px; }
-.panel-switcher-body .ai-chat-stream {
-  max-height: 50vh;
-}
-.panel-switcher-body .ai-response-card::-webkit-scrollbar { width: 5px; }
-.panel-switcher-body .ai-response-card::-webkit-scrollbar-thumb { background: var(--accent-25); border-radius: 3px; }
 .panel-switcher-body .ai-response-header { position: sticky; top: 0; background: var(--card-bg); z-index: 2; margin-bottom: 0; padding-bottom: .75rem; }
 .panel-switcher-body .ai-utility-section { max-width: 100%; margin: 0; padding-bottom: 1rem; }
 .panel-switcher-body .mode-dropdown-menu { max-height: 60vh; overflow-y: auto; }
