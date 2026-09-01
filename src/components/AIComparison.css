@@ -15,12 +15,8 @@
 
 /* ── Main section ── */
 .ai-utility-section {
-  max-width: 800px;
-  margin: 0 auto 4rem;
-  padding-bottom: 3rem;  /* was bumped to 8rem to clear the fixed input — no longer needed */
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  max-width: 800px; margin: 0 auto 4rem; padding-bottom: 3rem;
+  display: flex; flex-direction: column; gap: 1.5rem;
 }
 
 /* ── Chat input ── */
@@ -114,32 +110,9 @@
   border-radius: 20px; min-width: 16px; text-align: center;
 }
 
-/* Change .sticky-chatbox from sticking to top to fixing at bottom */
-.ai-input-dock {
-  position: sticky;
-  bottom: 0;
-  z-index: 30;
-  background: var(--bg);
-  padding-top: .5rem;
-  margin-top: auto;   /* keeps it settled near the bottom when there's little content */
-}
-
-/* ── Input dock — pinned to the bottom of the scroll area, solid backdrop
-   so conversation text doesn't show through while scrolling ── */
-.ai-input-dock {
-  position: sticky;
-  bottom: 0;
-  z-index: 100;
-  background: linear-gradient(180deg, transparent 0%, var(--bg) 22%, var(--bg) 100%);
-  padding-top: 1.75rem;
-  margin-top: auto;
-}
-
-.ai-chat-stream { display: flex; flex-direction: column; }
-
-/* Chatbox no longer sticks on its own — the dock handles that now */
+/* ── Sticky chatbox ── */
 .sticky-chatbox {
-  position: relative;
+  position: sticky; top: 1.5rem; z-index: 100;
   background: var(--glass); backdrop-filter: blur(20px);
   border-radius: 16px;
   border: 1px solid var(--line);
@@ -151,14 +124,8 @@
 
 /* ── AI response card ── */
 .ai-response-card {
-  background: var(--card-bg);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 1.5rem;
-  margin-top: 2rem;
-  margin-bottom: 2rem; /* Add bottom margin */
-  transition: all .3s ease;
-  backdrop-filter: blur(4px);
+  background: var(--card-bg); border: 1px solid var(--line); border-radius: 20px;
+  padding: 1.5rem; margin-top: 2rem; transition: all .3s ease; backdrop-filter: blur(4px);
 }
 .ai-response-card:hover {
   border-color: color-mix(in srgb, var(--glow) 30%, transparent);
@@ -532,18 +499,3 @@
 }
 .continuing-indicator:hover { border-color: var(--accent-40); }
 .continuing-icon { font-size: 1.1rem; filter: drop-shadow(0 0 6px var(--glow)); }
-
-/* ── Thread messages — typical LLM chat bubbles ── */
-.thread-messages { display: flex; flex-direction: column; gap: 1.1rem; }
-.thread-msg { max-width: 82%; display: flex; flex-direction: column; gap: .3rem; }
-.thread-msg-user { align-self: flex-end; align-items: flex-end; }
-.thread-msg-assistant { align-self: flex-start; align-items: flex-start; }
-.thread-msg-label { font-size: .68rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 0 .25rem; }
-.thread-msg-text {
-  padding: .7rem 1rem; border-radius: 16px; font-size: .92rem; line-height: 1.6;
-  white-space: pre-wrap; word-break: break-word;
-}
-.thread-msg-user .thread-msg-text { background: var(--grad-cta); color: var(--on-accent); border-bottom-right-radius: 4px; }
-.thread-msg-assistant .thread-msg-text { background: var(--field-bg); border: 1px solid var(--line); color: var(--text); border-bottom-left-radius: 4px; }
-
-@media (max-width: 600px) { .thread-msg { max-width: 90%; } }
