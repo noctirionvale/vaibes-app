@@ -73,6 +73,7 @@ const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
 
   const dropdownRef = useRef(null);
   const textareaRef = useRef(null);
+  const chatEndRef = useRef(null);
 
   const extractYouTubeID = useCallback((url) => {
     if (!url) return null;
@@ -145,6 +146,10 @@ const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
 
   useEffect(() => { if (user?.id) loadThreads(); }, [user?.id, loadThreads]);
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [activeThread?.messages?.length, response]);
+
   const openThread = (item, readOnly) => {
     setActiveThread({ ...item, readOnly });
     setCurrentMode(item.mode);
@@ -214,8 +219,6 @@ const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
     setThreads(prev => prev.map(t => t.id === thread.id ? { ...t, messages } : t));
     return messages;
   };
-
-  useEffect(() => { if (user?.id) loadThreads(); }, [user?.id, loadThreads]);
 
   const vAIbesCore = `You are Vaibey, the AI companion of vAIbes — a complete student workspace that combines AI assistance, creative tools, and community learning.
 
@@ -514,7 +517,7 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
   };
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
-  const showThreadView = !!activeThread && (activeThread.readOnly !== undefined || activeThread.messages.length > 2);
+  const showThreadView = !!activeThread;
 
   let inputPlaceholder;
   if (activeThread && !activeThread.readOnly) {
@@ -543,65 +546,70 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
       </div>
       <div className="vaibey-wrapper" style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}></div>
 
-      {/* Output now comes first, right under Vaibey */}
-      {showThreadView ? (
-        <div className="ai-response-card thread-view" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
-          <div className="ai-response-header">
-            <div className="response-header-left">
-              <span className="current-mode-badge">{modeIcons[activeThread.mode]} {modeLabels[activeThread.mode]}</span>
-            </div>
-            <div className="response-actions">
-              {activeThread.readOnly && <span className="usage-badge">👁 Read only</span>}
-              <button
-                className={`action-btn action-btn-copy ${copied ? 'copied' : ''}`}
-                onClick={() => handleCopy(activeThread.messages[activeThread.messages.length - 1]?.content || '')}
-              >
-                {copied ? '✓ Copied' : 'Copy'}
-              </button>
-              <button className="action-btn action-btn-reset" onClick={closeThread} title="Close thread">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-          </div>
-          <div className="thread-messages">
-            {activeThread.messages.map((m, i) => (
-              <div key={i} className={`thread-msg thread-msg-${m.role}`}>
-                <span className="thread-msg-label">{m.role === 'user' ? 'You' : 'Vaibey'}</span>
-                <div className="thread-msg-text">{m.content}</div>
+      {/* ── Conversation — scrolls above the input, like a normal chat ── */}
+      {(showThreadView || response) && (
+        <div className="ai-chat-stream">
+          {showThreadView ? (
+            <div className="ai-response-card thread-view" style={{ position: 'relative', zIndex: 1 }}>
+              <div className="ai-response-header">
+                <div className="response-header-left">
+                  <span className="current-mode-badge">{modeIcons[activeThread.mode]} {modeLabels[activeThread.mode]}</span>
+                </div>
+                <div className="response-actions">
+                  {activeThread.readOnly && <span className="usage-badge">👁 Read only</span>}
+                  <button
+                    className={`action-btn action-btn-copy ${copied ? 'copied' : ''}`}
+                    onClick={() => handleCopy(activeThread.messages[activeThread.messages.length - 1]?.content || '')}
+                  >
+                    {copied ? '✓ Copied' : 'Copy'}
+                  </button>
+                  <button className="action-btn action-btn-reset" onClick={closeThread} title="Close thread">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      ) : response && (
-        <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
-          <div className="ai-response-header">
-            <div className="response-header-left">
-              <span className="current-mode-badge">{modeIcons[currentMode]} {modeLabels[currentMode]}</span>
+              <div className="thread-messages">
+                {activeThread.messages.map((m, i) => (
+                  <div key={i} className={`thread-msg thread-msg-${m.role}`}>
+                    <span className="thread-msg-label">{m.role === 'user' ? 'You' : 'Vaibey'}</span>
+                    <div className="thread-msg-text">{m.content}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="response-actions">
-              <button className={`action-btn action-btn-copy ${copied ? 'copied' : ''}`} onClick={handleCopy}>
-                {copied ? '✓ Copied' : 'Copy'}
-              </button>
-              <button className="action-btn action-btn-reset" onClick={resetAll}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-          </div>
+          ) : (
+            <div className="ai-response-card" style={{ position: 'relative', zIndex: 1 }}>
+              <div className="ai-response-header">
+                <div className="response-header-left">
+                  <span className="current-mode-badge">{modeIcons[currentMode]} {modeLabels[currentMode]}</span>
+                </div>
+                <div className="response-actions">
+                  <button className={`action-btn action-btn-copy ${copied ? 'copied' : ''}`} onClick={handleCopy}>
+                    {copied ? '✓ Copied' : 'Copy'}
+                  </button>
+                  <button className="action-btn action-btn-reset" onClick={resetAll}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+              </div>
 
-          {currentMode === 'writeDraft' && (
-            <div className="audio-player-wrapper">
-              {apiFailed && <div className="tts-fallback-msg">⚠️ TTS error — using browser speech</div>}
-              <button onClick={handleManualPlay} className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`} disabled={isAudioPlaying}>
-                {isAudioPlaying ? <><span className="waveform"><span/><span/><span/><span/></span><span>Playing...</span></> : <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play Audio</span></>}
-              </button>
+              {currentMode === 'writeDraft' && (
+                <div className="audio-player-wrapper">
+                  {apiFailed && <div className="tts-fallback-msg">⚠️ TTS error — using browser speech</div>}
+                  <button onClick={handleManualPlay} className={`audio-play-btn ${isAudioPlaying ? 'playing' : ''}`} disabled={isAudioPlaying}>
+                    {isAudioPlaying ? <><span className="waveform"><span/><span/><span/><span/></span><span>Playing...</span></> : <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play Audio</span></>}
+                  </button>
+                </div>
+              )}
+
+              <div className="ai-response-text">{response}</div>
             </div>
           )}
-
-          <div className="ai-response-text">{response}</div>
+          <div ref={chatEndRef} />
         </div>
       )}
 
-      {/* Everything below is now one pinned unit */}
+      {/* ── Input — pinned to the bottom, solid backdrop ── */}
       <div className="ai-input-dock">
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem', paddingRight: '0.25rem', marginBottom: '0.5rem' }}>
           {currentMode === 'analyze' && (
@@ -633,13 +641,7 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
                     onClick={sendPdfToAI} 
                     disabled={pdfLoading}
                   >
-                    {pdfLoading ? (
-                      <>
-                        <span className="spinner"></span> Analyzing...
-                      </>
-                    ) : (
-                      '🔍 Analyze PDF'
-                    )}
+                    {pdfLoading ? (<><span className="spinner"></span> Analyzing...</>) : ('🔍 Analyze PDF')}
                   </button>
                   <button 
                     className="pdf-clear-btn" 
