@@ -1,12 +1,12 @@
 // src/context/MusicPlayerContext.jsx
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { NativeAudio } from '@capgo/native-audio';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
-// Self-hosted — Pixabay hotlinking violates their ToS, so download these
-// from pixabay.com/music/search/<mood>/ and drop them in public/audio/
-// under these exact filenames (see download list at the end of this answer).
 const STORAGE_BUCKET = 'study-music';
+const isNative = Capacitor.isNativePlatform();
 
 const getAudioUrl = (filename) => {
   const { data } = supabase.storage
@@ -44,8 +44,6 @@ export const MusicPlayerProvider = ({ children }) => {
   const [stationIdx, setStationIdx] = useState(0);
   const [volume, setVolumeState] = useState(70);
 
-  // 'loop' (repeat current track forever — original default behavior) or
-  // 'autonext' (advance to the next station when the current one ends).
   const [playbackMode, setPlaybackModeState] = useState(() => {
     try { return localStorage.getItem('vaibes_playback_mode') || 'loop'; }
     catch { return 'loop'; }
@@ -56,8 +54,10 @@ export const MusicPlayerProvider = ({ children }) => {
     try { localStorage.setItem('vaibes_playback_mode', mode); } catch {}
   }, []);
 
-  const audioRef = useRef(null);
-  const ytPlayerRef = useRef(null); // attached to the visible iframe in StudyWidget
+  const audioRef = useRef(null);        // web fallback player only
+  const ytPlayerRef = useRef(null);     // visible iframe, unchanged
+  const nativeAssetRef = useRef(null);  // id of the currently loaded NativeAudio asset
+  const nextStationRef = useRef(() => {}); // always-fresh ref for the native listener below
 
   useEffect(() => {
     if (!user?.id) return;
@@ -84,8 +84,48 @@ export const MusicPlayerProvider = ({ children }) => {
     } catch (e) { console.error(e); }
   }, [user]);
 
+  // One-time native config — this is what should trigger the Android
+  // foreground service + lock-screen notification for background playback.
   useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume / 100;
+    if (!isNative) return;
+    NativeAudio.configure({
+      focus: true,
+      background: true,
+      showNotification: true,
+      backgroundPlayback: true,
+    }).catch((e) => console.error('[MusicPlayer] NativeAudio.configure failed', e));
+  }, []);
+
+  // Native 'complete' event replaces the web <audio>'s onEnded handler
+  useEffect(() => {
+    if (!isNative) return;
+    let handle;
+    NativeAudio.addListener('complete', ({ assetId }) => {
+      if (assetId !== nativeAssetRef.current) return;
+      if (playbackMode === 'autonext') nextStationRef.current();
+    }).then(h => { handle = h; });
+    return () => { handle?.remove(); };
+  }, [playbackMode]);
+
+  // Keeps UI in sync when playback is toggled from the lock-screen/notification
+  useEffect(() => {
+    if (!isNative) return;
+    let handle;
+    NativeAudio.addListener('playbackState', ({ assetId, isPlaying: playing }) => {
+      if (assetId !== nativeAssetRef.current) return;
+      setIsPlayingState(playing);
+    }).then(h => { handle = h; });
+    return () => { handle?.remove(); };
+  }, []);
+
+  useEffect(() => {
+    if (isNative) {
+      if (nativeAssetRef.current) {
+        NativeAudio.setVolume({ assetId: nativeAssetRef.current, volume: volume / 100 }).catch(() => {});
+      }
+    } else if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+    }
     ytPlayerRef.current?.contentWindow?.postMessage(
       JSON.stringify({ event: 'command', func: 'setVolume', args: [volume] }), '*'
     );
@@ -100,6 +140,10 @@ export const MusicPlayerProvider = ({ children }) => {
         ytPlayerRef.current?.contentWindow?.postMessage(
           JSON.stringify({ event: 'command', func: next ? 'playVideo' : 'pauseVideo' }), '*'
         );
+      } else if (isNative && nativeAssetRef.current) {
+        next
+          ? NativeAudio.play({ assetId: nativeAssetRef.current }).catch(() => {})
+          : NativeAudio.pause({ assetId: nativeAssetRef.current }).catch(() => {});
       } else if (audioRef.current) {
         next ? audioRef.current.play().catch(() => {}) : audioRef.current.pause();
       }
@@ -112,6 +156,10 @@ export const MusicPlayerProvider = ({ children }) => {
       ytPlayerRef.current?.contentWindow?.postMessage(
         JSON.stringify({ event: 'command', func: 'pauseVideo' }), '*'
       );
+    } else if (isNative && nativeAssetRef.current) {
+      NativeAudio.stop({ assetId: nativeAssetRef.current }).catch(() => {});
+      NativeAudio.unload({ assetId: nativeAssetRef.current }).catch(() => {});
+      nativeAssetRef.current = null;
     } else {
       audioRef.current?.pause();
     }
@@ -119,18 +167,41 @@ export const MusicPlayerProvider = ({ children }) => {
     setCurrentStation(null);
   }, [currentStation]);
 
-  const selectStation = useCallback((station) => {
+  const selectStation = useCallback(async (station) => {
     if (currentStation?.id === station.id) { setIsPlaying(p => !p); return; }
     const idx = stations.findIndex(s => s.id === station.id);
     setCurrentStation(station);
     if (idx >= 0) setStationIdx(idx);
     setIsPlayingState(true);
-    if (audioRef.current) {
+
+    if (isNative) {
+      if (nativeAssetRef.current) {
+        try { await NativeAudio.stop({ assetId: nativeAssetRef.current }); } catch {}
+        try { await NativeAudio.unload({ assetId: nativeAssetRef.current }); } catch {}
+      }
+      nativeAssetRef.current = station.id;
+      try {
+        await NativeAudio.preload({
+          assetId: station.id,
+          assetPath: station.src,
+          isUrl: true,
+          volume: volume / 100,
+          notificationMetadata: { title: station.name, artist: 'vAIbes Study Session' },
+        });
+        if (playbackMode === 'loop') {
+          await NativeAudio.loop({ assetId: station.id });
+        } else {
+          await NativeAudio.play({ assetId: station.id });
+        }
+      } catch (e) {
+        console.error('[MusicPlayer] NativeAudio failed to load/play', e);
+      }
+    } else if (audioRef.current) {
       audioRef.current.src = station.src;
       audioRef.current.play().catch(() => {});
     }
     savePreference(station.id);
-  }, [currentStation, setIsPlaying, savePreference]);
+  }, [currentStation, setIsPlaying, savePreference, playbackMode, volume]);
 
   const prevStation = useCallback(() => {
     selectStation(stations[(stationIdx - 1 + stations.length) % stations.length]);
@@ -140,11 +211,21 @@ export const MusicPlayerProvider = ({ children }) => {
     selectStation(stations[(stationIdx + 1) % stations.length]);
   }, [stationIdx, selectStation]);
 
+  useEffect(() => { nextStationRef.current = nextStation; }, [nextStation]);
+
   // Opt-in only. Always a real, visible iframe — never hidden offscreen.
+  // Unaffected by the native-audio change: NativeAudio can't play YouTube,
+  // so pasted links keep the existing iframe/postMessage flow and the same
+  // "stops on minimize/lock" limitation as before.
   const playCustomUrl = useCallback((url) => {
     const videoId = extractYoutubeId(url);
     if (!videoId) return false;
     audioRef.current?.pause();
+    if (isNative && nativeAssetRef.current) {
+      NativeAudio.stop({ assetId: nativeAssetRef.current }).catch(() => {});
+      NativeAudio.unload({ assetId: nativeAssetRef.current }).catch(() => {});
+      nativeAssetRef.current = null;
+    }
     setCurrentStation({
       id: 'custom', name: url.length > 28 ? url.slice(0, 28) + '…' : url,
       emoji: '📺', color: '#6a5cff', type: 'youtube', youtubeId: videoId,
@@ -160,8 +241,11 @@ export const MusicPlayerProvider = ({ children }) => {
       `&playsinline=1&rel=0&origin=${encodeURIComponent(window.location.origin)}`
     : '';
 
+  // On native builds, NativeAudio's own notification handles lock-screen
+  // controls — skip the web MediaSession API entirely there to avoid two
+  // systems fighting over the same controls.
   useEffect(() => {
-    if (!('mediaSession' in navigator) || !currentStation) return;
+    if (isNative || !('mediaSession' in navigator) || !currentStation) return;
     navigator.mediaSession.metadata = new window.MediaMetadata({
       title: currentStation.name, artist: 'vAIbes Study Session',
     });
@@ -183,14 +267,16 @@ export const MusicPlayerProvider = ({ children }) => {
   return (
     <MusicPlayerContext.Provider value={value}>
       {children}
-      <audio
-        ref={audioRef}
-        loop={playbackMode === 'loop'}
-        preload="none"
-        style={{ display: 'none' }}
-        onEnded={() => { if (playbackMode === 'autonext') nextStation(); }}
-        onError={(e) => console.error('[MusicPlayer] failed to load', e.currentTarget.src)}
-      />
+      {!isNative && (
+        <audio
+          ref={audioRef}
+          loop={playbackMode === 'loop'}
+          preload="none"
+          style={{ display: 'none' }}
+          onEnded={() => { if (playbackMode === 'autonext') nextStation(); }}
+          onError={(e) => console.error('[MusicPlayer] failed to load', e.currentTarget.src)}
+        />
+      )}
     </MusicPlayerContext.Provider>
   );
 };
