@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useMusicPlayer } from '../context/MusicPlayerContext';
 import './VidFeed.css';
 
 /* ── Feed cache: survives tab switches & reloads within a session ── */
@@ -70,6 +71,9 @@ const VidFeed = ({ onCountChange, compact = false }) => {
   const activeIndexRef = useRef(activeSlideIndex);
   const channelKeyRef = useRef('');
   const savedViewRef = useRef(savedView);
+  const musicPlayer = useMusicPlayer();
+  const pauseMusicRef = useRef(() => {});
+  useEffect(() => { pauseMusicRef.current = () => musicPlayer.setIsPlaying(false); }, [musicPlayer]);
 
   useEffect(() => { itemsRef.current = items; }, [items]);
   useEffect(() => { activeIndexRef.current = activeSlideIndex; }, [activeSlideIndex]);
@@ -412,10 +416,13 @@ const VidFeed = ({ onCountChange, compact = false }) => {
             }, 1000);
           },
           onStateChange: (e) => {
-            if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) {
-              try { progressRef.current[video.id] = e.target.getCurrentTime(); persistNow(); } catch { /* noop */ }
-            }
-          },
+  if (e.data === YT.PlayerState.PLAYING) {
+    pauseMusicRef.current();
+  }
+  if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) {
+    try { progressRef.current[video.id] = e.target.getCurrentTime(); persistNow(); } catch { /* noop */ }
+  }
+},
         },
       });
     });
