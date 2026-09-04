@@ -316,8 +316,8 @@ const AppShellContent = () => {
     );
   }
 
-  if (!profile?.onboarding_completed && !onboardingComplete) {
-    return (
+  if (user && profile && !profile.onboarding_completed && !onboardingComplete) {
+  return (
       <OnboardingFlow
         onComplete={({ intent }) => {
           setCenterView(INTENT_TO_TAB[intent] || 'userwall');
