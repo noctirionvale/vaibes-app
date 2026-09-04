@@ -1,15 +1,61 @@
+/* src/components/OnboardingFlow.css */
+
 .onboarding-flow {
   position: fixed;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 18px;
   background: #0d0d14;
   z-index: 1000;
   padding: 24px;
+  overflow: hidden;
+}
+
+/* Ambient background glow — cheap single pseudo-element, safe on mobile */
+.ob-ambient-glow {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(106,92,255,0.18) 0%, rgba(59,130,246,0.08) 45%, transparent 70%);
+  animation: ob-glow-pulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes ob-glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50%      { transform: scale(1.15); opacity: 1; }
+}
+
+.ob-logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  animation: ob-logo-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), ob-logo-pulse 3.5s ease-in-out 0.7s infinite;
+  filter: drop-shadow(0 0 18px rgba(106,92,255,0.5));
+}
+
+@keyframes ob-logo-in {
+  from { opacity: 0; transform: scale(0.4) rotate(-15deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes ob-logo-pulse {
+  0%, 100% { filter: drop-shadow(0 0 18px rgba(106,92,255,0.5)); }
+  50%      { filter: drop-shadow(0 0 30px rgba(106,92,255,0.8)); }
+}
+
+.ob-vaibey-wrap {
+  position: relative;
+  z-index: 2;
 }
 
 .ob-bubble {
+  position: relative;
+  z-index: 2;
   max-width: 420px;
   width: 100%;
   background: #17171f;
@@ -17,6 +63,12 @@
   border-radius: 16px;
   padding: 28px;
   color: #f0f0f5;
+  animation: ob-bubble-in 0.35s ease;
+}
+
+@keyframes ob-bubble-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .ob-bubble p { font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
@@ -30,7 +82,9 @@
   color: #f0f0f5;
   font-size: 15px;
   margin-bottom: 14px;
+  transition: border-color 0.2s ease;
 }
+.ob-input:focus { border-color: #6a5cff; outline: none; }
 
 .ob-next-btn {
   width: 100%;
@@ -41,10 +95,12 @@
   color: white;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
 }
+.ob-next-btn:hover:not(:disabled) { background: #5849e0; transform: translateY(-1px); }
 .ob-next-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.ob-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ob-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 
 .ob-chip {
   padding: 10px 16px;
@@ -54,8 +110,10 @@
   color: #6a5cff;
   cursor: pointer;
   font-size: 14px;
+  transition: all 0.18s ease;
 }
-.ob-chip:hover { background: #6a5cff22; }
+.ob-chip:hover { background: #6a5cff22; transform: translateY(-1px); }
+.ob-chip:active { transform: scale(0.97); }
 
 .ob-wall-preview {
   border-left: 3px solid #6a5cff;
@@ -63,10 +121,111 @@
   background: #6a5cff11;
   border-radius: 8px;
   margin-bottom: 16px;
+  animation: ob-preview-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+@keyframes ob-preview-pop {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 .ob-wall-preview-label {
   font-size: 12px;
   color: #6a5cff;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.ob-wall-preview-thumb {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+/* Photo step */
+.ob-photo-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.ob-photo-dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  border: 1.5px dashed #2a2a35;
+  border-radius: 12px;
+  color: #9a9aa8;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.ob-photo-dropzone:hover { border-color: #6a5cff; }
+
+.ob-photo-preview-thumb {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* Review step */
+.ob-review-card {
+  border: 1px solid #2a2a35;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: #0d0d14;
+}
+
+.ob-review-photo {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.ob-review-title {
+  display: block;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.ob-review-topic {
+  color: #9a9aa8;
+  font-size: 14px;
+  margin: 0;
+}
+
+.ob-review-edit-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.ob-text-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #6a5cff;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Mobile: trim the heaviest visual effects, shrink spacing */
+@media (max-width: 480px) {
+  .ob-ambient-glow { width: 90vmax; height: 90vmax; }
+  .ob-logo { width: 64px; height: 64px; }
+  .ob-bubble { padding: 20px; border-radius: 14px; }
+  .onboarding-flow { gap: 12px; }
 }

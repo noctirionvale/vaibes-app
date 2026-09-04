@@ -6,6 +6,8 @@ import AuthModal from './AuthModal';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
 import TypingCat from './TypingCat';
+import { saveToWall } from '../lib/saveToWall';
+import { renderMarkdown } from '../lib/markdown';
 import './AIComparison.css';
 
 const MOBILE_BREAKPOINT = 768;
@@ -451,9 +453,23 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
         setActiveThread(prev => ({ ...prev, messages: updatedMessages }));
         setInputText('');
       } else {
-        setResponse(replyText);
-        const newThread = await createThread(currentMode, textToSend, replyText);
-        if (newThread) setActiveThread(newThread);
+  setResponse(replyText);
+  const newThread = await createThread(currentMode, textToSend, replyText);
+  if (newThread) setActiveThread(newThread);
+
+  // Auto-save to the Wall — skipping quizMe since those probably belong in
+  // EduFeed, not as a Wall note. Add/remove modes here as you like.
+  const AUTO_SAVE_MODES = ['explain', 'summarize', 'analyze', 'writeDraft'];
+if (AUTO_SAVE_MODES.includes(currentMode)) {
+  try {
+    await saveToWall(supabase, user, {
+      title: textToSend,
+      content: `<p>${renderMarkdown(replyText)}</p>`,
+    });
+  } catch (e) {
+    console.error('[AIComparison] failed to auto-save to Wall', e);
+  }
+}
         if (currentMode === 'summarize') {
           setSummarizeDone(true); setIsTranscriptPasted(false); setShowVideoPreview(false);
           setInputText(''); setPersistedVideoId(null); setFetchedUrl('');
