@@ -1,0 +1,72 @@
+.onboarding-flow {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0d0d14;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.ob-bubble {
+  max-width: 420px;
+  width: 100%;
+  background: #17171f;
+  border: 1px solid #2a2a35;
+  border-radius: 16px;
+  padding: 28px;
+  color: #f0f0f5;
+}
+
+.ob-bubble p { font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
+
+.ob-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #2a2a35;
+  background: #0d0d14;
+  color: #f0f0f5;
+  font-size: 15px;
+  margin-bottom: 14px;
+}
+
+.ob-next-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #6a5cff;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ob-next-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ob-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.ob-chip {
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid #6a5cff;
+  background: transparent;
+  color: #6a5cff;
+  cursor: pointer;
+  font-size: 14px;
+}
+.ob-chip:hover { background: #6a5cff22; }
+
+.ob-wall-preview {
+  border-left: 3px solid #6a5cff;
+  padding: 10px 14px;
+  background: #6a5cff11;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.ob-wall-preview-label {
+  font-size: 12px;
+  color: #6a5cff;
+  font-weight: 600;
+  text-transform: uppercase;
+}

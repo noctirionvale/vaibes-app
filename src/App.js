@@ -25,7 +25,15 @@ import EduFeed from './components/EduFeed';
 import VidFeed from './components/VidFeed';
 import { MusicPlayerProvider } from './context/MusicPlayerContext';
 import { useOnboardingTour } from './hooks/useOnboardingTour';
+import OnboardingFlow from './components/OnboardingFlow';
 import './styles/App.css';
+
+const INTENT_TO_TAB = {
+  explain: 'aichat',
+  quiz: 'edufeed',
+  study_room: 'edufeed', // Community Rooms live inside EduFeed's own tabs, not a separate centerView
+  exploring: 'userwall',
+};
 
 const AppShellContent = () => {
   const isMobile = useIsMobile();
@@ -51,6 +59,7 @@ const AppShellContent = () => {
   const [rightPanelView, setRightPanelView] = useState('creative');
   const [centerView, setCenterView] = useState('userwall');
   const [forceCreativeEditorInCenter, setForceCreativeEditorInCenter] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   // ── Live slots: VidFeed & EduFeed mount ONCE and stay mounted regardless
   // of whether they're currently shown center or right — swapping only
@@ -304,6 +313,17 @@ const AppShellContent = () => {
           onClose={handleCommunityEditDone}
         />
       </div>
+    );
+  }
+
+  if (!profile?.onboarding_completed && !onboardingComplete) {
+    return (
+      <OnboardingFlow
+        onComplete={({ intent }) => {
+          setCenterView(INTENT_TO_TAB[intent] || 'userwall');
+          setOnboardingComplete(true);
+        }}
+      />
     );
   }
 
