@@ -196,33 +196,6 @@
   font-weight: 500;
 }
 
-/* ── Desktop Layout Adjustment ── */
-@media (min-width: 769px) {
-  .edufeed-wrapper .edufeed-card-inner {
-    display: flex; 
-    flex-direction: column; 
-    height: 100%;
-  }
-  .edufeed-wrapper .edufeed-attachments-top {
-    flex: 0 0 auto; /* Changed from flex: 1 to allow natural height */
-    margin-bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
-    aspect-ratio: auto;
-    max-height: none;
-    border-radius: 0;
-  }
-  .edufeed-wrapper .ef-card-preview {
-    flex: 1; /* Let preview take remaining space */
-    min-height: 0;
-  }
-  .edufeed-wrapper .ef-card-preview-scroll {
-    justify-content: flex-start;
-  }
-}
 iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto; }
 
 .edufeed-att-file {
@@ -1313,8 +1286,14 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   .edufeed-wrapper .edufeed-attachments-top {
     flex: 1; min-height: 0; margin-bottom: 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
+    padding-top: 1rem;
+  }
+  .edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
+    aspect-ratio: auto;
+    max-height: none;
+    border-radius: 0;
   }
   .edufeed-wrapper .ef-card-preview {
     flex: 0 0 auto; max-height: 100%;
@@ -1476,11 +1455,33 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   .community-race-btn { padding: 0.8rem 1.25rem; font-size: 0.88rem; }
 
   .edufeed-attachments-top.is-community .edufeed-att-frame,
-.edufeed-attachments-top.is-quiz .edufeed-att-frame { max-height: min(340px, 42vh); }
+  .edufeed-attachments-top.is-quiz .edufeed-att-frame { max-height: min(340px, 42vh); }
 
-  .ef-card-preview { padding: 0.6rem 0.75rem; }
-  .ef-card-preview-footer { gap: 0.4rem; }
-  .ef-card-preview-meta { gap: 0.3rem; }
+  .ef-card-preview { padding: 0.55rem 0.7rem; }
+
+  /* Spread badges left-to-right instead of stacking them all on the left —
+     status glues to the far right via margin-left:auto no matter how many
+     badges come before it. */
+  .ef-card-preview-top-row,
+  .ef-card-preview-meta { justify-content: space-between; gap: 0.3rem; }
+  .community-status { margin-left: auto; }
+
+  .ef-card-preview-badge,
+  .community-subject-tag,
+  .community-status { font-size: 0.62rem; padding: 0.15rem 0.5rem; }
+
+  /* Footer becomes a row so the CTA/Done chip sits to the right of the
+     badge cluster instead of stacking underneath as another line. */
+  .ef-card-preview-footer {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.4rem;
+  }
+  .ef-card-preview-footer-info { flex: 1 1 auto; min-width: 0; }
+  .ef-card-preview-cta { align-self: flex-end; margin-top: 0; }
+
   .ef-card-preview-done-badge,
   .ef-card-preview-cta { padding: 0.5rem 0.75rem; font-size: 0.74rem; }
 
@@ -1705,6 +1706,10 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   cursor: pointer; font-family: inherit; transition: all 0.15s ease;
 }
 .ef-done-chip:hover { background: color-mix(in srgb, var(--success) 22%, transparent); }
+
+@media (max-width: 768px) {
+  .ef-done-chip-wrap { align-self: flex-end; margin-top: 0; }
+}
 
 .ef-done-toast {
   position: absolute; bottom: calc(100% + 8px); left: 0;

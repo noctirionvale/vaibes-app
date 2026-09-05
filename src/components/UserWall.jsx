@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import InlineChatView from './UnifiedMessaging/InlineChatView';
+import { createPortal } from 'react-dom';
 import './UserWall.css';
 
 const renderMarkdown = (text) => {
@@ -500,7 +501,7 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
     const hasModalText = plainText.length > 0 && !isJustUrl;
     const renderedContent = renderContent(item.content);
 
-    return (
+    return createPortal(
       <div className="creation-modal-overlay" onClick={closeModal}>
         <div className="creation-modal" onClick={e => e.stopPropagation()}>
           <div className="modal-close">
@@ -555,7 +556,8 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
             </div>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   };
 
