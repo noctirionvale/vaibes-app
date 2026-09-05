@@ -386,8 +386,8 @@ const CardPreview = ({ post, onPlay, completion }) => {
         </div>
 
         {completion ? (
-          <div className="ef-card-preview-done-badge">✅ Already taken — {completion.points} pts earned</div>
-        ) : (
+  <DoneChip points={completion.points} />
+) : (
           <button
             className="ef-card-preview-cta"
             onClick={(e) => { e.stopPropagation(); onPlay(); }}
@@ -397,6 +397,29 @@ const CardPreview = ({ post, onPlay, completion }) => {
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Compact "done" chip — replaces the old full-width persistent badge.
+// Tapping briefly shows points earned, then fades — no permanent space cost. ──
+const DoneChip = ({ points }) => {
+  const [toastOn, setToastOn] = useState(false)
+  const timeoutRef = useRef(null)
+
+  const reveal = (e) => {
+    e.stopPropagation()
+    setToastOn(true)
+    clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => setToastOn(false), 2200)
+  }
+
+  useEffect(() => () => clearTimeout(timeoutRef.current), [])
+
+  return (
+    <div className="ef-done-chip-wrap">
+      <button type="button" className="ef-done-chip" onClick={reveal}>✅ Done</button>
+      {toastOn && <div className="ef-done-toast">+{points} pts earned</div>}
     </div>
   )
 }
@@ -426,8 +449,8 @@ const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => 
         </div>
 
         {completion ? (
-          <div className="ef-card-preview-done-badge">✅ Already taken — {completion.points} pts earned</div>
-        ) : (
+  <DoneChip points={completion.points} />
+) : (
           <button
             className="ef-card-preview-cta"
             onClick={(e) => { e.stopPropagation(); onPrimaryClick(e); }}

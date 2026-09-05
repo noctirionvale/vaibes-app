@@ -1299,9 +1299,7 @@
 }
 
 .notif-dropdown {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
+  position: fixed;
   z-index: 3501;
   width: min(340px, calc(100vw - 2rem));
   max-height: 420px;

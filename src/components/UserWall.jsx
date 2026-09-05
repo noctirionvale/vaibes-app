@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import InlineChatView from './UnifiedMessaging/InlineChatView';
@@ -52,6 +53,9 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  const notifBtnRef = useRef(null);
+const [notifPos, setNotifPos] = useState({ top: 0, left: 0 });
+
   /* ── Fetch items ── */
   const fetchItems = useCallback(async () => {
     if (!user) return;
@@ -93,6 +97,23 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, fetchNotifications]);
+
+  useEffect(() => {
+  if (!showNotifications) return;
+  const recalc = () => {
+    if (!notifBtnRef.current) return;
+    const rect = notifBtnRef.current.getBoundingClientRect();
+    const width = Math.min(340, window.innerWidth - 32);
+    setNotifPos({ top: rect.bottom + 10, left: Math.max(16, rect.right - width) });
+  };
+  recalc();
+  window.addEventListener('scroll', recalc, true);
+  window.addEventListener('resize', recalc);
+  return () => {
+    window.removeEventListener('scroll', recalc, true);
+    window.removeEventListener('resize', recalc);
+  };
+}, [showNotifications]);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -664,14 +685,14 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
           </div>
           <div className="header-right">
             <div className="notif-bell-wrap">
-              <button className="notif-bell-btn" onClick={openNotifications} title="Notifications">
+              <button ref={notifBtnRef} className="notif-bell-btn" onClick={openNotifications} title="Notifications">
                 🔔
                 {unreadCount > 0 && <span className="notif-bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
               </button>
-              {showNotifications && (
-                <>
-                  <div className="notif-dropdown-backdrop" onClick={() => setShowNotifications(false)} />
-                  <div className="notif-dropdown">
+              {showNotifications && createPortal(
+  <>
+    <div className="notif-dropdown-backdrop" onClick={() => setShowNotifications(false)} />
+    <div className="notif-dropdown" style={{ top: notifPos.top, left: notifPos.left }}>
                     <div className="notif-dropdown-header">
                       <span>Notifications</span>
                       <button className="modal-close-btn" onClick={() => setShowNotifications(false)}>✕</button>
