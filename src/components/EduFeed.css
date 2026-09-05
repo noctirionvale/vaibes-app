@@ -1475,7 +1475,17 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   .community-race-badge::after { font-size: 0.75rem; }
   .community-race-btn { padding: 0.8rem 1.25rem; font-size: 0.88rem; }
 
-  .edufeed-attachments-top.is-community .edufeed-att-frame { max-height: 220px; }
+  .edufeed-attachments-top.is-community .edufeed-att-frame,
+  .edufeed-attachments-top.is-quiz .edufeed-att-frame { max-height: min(200px, 30vh); }
+
+  .ef-card-preview { padding: 0.6rem 0.75rem; }
+  .ef-card-preview-footer { gap: 0.4rem; }
+  .ef-card-preview-meta { gap: 0.3rem; }
+  .ef-card-preview-done-badge,
+  .ef-card-preview-cta { padding: 0.5rem 0.75rem; font-size: 0.74rem; }
+
+  .edufeed-card-footer { flex-wrap: wrap; gap: 0.3rem; padding: 0.4rem 0.65rem; }
+  .edufeed-action-btn { padding: 0.22rem 0.55rem; font-size: 0.68rem; }
 
   .edufeed-snap-slide .edufeed-community-body {
     overflow-y: scroll; -webkit-overflow-scrolling: touch;

@@ -818,7 +818,11 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
       {activeThread.messages.map((m, i) => (
         <div key={i} className={`thread-msg thread-msg-${m.role}`}>
           <span className="thread-msg-label">{m.role === 'user' ? 'You' : 'Vaibey'}</span>
-          <div className="thread-msg-text">{m.content}</div>
+          {m.role === 'user' ? (
+            <div className="thread-msg-text">{m.content}</div>
+          ) : (
+            <div className="thread-msg-text ai-response-text" dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />
+          )}
         </div>
       ))}
     </div>
@@ -849,7 +853,7 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
             </div>
           )}
 
-          <div className="ai-response-text">{response}</div>
+          <div className="ai-response-text" dangerouslySetInnerHTML={{ __html: renderMarkdown(response) }} />
         </div>
       )}
 
