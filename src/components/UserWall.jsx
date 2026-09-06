@@ -240,30 +240,31 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
   };
 
   const startRoom = async (item) => {
-    setRoomLoading(true);
-    try {
-      const { data: existing, error: findErr } = await supabase
-        .from('groups').select('*').eq('wall_item_id', item.id).maybeSingle();
-      if (findErr) throw findErr;
+  setRoomLoading(true);
+  try {
+    const { data: existing, error: findErr } = await supabase
+      .from('groups').select('*').eq('wall_item_id', item.id).maybeSingle();
+    if (findErr) throw findErr;
 
-      let group = existing;
-      if (!group) {
-        const { data: created, error: createErr } = await supabase
-          .from('groups')
-          .insert({ name: item.title, icon: typeEmoji(item), created_by: user.id, wall_item_id: item.id })
-          .select().single();
-        if (createErr) throw createErr;
-        group = created;
-        await supabase.from('group_members').insert({ group_id: group.id, user_id: user.id });
-      }
-      setActiveRoom(group);
-    } catch (err) {
-      console.error('Failed to open study room:', err);
-      alert('Could not open the room: ' + (err.message || 'Unknown error'));
-    } finally {
-      setRoomLoading(false);
+    let group = existing;
+    if (!group) {
+      const { data: created, error: createErr } = await supabase
+        .from('groups')
+        .insert({ name: item.title, icon: typeEmoji(item), created_by: user.id, wall_item_id: item.id })
+        .select().single();
+      if (createErr) throw createErr;
+      group = created;
+      await supabase.from('group_members').insert({ group_id: group.id, user_id: user.id });
     }
-  };
+    closeModal();       // NEW
+    setActiveRoom(group);
+  } catch (err) {
+    console.error('Failed to open study room:', err);
+    alert('Could not open the room: ' + (err.message || 'Unknown error'));
+  } finally {
+    setRoomLoading(false);
+  }
+};
 
   const filteredRooms = myRooms.filter(g => {
     const q = roomSearch.trim().toLowerCase();

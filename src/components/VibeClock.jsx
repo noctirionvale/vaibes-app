@@ -1,65 +1,36 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useAlarm } from '../context/AlarmContext';
 import './VibeClock.css';
 
-const ALARM_STORAGE_KEY = 'vaibes_vibeclock_alarm_v1';
-
-const computeNextAlarmTimestamp = (hour24, minute) => {
-  const now = new Date();
-  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour24, minute, 0, 0);
-  if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
-  return target.getTime();
-};
-
-const loadStoredAlarm = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(ALARM_STORAGE_KEY));
-    if (!parsed || typeof parsed.targetTimestamp !== 'number'
-        || typeof parsed.hour !== 'number' || typeof parsed.minute !== 'number') return null;
-    return parsed;
-  } catch { return null; }
-};
-
 const VibeClock = (props) => {
-  const isControlled = props.mode !== undefined;
+  const ctx = useAlarm();
 
-  const [localMode,           setLocalMode]           = useState('clock');
-  const [localAlarmHour,      setLocalAlarmHour]      = useState(12);
-  const [localAlarmMinute,    setLocalAlarmMinute]    = useState(0);
-  const [localAlarmPeriod,    setLocalAlarmPeriod]    = useState('AM');
-  const [localAlarmSet, setLocalAlarmSet] = useState(() => {
-    const stored = loadStoredAlarm();
-    return stored
-      ? { hour: stored.hour, minute: stored.minute, display: stored.display, period: stored.period, targetTimestamp: stored.targetTimestamp }
-      : null;
-  });
-  const [localAlarmTriggered, setLocalAlarmTriggered] = useState(() => !!loadStoredAlarm()?.triggeredAt);
-  const localAudioRef = useRef(null);
-  const alarmTriggeredRef = useRef(false);
+  // Falls back to the shared AlarmContext by default. Props still win if a
+  // parent explicitly passes them (kept for forward-compat / testing), but
+  // nothing currently does — every instance of VibeClock, wherever it's
+  // rendered, now reads and writes the same always-mounted alarm state.
+  const mode           = props.mode           ?? ctx.mode;
+  const alarmHour      = props.alarmHour      ?? ctx.alarmHour;
+  const alarmMinute    = props.alarmMinute    ?? ctx.alarmMinute;
+  const alarmPeriod    = props.alarmPeriod    ?? ctx.alarmPeriod;
+  const alarmSet       = props.alarmSet       ?? ctx.alarmSet;
+  const alarmTriggered = props.alarmTriggered ?? ctx.alarmTriggered;
+
+  const setMode        = props.onModeChange        ?? ctx.setMode;
+  const setAlarmHour   = props.onAlarmHourChange   ?? ctx.setAlarmHour;
+  const setAlarmMinute = props.onAlarmMinuteChange ?? ctx.setAlarmMinute;
+  const setAlarmPeriod = props.onAlarmPeriodChange ?? ctx.setAlarmPeriod;
+  const setAlarmSet    = props.onAlarmSetChange    ?? ctx.setAlarmSet;
+  const stopAlarm      = props.onStopAlarm         ?? ctx.stopAlarm;
+  const cancelAlarm    = props.onCancelAlarm       ?? ctx.cancelAlarm;
+  const computeNextAlarmTimestamp = ctx.computeNextAlarmTimestamp;
 
   // Which picker is open: 'hour' | 'minute' | null
   const [openPicker, setOpenPicker] = useState(null);
-  // Fixed position coords for the picker portal
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
 
   const hourDigitRef   = useRef(null);
   const minuteDigitRef = useRef(null);
-
-  const mode           = isControlled ? props.mode           : localMode;
-  const alarmHour      = isControlled ? props.alarmHour      : localAlarmHour;
-  const alarmMinute    = isControlled ? props.alarmMinute    : localAlarmMinute;
-  const alarmPeriod    = isControlled ? props.alarmPeriod    : localAlarmPeriod;
-  const alarmSet       = isControlled ? props.alarmSet       : localAlarmSet;
-  const alarmTriggered = isControlled ? props.alarmTriggered : localAlarmTriggered;
-
-  const setMode        = isControlled ? props.onModeChange        : setLocalMode;
-  const setAlarmHour   = isControlled ? props.onAlarmHourChange   : setLocalAlarmHour;
-  const setAlarmMinute = isControlled ? props.onAlarmMinuteChange : setLocalAlarmMinute;
-  const setAlarmPeriod = isControlled ? props.onAlarmPeriodChange : setLocalAlarmPeriod;
-  const setAlarmSet    = isControlled ? props.onAlarmSetChange    : setLocalAlarmSet;
-
-  useEffect(() => {
-    alarmTriggeredRef.current = alarmTriggered;
-  }, [alarmTriggered]);
 
   // Close picker on outside click
   useEffect(() => {
@@ -115,110 +86,25 @@ const VibeClock = (props) => {
     setMode(mode === 'clock' ? 'alarm' : 'clock');
   };
 
-  const fireLocalAlarm = () => {
-    if (alarmTriggeredRef.current) return;
-    alarmTriggeredRef.current = true; // synchronous guard — closes a race window
-    setLocalAlarmTriggered(true);     // where a fast-ticking interval could double-fire
-    if (localAudioRef.current) {
-      localAudioRef.current.currentTime = 0;
-      localAudioRef.current.play().catch(e => console.log('Audio play failed:', e));
-    }
-    // Roll the target to its next occurrence right away so a persisted
-    // alarm behaves like a recurring daily alarm and never immediately
-    // re-fires the moment it's dismissed (or the moment the page reloads).
-    setLocalAlarmSet(prev => prev
-      ? { ...prev, targetTimestamp: computeNextAlarmTimestamp(prev.hour, prev.minute) }
-      : prev);
-  };
-
-  useEffect(() => {
-    if (isControlled) return;
-    const id = setInterval(() => {
-      if (localAlarmSet && !alarmTriggeredRef.current && Date.now() >= localAlarmSet.targetTimestamp) {
-        fireLocalAlarm();
-      }
-    }, 1000);
-    return () => clearInterval(id);
-  }, [isControlled, localAlarmSet]);
-
-  // Persist alarm + ringing state on every change — this is what makes
-  // the alarm survive a refresh, the widget being hidden, or its parent
-  // panel unmounting, all of which fully remount this component.
-  useEffect(() => {
-    if (isControlled) return;
-    if (!localAlarmSet) {
-      try { localStorage.removeItem(ALARM_STORAGE_KEY); } catch {}
-      return;
-    }
-    try {
-      localStorage.setItem(ALARM_STORAGE_KEY, JSON.stringify({
-        hour: localAlarmSet.hour,
-        minute: localAlarmSet.minute,
-        display: localAlarmSet.display,
-        period: localAlarmSet.period,
-        targetTimestamp: localAlarmSet.targetTimestamp,
-        triggeredAt: localAlarmTriggered ? Date.now() : null,
-      }));
-    } catch {}
-  }, [isControlled, localAlarmSet, localAlarmTriggered]);
-
-  useEffect(() => {
-    if (isControlled) return;
-    const unlockAudio = async () => {
-      if (localAudioRef.current) {
-        try {
-          await localAudioRef.current.play();
-          localAudioRef.current.pause();
-          localAudioRef.current.currentTime = 0;
-        } catch (e) {}
-      }
-    };
-    const events = ['click', 'keydown', 'touchstart'];
-    events.forEach(ev => document.addEventListener(ev, unlockAudio, { once: true }));
-    return () => events.forEach(ev => document.removeEventListener(ev, unlockAudio));
-  }, [isControlled]);
+  const handleSetAlarm = () => {
+  let hour24 = alarmHour;
+  if (alarmPeriod === 'PM' && alarmHour !== 12) hour24 = alarmHour + 12;
+  if (alarmPeriod === 'AM' && alarmHour === 12) hour24 = 0;
+  setAlarmSet({
+    hour:    hour24,
+    minute:  alarmMinute,
+    display: `${alarmHour.toString().padStart(2, '0')}:${alarmMinute.toString().padStart(2, '0')}`,
+    period:  alarmPeriod,
+    targetTimestamp: computeNextAlarmTimestamp(hour24, alarmMinute),
+  });
+  setOpenPicker(null);
+};;
 
   const [currentTime, setCurrentTime] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-
-  const stopAlarm = () => {
-    if (isControlled) {
-      props.onStopAlarm?.();
-    } else {
-      if (localAudioRef.current) {
-        localAudioRef.current.pause();
-        localAudioRef.current.currentTime = 0;
-      }
-      setLocalAlarmTriggered(false);
-      alarmTriggeredRef.current = false;
-    }
-  };
-
-  const cancelAlarm = () => {
-    if (isControlled) {
-      props.onCancelAlarm?.();
-    } else {
-      setLocalAlarmSet(null);
-      stopAlarm();
-    }
-  };
-
-  const handleSetAlarm = () => {
-    let hour24 = alarmHour;
-    if (alarmPeriod === 'PM' && alarmHour !== 12) hour24 = alarmHour + 12;
-    if (alarmPeriod === 'AM' && alarmHour === 12) hour24 = 0;
-    setAlarmSet({
-      hour:    hour24,
-      minute:  alarmMinute,
-      display: `${alarmHour.toString().padStart(2, '0')}:${alarmMinute.toString().padStart(2, '0')}`,
-      period:  alarmPeriod,
-      targetTimestamp: computeNextAlarmTimestamp(hour24, alarmMinute),
-    });
-    setOpenPicker(null);
-  };
 
   const hours       = currentTime.getHours();
   const mins        = currentTime.getMinutes();
@@ -230,13 +116,10 @@ const VibeClock = (props) => {
     weekday: 'short', month: 'long', day: 'numeric',
   }).toUpperCase();
 
-  // ── Seconds progress ring — sweeps clockwise from 12 o'clock, resets each minute ──
   const RING_R = 47;
   const RING_C = 2 * Math.PI * RING_R;
   const ringOffset = RING_C * (1 - secs / 60);
 
-  // At the 59→0 wrap, killing the CSS transition for one frame stops the ring
-  // from visibly "rewinding" backwards across the whole circle.
   const prevSecsRef = useRef(secs);
   const [ringTransition, setRingTransition] = useState(true);
   useEffect(() => {
@@ -252,7 +135,6 @@ const VibeClock = (props) => {
   const hourOptions   = Array.from({ length: 12 }, (_, i) => i + 1);
   const minuteOptions = Array.from({ length: 60 }, (_, i) => i);
 
-  // Scroll selected option into view when picker opens
   const pickerRef = useRef(null);
   useEffect(() => {
     if (!openPicker || !pickerRef.current) return;
@@ -262,8 +144,6 @@ const VibeClock = (props) => {
 
   return (
     <div className="vibe-clock">
-      {!isControlled && <audio ref={localAudioRef} src="/alarm.mp3" preload="auto" loop />}
-
       <div className="clock-face">
         <svg className="clock-progress-ring" viewBox="0 0 100 100" aria-hidden="true">
           <circle className="clock-progress-track" cx="50" cy="50" r={RING_R} />
@@ -288,7 +168,6 @@ const VibeClock = (props) => {
             />
           </div>
 
-          {/* ════ CLOCK MODE ════ */}
           {mode === 'clock' && (
             <div className="clock-display">
               <div className="clock-time-big">
@@ -302,14 +181,11 @@ const VibeClock = (props) => {
             </div>
           )}
 
-          {/* ════ ALARM MODE ════ */}
           {mode === 'alarm' && (
             <div className="alarm-display">
               {!alarmSet ? (
                 <>
                   <div className="alarm-time-big">
-
-                    {/* Hour digit */}
                     <span className="alarm-picker-anchor">
                       <span
                         ref={hourDigitRef}
@@ -322,7 +198,6 @@ const VibeClock = (props) => {
 
                     <span className="alarm-colon">:</span>
 
-                    {/* Minute digit */}
                     <span className="alarm-picker-anchor">
                       <span
                         ref={minuteDigitRef}
@@ -362,7 +237,6 @@ const VibeClock = (props) => {
             </div>
           )}
 
-          {/* Ringing overlay */}
           {alarmTriggered && (
             <div className="alarm-ringing-overlay">
               <div className="alarm-ringing">
@@ -376,7 +250,6 @@ const VibeClock = (props) => {
         </div>
       </div>
 
-      {/* ════ PICKER PORTAL — renders at document root level via fixed positioning ════ */}
       {openPicker && (
         <div
           ref={pickerRef}
