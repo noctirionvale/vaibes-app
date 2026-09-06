@@ -572,7 +572,7 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
 
   const renderMyRoomsModal = () => {
     if (!showMyRooms) return null;
-    return (
+    return createPortal(
       <div className="creation-modal-overlay" onClick={() => setShowMyRooms(false)}>
         <div className="room-picker-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
           <div className="modal-close">
@@ -612,7 +612,7 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
   /* ── Join requests modal ── */
   const renderJoinRequestsModal = () => {
     if (!showRequests) return null;
-    return (
+    return createPortal(
       <div className="creation-modal-overlay" onClick={() => setShowRequests(false)}>
         <div className="creation-modal" onClick={e => e.stopPropagation()}>
           <div className="modal-close">
