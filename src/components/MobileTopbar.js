@@ -51,8 +51,17 @@ const IconWall = () => (
   </svg>
 );
 
-const DEFAULT_TAB_ORDER = ['home', 'creative', 'edufeed', 'vidfeed', 'wall'];
+// 'wall' sits in the center (3rd of 5) so new users land on UserWall by
+// default. Only affects brand-new users — anyone with an existing saved
+// order keeps their own arrangement (see loadTabOrder below).
+const DEFAULT_TAB_ORDER = ['home', 'creative', 'wall', 'edufeed', 'vidfeed'];
 const TAB_ORDER_KEY = 'vaibes_mobile_tab_order_v1';
+
+// Whichever inline panel (Home or Wall) the user last viewed becomes their
+// default landing tab next time they open the app. New users default to
+// 'wall', matching the center-tab placement above.
+const ACTIVE_TAB_KEY = 'vaibes_mobile_active_tab_v1';
+const DEFAULT_ACTIVE_TAB = 'wall';
 
 const loadTabOrder = () => {
   try {
@@ -60,6 +69,14 @@ const loadTabOrder = () => {
     if (Array.isArray(saved) && saved.length) return saved;
   } catch { /* ignore */ }
   return DEFAULT_TAB_ORDER;
+};
+
+const loadActiveTab = () => {
+  try {
+    const saved = localStorage.getItem(ACTIVE_TAB_KEY);
+    if (saved) return saved;
+  } catch { /* ignore */ }
+  return DEFAULT_ACTIVE_TAB;
 };
 
 const MobileTopbar = ({ 
@@ -74,7 +91,7 @@ const MobileTopbar = ({
   const { user, profile } = useAuth();
   
   // ── Bottom Nav State ──
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState(loadActiveTab);
   
   // ── Modals state ──
   const [showAuthModal,  setShowAuthModal]  = useState(false);
@@ -83,7 +100,6 @@ const MobileTopbar = ({
   const [showCreative,   setShowCreative]   = useState(false);
   const [showEduFeed,    setShowEduFeed]    = useState(false);
   const [showVidFeed,    setShowVidFeed]    = useState(false);
-  const [showUserWall,   setShowUserWall]   = useState(false);
   const [showRacePlay, setShowRacePlay] = useState(false);
   const [raceRoomId, setRaceRoomId] = useState(null);
 
@@ -102,6 +118,12 @@ const MobileTopbar = ({
   useEffect(() => {
     try { localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(tabOrder)); } catch { /* storage unavailable */ }
   }, [tabOrder]);
+
+  // Persist whichever inline tab (home/wall) is currently active — this is
+  // what makes it "sticky" as the default the next time the app opens.
+  useEffect(() => {
+    try { localStorage.setItem(ACTIVE_TAB_KEY, activeTab); } catch { /* storage unavailable */ }
+  }, [activeTab]);
 
   // ── Auto-open creative sheet when editItem arrives from parent ──
   useEffect(() => {
@@ -205,25 +227,50 @@ const MobileTopbar = ({
     onInjectToCanvas: () => {},
   };
 
-  // ── Bottom Nav Tabs (6 tabs) ──
- const tabs = [
-  { id: 'home', icon: <IconHome />, label: 'AIchat', action: () => setActiveTab('home'), component: <AIComparison {...aiComparisonProps} /> },
-  {
-    id: 'creative',
-    icon: <IconPencil />,
-    label: 'Create',
-    action: () => {
-      if (userTier !== 'pro' && user?.email !== 'noctirionvale@gmail.com') {
-        onOpenUpgrade?.();
-        return;
-      }
-      setShowCreative(true);
+  // ── Bottom Nav Tabs (5 tabs) ──
+  // 'home' and 'wall' render INLINE in .mobile-main-content (no sheet) —
+  // whichever is active is what gets highlighted and remembered as the
+  // default landing tab. 'creative' / 'edufeed' / 'vidfeed' stay full-screen
+  // sheets and never touch activeTab, since the bottom nav (and its
+  // highlight) is completely covered while a sheet is open anyway.
+  const tabs = [
+    {
+      id: 'home',
+      icon: <IconHome />,
+      label: 'AIchat',
+      action: () => setActiveTab('home'),
+      component: <AIComparison {...aiComparisonProps} />,
     },
-  },
-  { id: 'edufeed', icon: <IconFeed />, label: 'EduFeed', action: () => { setShowEduFeed(true); } },
-  { id: 'vidfeed', icon: <IconVideo />, label: 'VidFeed', action: () => { setShowVidFeed(true); } },
-  { id: 'wall', icon: <IconWall />, label: 'My Wall', action: () => { setShowUserWall(true); } },
-];
+    {
+      id: 'creative',
+      icon: <IconPencil />,
+      label: 'Create',
+      action: () => {
+        if (userTier !== 'pro' && user?.email !== 'noctirionvale@gmail.com') {
+          onOpenUpgrade?.();
+          return;
+        }
+        setShowCreative(true);
+      },
+    },
+    {
+      id: 'wall',
+      icon: <IconWall />,
+      label: 'My Wall',
+      action: () => setActiveTab('wall'),
+      component: (
+        <UserWall
+          refreshTrigger={refreshWall}
+          onEditItem={(item) => {
+            setWallEditItem(item);
+            setShowCreative(true);
+          }}
+        />
+      ),
+    },
+    { id: 'edufeed', icon: <IconFeed />, label: 'EduFeed', action: () => { setShowEduFeed(true); } },
+    { id: 'vidfeed', icon: <IconVideo />, label: 'VidFeed', action: () => { setShowVidFeed(true); } },
+  ];
 
   const orderedTabs = tabOrder
     .filter(id => tabs.some(t => t.id === id))
@@ -333,30 +380,6 @@ const MobileTopbar = ({
                 onOpenBilling={onOpenUpgrade}
                 editItem={wallEditItem}
                 onEditDone={handleWallEditDone}
-              />
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ── USER WALL SHEET ── */}
-      {showUserWall && (
-        <>
-          <div className="mobile-modal-overlay" onClick={() => setShowUserWall(false)} />
-          <div className="mobile-bottom-sheet userwall-sheet full-sheet">
-            <div className="mobile-sheet-handle" />
-            <div className="mobile-sheet-header">
-              <span>🧱 My Wall</span>
-              <button className="mobile-sheet-close" onClick={() => setShowUserWall(false)}>✕</button>
-            </div>
-            <div className="mobile-sheet-body full-sheet-body">
-              <UserWall
-                refreshTrigger={refreshWall}
-                onEditItem={(item) => {
-                  setWallEditItem(item);
-                  setShowUserWall(false);
-                  setShowCreative(true);
-                }}
               />
             </div>
           </div>
