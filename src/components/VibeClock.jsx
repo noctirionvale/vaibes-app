@@ -1,6 +1,24 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import './VibeClock.css';
 
+const ALARM_STORAGE_KEY = 'vaibes_vibeclock_alarm_v1';
+
+const computeNextAlarmTimestamp = (hour24, minute) => {
+  const now = new Date();
+  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour24, minute, 0, 0);
+  if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+  return target.getTime();
+};
+
+const loadStoredAlarm = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ALARM_STORAGE_KEY));
+    if (!parsed || typeof parsed.targetTimestamp !== 'number'
+        || typeof parsed.hour !== 'number' || typeof parsed.minute !== 'number') return null;
+    return parsed;
+  } catch { return null; }
+};
+
 const VibeClock = (props) => {
   const isControlled = props.mode !== undefined;
 
@@ -8,8 +26,13 @@ const VibeClock = (props) => {
   const [localAlarmHour,      setLocalAlarmHour]      = useState(12);
   const [localAlarmMinute,    setLocalAlarmMinute]    = useState(0);
   const [localAlarmPeriod,    setLocalAlarmPeriod]    = useState('AM');
-  const [localAlarmSet,       setLocalAlarmSet]       = useState(null);
-  const [localAlarmTriggered, setLocalAlarmTriggered] = useState(false);
+  const [localAlarmSet, setLocalAlarmSet] = useState(() => {
+    const stored = loadStoredAlarm();
+    return stored
+      ? { hour: stored.hour, minute: stored.minute, display: stored.display, period: stored.period, targetTimestamp: stored.targetTimestamp }
+      : null;
+  });
+  const [localAlarmTriggered, setLocalAlarmTriggered] = useState(() => !!loadStoredAlarm()?.triggeredAt);
   const localAudioRef = useRef(null);
   const alarmTriggeredRef = useRef(false);
 
@@ -94,27 +117,50 @@ const VibeClock = (props) => {
 
   const fireLocalAlarm = () => {
     if (alarmTriggeredRef.current) return;
-    setLocalAlarmTriggered(true);
+    alarmTriggeredRef.current = true; // synchronous guard — closes a race window
+    setLocalAlarmTriggered(true);     // where a fast-ticking interval could double-fire
     if (localAudioRef.current) {
       localAudioRef.current.currentTime = 0;
       localAudioRef.current.play().catch(e => console.log('Audio play failed:', e));
     }
+    // Roll the target to its next occurrence right away so a persisted
+    // alarm behaves like a recurring daily alarm and never immediately
+    // re-fires the moment it's dismissed (or the moment the page reloads).
+    setLocalAlarmSet(prev => prev
+      ? { ...prev, targetTimestamp: computeNextAlarmTimestamp(prev.hour, prev.minute) }
+      : prev);
   };
 
   useEffect(() => {
     if (isControlled) return;
     const id = setInterval(() => {
-      if (localAlarmSet && !alarmTriggeredRef.current) {
-        const now = new Date();
-        if (now.getHours()   === localAlarmSet.hour &&
-            now.getMinutes() === localAlarmSet.minute &&
-            now.getSeconds() === 0) {
-          fireLocalAlarm();
-        }
+      if (localAlarmSet && !alarmTriggeredRef.current && Date.now() >= localAlarmSet.targetTimestamp) {
+        fireLocalAlarm();
       }
     }, 1000);
     return () => clearInterval(id);
   }, [isControlled, localAlarmSet]);
+
+  // Persist alarm + ringing state on every change — this is what makes
+  // the alarm survive a refresh, the widget being hidden, or its parent
+  // panel unmounting, all of which fully remount this component.
+  useEffect(() => {
+    if (isControlled) return;
+    if (!localAlarmSet) {
+      try { localStorage.removeItem(ALARM_STORAGE_KEY); } catch {}
+      return;
+    }
+    try {
+      localStorage.setItem(ALARM_STORAGE_KEY, JSON.stringify({
+        hour: localAlarmSet.hour,
+        minute: localAlarmSet.minute,
+        display: localAlarmSet.display,
+        period: localAlarmSet.period,
+        targetTimestamp: localAlarmSet.targetTimestamp,
+        triggeredAt: localAlarmTriggered ? Date.now() : null,
+      }));
+    } catch {}
+  }, [isControlled, localAlarmSet, localAlarmTriggered]);
 
   useEffect(() => {
     if (isControlled) return;
@@ -169,6 +215,7 @@ const VibeClock = (props) => {
       minute:  alarmMinute,
       display: `${alarmHour.toString().padStart(2, '0')}:${alarmMinute.toString().padStart(2, '0')}`,
       period:  alarmPeriod,
+      targetTimestamp: computeNextAlarmTimestamp(hour24, alarmMinute),
     });
     setOpenPicker(null);
   };

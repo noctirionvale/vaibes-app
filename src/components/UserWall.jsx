@@ -563,10 +563,11 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
 
   const renderActiveRoom = () => {
     if (!activeRoom) return null;
-    return (
+    return createPortal(
       <div className="room-overlay">
         <InlineChatView type="group" group={activeRoom} onBack={() => setActiveRoom(null)} />
-      </div>
+      </div>,
+      document.body
     );
   };
 
