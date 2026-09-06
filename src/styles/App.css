@@ -731,7 +731,8 @@ body.light-mode .qa-input:focus {
   
   .modal-content { padding: 1.5rem 1.25rem; margin: 1rem; max-width: 100%; border-radius: 16px; }
   .room-overlay { padding: 0; }
-  .room-overlay .crp-container { max-height: 100vh; border-radius: 0; }
+  .room-overlay .crp-container,
+  .room-overlay .icv-root { max-height: 100vh; max-width: 100%; border-radius: 0; }
   
   .mobile-topbar {
     display: flex !important;
