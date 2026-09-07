@@ -465,6 +465,7 @@ const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => 
   )
 }
 
+
 // ── HOC: Media-First Layout ──
 const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
   return function WrappedCard({

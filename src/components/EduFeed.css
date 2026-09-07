@@ -1154,6 +1154,7 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 
 .ef-card-preview-top-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 .ef-card-preview-done-badge {
+  align-self: flex-start;   /* NEW */
   margin-top: 0.25rem;
   padding: 0.6rem 0.9rem;
   border-radius: 12px;
@@ -1483,7 +1484,11 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   .ef-card-preview-cta { align-self: flex-end; margin-top: 0; }
 
   .ef-card-preview-done-badge,
-  .ef-card-preview-cta { padding: 0.5rem 0.75rem; font-size: 0.74rem; }
+  .ef-card-preview-cta,
+.ef-card-preview-done-badge {           /* was: .ef-card-preview-cta only */
+  align-self: flex-end;
+  margin-top: 0;
+}
 
   .edufeed-card-footer { flex-wrap: wrap; gap: 0.3rem; padding: 0.4rem 0.65rem; }
   .edufeed-action-btn { padding: 0.22rem 0.55rem; font-size: 0.68rem; }
@@ -1696,7 +1701,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   }
 }
 
-.ef-done-chip-wrap { position: relative; margin-top: 0.25rem; align-self: flex-end; }
+.ef-done-chip-wrap { position: relative; margin-top: 0.25rem; align-self: flex-start; }
 
 .ef-done-chip {
   padding: 0.55rem 1rem; border-radius: 12px;
@@ -1725,3 +1730,23 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
 .ef-comments { max-height: 170px; }
 .ef-comments-list { padding: 0.45rem 0.7rem 0.3rem; gap: 0.4rem; }
+
+.community-done-badge {
+  width: 100%;
+  margin-top: 0.3rem;                 /* matches .community-join-btn */
+  padding: 0.6rem 1rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  color: var(--success);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.ef-done-chip { padding: 0.5rem 0.75rem; font-size: 0.74rem; }
