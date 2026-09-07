@@ -1280,16 +1280,21 @@
    CENTER VIEW — Desktop EduFeed (absorb extra space)
    ══════════════════════════════════════════════ */
 @media (min-width: 769px) {
-  .edufeed-wrapper .edufeed-card-inner {
-    display: flex; flex-direction: column; height: 100%;
-  }
   .edufeed-wrapper .edufeed-attachments-top {
+    flex: 1;
+    min-height: 0;
+    max-height: 100%;          /* NEW — caps the box so it can't push past the footer */
     margin-bottom: 0;
-    padding-top: 1rem;
+    display: flex;
+    align-items: center;       /* was: flex-start — closes the top gap you circled */
+    justify-content: center;
+    padding-top: 0.5rem;       /* was: 1rem — tightens the top gap further */
+    overflow: hidden;          /* NEW — stops the image from bleeding into the Done chip */
   }
-  /* Square corners only at the larger desktop size — a deliberate look,
-     kept from the original rule. */
   .edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
+    aspect-ratio: auto;
+    height: 100%;               /* NEW — fills the available box instead of sizing to content */
+    max-height: 100%;           /* was: none — the actual "fit" fix */
     border-radius: 0;
   }
 }
