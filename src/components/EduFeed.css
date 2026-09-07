@@ -1696,7 +1696,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   }
 }
 
-.ef-done-chip-wrap { position: relative; margin-top: 0.25rem; align-self: flex-start; }
+.ef-done-chip-wrap { position: relative; margin-top: 0.25rem; align-self: flex-end; }
 
 .ef-done-chip {
   padding: 0.55rem 1rem; border-radius: 12px;
