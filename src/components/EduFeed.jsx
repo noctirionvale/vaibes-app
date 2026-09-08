@@ -4,8 +4,6 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import CommunityRoomPlay from './CommunityRoomPlay';
 import QuizArenaModal from './QuizArenaModal';
-import PlayerSpotlight from './PlayerSpotlight';
-import LiveChallengeBanner from './LiveChallengeBanner';
 import PointsDashboard from './PointsDashboard';
 import BadgeRow from './BadgeRow';
 import { attachBadges } from '../lib/badgeQueries';
@@ -1463,9 +1461,6 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
       {showDashboardModal && (
         <PointsDashboard onClose={() => setShowDashboardModal(false)} />
       )}
-
-      <PlayerSpotlight />
-      <LiveChallengeBanner onJoinRoom={(id) => setArenaRoomId(id)} />
 
       <div className="edufeed-type-filter-bar">
   <div className="edufeed-filter-left">

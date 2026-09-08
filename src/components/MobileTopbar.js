@@ -9,6 +9,8 @@ import CommunityRoomPlay from './CommunityRoomPlay';
 import VidFeed from './VidFeed';
 import UserWall from './UserWall';
 import AIComparison from './AIComparison';
+import PlayerSpotlight from './PlayerSpotlight';   // NEW
+import LiveChallengeBanner from './LiveChallengeBanner'; // NEW
 import './MobileTopbar.css';
 
 // ── Icons ──
@@ -387,29 +389,36 @@ const MobileTopbar = ({
       )}
 
       {/* ── EDUFEED SHEET ── */}
-      {showEduFeed && (
-        <>
-          <div className="mobile-modal-overlay" onClick={() => setShowEduFeed(false)} />
-          <div className="mobile-bottom-sheet edufeed-sheet full-sheet">
-            <div className="mobile-sheet-handle" />
-            <div className="mobile-sheet-header">
-              <span>🎓 EduFeed</span>
-              <button className="mobile-sheet-close" onClick={() => setShowEduFeed(false)}>✕</button>
-            </div>
-            <div className="mobile-sheet-body full-sheet-body">
-              <EduFeed 
-                userTier={userTier}
-                onEditPost={handleEduEdit}
-                onOpenRacePlay={(roomId) => {
-                  setShowEduFeed(false);
-                  setRaceRoomId(roomId);
-                  setShowRacePlay(true);
-                }}
-              />
-            </div>
-          </div>
-        </>
-      )}
+{showEduFeed && (
+  <>
+    <div className="mobile-modal-overlay" onClick={() => setShowEduFeed(false)} />
+    <div className="mobile-bottom-sheet edufeed-sheet full-sheet">
+      <div className="mobile-sheet-handle" />
+      <div className="mobile-sheet-header">
+        <span>🎓 EduFeed</span>
+        <button className="mobile-sheet-close" onClick={() => setShowEduFeed(false)}>✕</button>
+      </div>
+      <div className="mobile-sheet-top-strip">
+        <PlayerSpotlight />
+        <LiveChallengeBanner onJoinRoom={(roomId) => {
+          setRaceRoomId(roomId);
+          setShowRacePlay(true);
+        }} />
+      </div>
+      <div className="mobile-sheet-body full-sheet-body">
+        <EduFeed 
+          userTier={userTier}
+          onEditPost={handleEduEdit}
+          onOpenRacePlay={(roomId) => {
+            setShowEduFeed(false);
+            setRaceRoomId(roomId);
+            setShowRacePlay(true);
+          }}
+        />
+      </div>
+    </div>
+  </>
+)}
 
       {/* ── COMMUNITY RACE PLAY SHEET ── */}
       {showRacePlay && raceRoomId && (

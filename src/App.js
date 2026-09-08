@@ -27,6 +27,9 @@ import { MusicPlayerProvider } from './context/MusicPlayerContext';
 import { useOnboardingTour } from './hooks/useOnboardingTour';
 import OnboardingFlow from './components/OnboardingFlow';
 import { AlarmProvider } from './context/AlarmContext';
+import PlayerSpotlight from './components/PlayerSpotlight';
+import LiveChallengeBanner from './components/LiveChallengeBanner';
+import QuizArenaModal from './components/QuizArenaModal';
 import './styles/App.css';
 
 const INTENT_TO_TAB = {
@@ -61,6 +64,8 @@ const AppShellContent = () => {
   const [centerView, setCenterView] = useState('userwall');
   const [forceCreativeEditorInCenter, setForceCreativeEditorInCenter] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
+
+const [topArenaRoomId, setTopArenaRoomId] = useState(null); // NEW
 
   // ── Live slots: VidFeed & EduFeed mount ONCE and stay mounted regardless
   // of whether they're currently shown center or right — swapping only
@@ -343,56 +348,69 @@ const AppShellContent = () => {
       )}
 
       {!isMobile && (
-        <>
-          <div className="main-wrapper">
-            <LeftSidebar />
-            <main className="content-center">
-              <div className="chatbox-wrapper">
-                <div
-                  className={
-                    !forceCreativeEditorInCenter && (centerView === 'vidfeed' || centerView === 'edufeed')
-                      ? `center-view-wrapper center-view-wrapper--feed center-view-wrapper--${centerView}`
-                      : 'center-view-wrapper'
-                  }
-                >
-                  {centerColumnContent}
-                </div>
-              </div>
-            </main>
+  <div className="app-shell">
+    <div className="app-top-strip">
+      <PlayerSpotlight />
+      <LiveChallengeBanner onJoinRoom={(id) => setTopArenaRoomId(id)} />
+    </div>
 
-            <div className="right-panel">
-              <PanelSwitcher
-                activeView={rightPanelView}
-                centerActiveKey={centerActiveKey}
-                onViewChange={switchRightPanel}
-                creativeEditorProps={rightCreativeEditorProps}
-                aiComparisonProps={aiComparisonProps}
-                userTier={userTier}
-                vidSlotRef={rightVidSlotRef}
-                eduSlotRef={rightEduSlotRef}
-              />
-            </div>
+    <div className="main-wrapper">
+      <LeftSidebar />
+      <main className="content-center">
+        <div className="chatbox-wrapper">
+          <div
+            className={
+              !forceCreativeEditorInCenter && (centerView === 'vidfeed' || centerView === 'edufeed')
+                ? `center-view-wrapper center-view-wrapper--feed center-view-wrapper--${centerView}`
+                : 'center-view-wrapper'
+            }
+          >
+            {centerColumnContent}
           </div>
+        </div>
+      </main>
 
-          {vidfeedLocation && (
-            <LiveSlot
-              slotRef={vidfeedLocation === 'center' ? centerVidSlotRef : rightVidSlotRef}
-              hostClassName={feedHostClass(vidfeedLocation, 'vidfeed')}
-            >
-              <VidFeed compact={vidfeedLocation === 'right'} />
-            </LiveSlot>
-          )}
+      <div className="right-panel">
+        <PanelSwitcher
+          activeView={rightPanelView}
+          centerActiveKey={centerActiveKey}
+          onViewChange={switchRightPanel}
+          creativeEditorProps={rightCreativeEditorProps}
+          aiComparisonProps={aiComparisonProps}
+          userTier={userTier}
+          vidSlotRef={rightVidSlotRef}
+          eduSlotRef={rightEduSlotRef}
+        />
+      </div>
+    </div>
 
-          {edufeedLocation && (
-            <LiveSlot
-              slotRef={edufeedLocation === 'center' ? centerEduSlotRef : rightEduSlotRef}
-              hostClassName={feedHostClass(edufeedLocation, 'edufeed')}
-            >
-              <EduFeed userTier={userTier} onEditPost={handleEditEduPost} />
-            </LiveSlot>
-          )}
-        </>
-      )}
+    {vidfeedLocation && (
+      <LiveSlot
+        slotRef={vidfeedLocation === 'center' ? centerVidSlotRef : rightVidSlotRef}
+        hostClassName={feedHostClass(vidfeedLocation, 'vidfeed')}
+      >
+        <VidFeed compact={vidfeedLocation === 'right'} />
+      </LiveSlot>
+    )}
+
+    {edufeedLocation && (
+      <LiveSlot
+        slotRef={edufeedLocation === 'center' ? centerEduSlotRef : rightEduSlotRef}
+        hostClassName={feedHostClass(edufeedLocation, 'edufeed')}
+      >
+        <EduFeed
+          userTier={userTier}
+          onEditPost={handleEditEduPost}
+          onOpenRacePlay={(id) => setTopArenaRoomId(id)}
+        />
+      </LiveSlot>
+    )}
+
+    {topArenaRoomId && (
+      <QuizArenaModal roomId={topArenaRoomId} onClose={() => setTopArenaRoomId(null)} />
+    )}
+  </div>
+)}
 
       {showEduEditorModal && createPortal(
         <div className="modal-overlay" onClick={handleEduEditDone}>

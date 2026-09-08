@@ -363,7 +363,9 @@ html, body {
 .center-view-wrapper--feed {
   max-width: 560px;
   margin: 0 auto;
-  height: calc(100vh - 4rem);
+  width: 100%;
+  flex: 1 1 auto;
+  height: auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -786,4 +788,27 @@ body.light-mode .qa-input:focus {
   .center-view-wrapper--edufeed .community-title { font-size: 1.2rem; }
   .center-view-wrapper--edufeed .community-description { font-size: 0.85rem; }
   .center-view-wrapper--edufeed .community-join-btn { font-size: 0.92rem; padding: 0.75rem 1.25rem; }
+}
+
+/* ── App shell: puts the ticker strip above the whole 3-column row,
+   leveled with the top of the sidebar and right panel ── */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+.app-top-strip {
+  flex-shrink: 0;
+  padding: 0.6rem 1rem 0;
+}
+.app-shell .main-wrapper {
+  height: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.app-shell .right-panel,
+.app-shell .ai-panel {
+  height: 100%; /* was hardcoded 100vh — would overflow under the new strip */
 }
