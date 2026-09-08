@@ -29,6 +29,25 @@
 /* ══════════════════════════════════════════════
    WRAPPER & FILTER BAR
    ══════════════════════════════════════════════ */
+.edufeed-wrapper { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+
+.edufeed-type-filter-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 0.5rem; flex-wrap: wrap; padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.edufeed-filter-left { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.edufeed-filter-right { display: flex; align-items: center; }
+
+.edufeed-type-filter-pill {
+  padding: 0.28rem 0.65rem; border-radius: 20px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--muted); font-size: 0.73rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s ease; font-family: inherit; white-space: nowrap;
+}
+.edufeed-type-filter-pill.active {
+  border-color: var(--glow); background: var(--accent-12); color: var(--accent-text);
+}
 
 /* ══════════════════════════════════════════════
    CARD BASE
@@ -1091,13 +1110,18 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   flex-shrink: 0;
   padding-top: 0.5rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;       /* was: column */
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 .ef-card-preview-footer-info {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .ef-card-preview-thumb {
   position: relative; width: 100%; aspect-ratio: 16 / 9;
@@ -1122,21 +1146,22 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 }
 .ef-card-preview-count { font-size: 0.7rem; color: var(--muted); }
 .ef-card-preview-cta {
-  margin-top: 0.25rem; align-self: flex-start;
+  margin-top: 0; align-self: flex-end;   /* was: margin-top:0.25rem; align-self:flex-start */
   padding: 0.55rem 1rem; border: none; border-radius: 12px;
   background: var(--grad-cta); background-size: 200% auto;
   animation: shimmer 3s linear infinite;
   color: var(--on-accent); font-weight: 700; font-size: 0.82rem;
   cursor: pointer; box-shadow: 0 4px 14px var(--accent-25);
   transition: all 0.2s ease; font-family: inherit;
+  flex-shrink: 0;
 }
 .ef-card-preview-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-40); }
 .ef-card-preview-cta:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
 
 .ef-card-preview-top-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 .ef-card-preview-done-badge {
-  align-self: flex-start;   /* NEW */
-  margin-top: 0.25rem;
+  align-self: flex-end;      /* was: flex-start */
+  margin-top: 0;             /* was: 0.25rem */
   padding: 0.6rem 0.9rem;
   border-radius: 12px;
   background: color-mix(in srgb, var(--success) 12%, transparent);
@@ -1145,6 +1170,7 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   font-size: 0.8rem;
   font-weight: 700;
   text-align: center;
+  flex-shrink: 0;
 }
 
 /* Quiz-play modals are createPortal'd straight to document.body, so they're
@@ -1261,74 +1287,28 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 /* ══════════════════════════════════════════════
    CENTER VIEW — Desktop EduFeed (absorb extra space)
    ══════════════════════════════════════════════ */
-/* AFTER */
 @media (min-width: 769px) {
   .edufeed-wrapper .edufeed-card-inner {
     display: flex; flex-direction: column; height: 100%;
   }
-
-  /* Image can now shrink and is hard-capped — it can never crowd out the footer */
   .edufeed-wrapper .edufeed-attachments-top {
-    flex: 0 1 auto;
-    min-height: 0;
-    max-height: 58%;
-    margin-bottom: 0;
+    flex: 1; min-height: 0; margin-bottom: 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding-top: 1rem;
-    overflow: hidden;
   }
   .edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
     aspect-ratio: auto;
-    max-height: 100%;
-    width: 100%;
+    max-height: none;
     border-radius: 0;
   }
-
-  /* Preview/footer now takes ALL remaining space instead of shrink-to-content */
   .edufeed-wrapper .ef-card-preview {
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: none;
+    flex: 0 0 auto; max-height: 100%;
   }
   .edufeed-wrapper .ef-card-preview-scroll {
     justify-content: flex-start;
   }
-}
-
-/* Adaptive compact layout — reacts to the CARD's own width, not the
-   browser viewport, so the right panel (~400px) finally gets the same
-   compact treatment mobile already has, regardless of screen size. */
-@container edufeed (max-width: 480px) {
-  .ef-card-preview-badge,
-  .community-subject-tag,
-  .community-status {
-    font-size: 0.62rem;
-    padding: 0.15rem 0.5rem;
-  }
-
-  .ef-card-preview-top-row,
-  .ef-card-preview-meta {
-    justify-content: space-between;
-    gap: 0.3rem;
-  }
-  .community-status { margin-left: auto; }
-
-  .ef-card-preview-footer {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 0.4rem;
-  }
-  .ef-card-preview-footer-info { flex: 1 1 auto; min-width: 0; }
-  .ef-card-preview-cta,
-  .ef-card-preview-done-badge,
-  .ef-done-chip-wrap { align-self: flex-end; margin-top: 0; }
-
-  .edufeed-card-footer { flex-wrap: wrap; gap: 0.3rem; padding: 0.4rem 0.65rem; }
-  .edufeed-action-btn { padding: 0.22rem 0.55rem; font-size: 0.68rem; }
 }
 
 /* ══════════════════════════════════════════════
@@ -1500,22 +1480,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
   /* Footer becomes a row so the CTA/Done chip sits to the right of the
      badge cluster instead of stacking underneath as another line. */
-  .ef-card-preview-footer {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 0.4rem;
-  }
-  .ef-card-preview-footer-info { flex: 1 1 auto; min-width: 0; }
-  .ef-card-preview-cta { align-self: flex-end; margin-top: 0; }
 
-  .ef-card-preview-done-badge,
-  .ef-card-preview-cta,
-.ef-card-preview-done-badge {           /* was: .ef-card-preview-cta only */
-  align-self: flex-end;
-  margin-top: 0;
-}
 
   .edufeed-card-footer { flex-wrap: wrap; gap: 0.3rem; padding: 0.4rem 0.65rem; }
   .edufeed-action-btn { padding: 0.22rem 0.55rem; font-size: 0.68rem; }
@@ -1537,8 +1502,6 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  container-type: inline-size;
-  container-name: edufeed;
 }
 
 .edufeed-type-filter-bar {
@@ -1730,7 +1693,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   }
 }
 
-.ef-done-chip-wrap { position: relative; margin-top: 0.25rem; align-self: flex-start; }
+.ef-done-chip-wrap { position: relative; margin-top: 0; align-self: flex-end; } /* was: margin-top:0.25rem; align-self:flex-start */
 
 .ef-done-chip {
   padding: 0.55rem 1rem; border-radius: 12px;
@@ -1741,9 +1704,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 }
 .ef-done-chip:hover { background: color-mix(in srgb, var(--success) 22%, transparent); }
 
-@media (max-width: 768px) {
-  .ef-done-chip-wrap { align-self: flex-end; margin-top: 0; }
-}
+
 
 .ef-done-toast {
   position: absolute; bottom: calc(100% + 8px); left: 0;
