@@ -1740,3 +1740,20 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 }
 
 .ef-done-chip { padding: 0.5rem 0.75rem; font-size: 0.74rem; }
+
+/* NEW — the live tickers are now their own visual group, not just loose
+   elements sitting on top of the filter bar. flex-shrink:0 keeps them
+   from ever being squeezed by the card feed below. */
+.edufeed-live-header {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding-bottom: 0.4rem;
+}
+
+/* Robust selector (beats the file's duplicate filter-bar rules regardless
+   of source order) — adds the missing breathing room before the first
+   quiz card, so it doesn't touch the filter pills directly. */
+.edufeed-wrapper .edufeed-type-filter-bar {
+  margin-bottom: 0.5rem;
+}

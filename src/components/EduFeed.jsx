@@ -1464,8 +1464,10 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
         <PointsDashboard onClose={() => setShowDashboardModal(false)} />
       )}
 
-      <PlayerSpotlight />
-      <LiveChallengeBanner onJoinRoom={(id) => setArenaRoomId(id)} />
+      <div className="edufeed-live-header">
+        <PlayerSpotlight />
+        <LiveChallengeBanner onJoinRoom={(id) => setArenaRoomId(id)} />
+      </div>
 
       <div className="edufeed-type-filter-bar">
   <div className="edufeed-filter-left">
