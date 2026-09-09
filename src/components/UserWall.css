@@ -1221,14 +1221,22 @@
     gap: 0.3rem;
   }
 
+  .grid-card .card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);   /* NEW — real, fixed gutters via grid gap,
+      instead of flex items whose visible spacing depended on how much of
+      their equal-width box the label text happened to fill */
+    gap: 0.4rem;
+  }
+
   .grid-card .action-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: 1 1 calc(33.33% - 0.3rem);
+    width: 100%;
     min-width: 0;
     font-size: 0.66rem;
-    padding: 0.4rem 0.3rem;
+    padding: 0.45rem 0.4rem;   /* slightly roomier now that each button gets ~half the card width instead of a third */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
