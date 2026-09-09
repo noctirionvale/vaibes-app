@@ -1287,6 +1287,33 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 }
 
 /* ══════════════════════════════════════════════
+   CENTER VIEW — Desktop EduFeed (absorb extra space)
+   ══════════════════════════════════════════════ */
+@media (min-width: 769px) {
+  .edufeed-wrapper .edufeed-card-inner {
+    display: flex; flex-direction: column; height: 100%;
+  }
+  .edufeed-wrapper .edufeed-attachments-top {
+    flex: 1; min-height: 0; margin-bottom: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 1rem;
+  }
+  .edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
+    aspect-ratio: auto;
+    max-height: none;
+    border-radius: 0;
+  }
+  .edufeed-wrapper .ef-card-preview {
+    flex: 0 0 auto; max-height: 100%;
+  }
+  .edufeed-wrapper .ef-card-preview-scroll {
+    justify-content: flex-start;
+  }
+}
+
+/* ══════════════════════════════════════════════
    SNAP-SLIDE INTERACTIVITY FIXES
    (taps were being swallowed by snap-scroll drag handling)
    ══════════════════════════════════════════════ */
