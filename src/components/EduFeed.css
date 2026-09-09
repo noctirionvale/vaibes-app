@@ -1757,3 +1757,72 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 .edufeed-wrapper .edufeed-type-filter-bar {
   margin-bottom: 0.5rem;
 }
+
+/* ══════════════════════════════════════════════
+   COMMENTS MODAL
+   ══════════════════════════════════════════════ */
+.modal-content.ef-comments-modal {
+  width: min(480px, 92vw);
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--accent-20);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/* Undo the inline-accordion sizing/animation now that this only ever
+   renders inside the modal — flex:1 lets the list claim all the leftover
+   height instead of being capped at the old 170px/240px accordion limit. */
+.ef-comments-modal .ef-comments {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  border-top: none;
+  background: transparent;
+  animation: none;
+}
+
+.ef-comments-modal .ef-comments-list {
+  flex: 1;
+  min-height: 220px;
+  padding: 0.9rem 1.1rem 0.5rem;
+}
+
+.ef-comments-modal .ef-comment-composer {
+  padding: 0.65rem 1.1rem calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 480px) {
+  .modal-content.ef-comments-modal {
+    width: 94vw;
+    max-height: 85dvh;
+  }
+}
+
+/* NEW — replaces the old 3-pill .ef-card-preview-meta treatment for
+   community cards specifically. One quiet line instead of three bordered
+   boxes: less clutter, and far less prone to wrapping on narrow widths. */
+.ef-card-preview-stats-line {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 769px) {
+  .edufeed-wrapper .ef-card-preview {
+    flex: 0 0 auto;
+    max-height: 100%;
+    min-height: 168px;   /* NEW — this is the actual fix for the overlap.
+      Without it, flex:1 on the image above swallows every spare pixel,
+      leaving the badge row with nothing — hence it reading as "stamped
+      onto the image." This guarantees the footer always gets real,
+      solid-background space below the media, no matter how tall the
+      image wants to grow. */
+  }
+}

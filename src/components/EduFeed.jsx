@@ -426,6 +426,13 @@ const DoneChip = ({ points }) => {
 
 const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => {
   const ended = community.status !== 'live'
+  // 3 separate bordered pills → 1 quiet line. Player count dropped —
+  // useful once you're in the room, not a deciding factor before joining.
+  const statsLine = [
+    `⏱️ ${community.time_limit_minutes ?? '∞'}m`,
+    (community.difficulty || 'medium').replace(/^\w/, c => c.toUpperCase()),
+  ].join('   ·   ')
+
   return (
     <div className="ef-card-preview ef-community-preview">
       <div className="ef-card-preview-scroll">
@@ -441,16 +448,12 @@ const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => 
               {community.status === 'live' ? '🟢 Live' : '🔴 Ended'}
             </span>
           </div>
-          <div className="ef-card-preview-meta">
-            <span className="ef-card-preview-badge">👥 {community.max_players || 15}</span>
-            <span className="ef-card-preview-badge">⏱️ {community.time_limit_minutes ?? '∞'}m</span>
-            <span className="ef-card-preview-badge capitalize">📊 {community.difficulty || 'medium'}</span>
-          </div>
+          <div className="ef-card-preview-stats-line">{statsLine}</div>
         </div>
 
         {completion ? (
-  <DoneChip points={completion.points} />
-) : (
+          <DoneChip points={completion.points} />
+        ) : (
           <button
             className="ef-card-preview-cta"
             onClick={(e) => { e.stopPropagation(); onPrimaryClick(e); }}
@@ -586,9 +589,18 @@ const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
           onShare={handleShare} shared={shared}
         />
 
-        {commentsOpen && (
-          <CommentsSection post={{ ...post, comment_count: commentCount }} user={user} />
-        )}
+        {commentsOpen && createPortal(
+  <div className="modal-overlay edufeed-portal-overlay" onClick={() => setCommentsOpen(false)}>
+    <div className="modal-content ef-comments-modal" onClick={e => e.stopPropagation()}>
+      <div className="ef-modal-header">
+        <span className="ef-modal-title">💬 Comments</span>
+        <button className="ef-modal-close" onClick={() => setCommentsOpen(false)} aria-label="Close">✕</button>
+      </div>
+      <CommentsSection post={{ ...post, comment_count: commentCount }} user={user} />
+    </div>
+  </div>,
+  document.body
+)}
 
         {!selfContained && hasOpenedQuiz && createPortal(
           <div
