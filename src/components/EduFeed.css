@@ -1103,7 +1103,9 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 .ef-card-preview-scroll {
   flex: 1; min-height: 0; overflow-y: auto;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
-  display: flex; flex-direction: column; justify-content: center; gap: 0.5rem;
+  display: flex; flex-direction: column;
+  justify-content: flex-end;   /* was: center */
+  gap: 0.5rem;
 }
 .ef-card-preview-scroll::-webkit-scrollbar { display: none; }
 .ef-card-preview-footer {
@@ -1282,33 +1284,6 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   position: absolute; top: 0; left: 0; right: 0; height: 120px;
   background: linear-gradient(180deg, var(--accent-08) 0%, transparent 100%);
   pointer-events: none; z-index: 1;
-}
-
-/* ══════════════════════════════════════════════
-   CENTER VIEW — Desktop EduFeed (absorb extra space)
-   ══════════════════════════════════════════════ */
-@media (min-width: 769px) {
-  .edufeed-wrapper .edufeed-card-inner {
-    display: flex; flex-direction: column; height: 100%;
-  }
-  .edufeed-wrapper .edufeed-attachments-top {
-    flex: 1; min-height: 0; margin-bottom: 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 1rem;
-  }
-  .edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
-    aspect-ratio: auto;
-    max-height: none;
-    border-radius: 0;
-  }
-  .edufeed-wrapper .ef-card-preview {
-    flex: 0 0 auto; max-height: 100%;
-  }
-  .edufeed-wrapper .ef-card-preview-scroll {
-    justify-content: flex-start;
-  }
 }
 
 /* ══════════════════════════════════════════════
@@ -1825,4 +1800,32 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
       solid-background space below the media, no matter how tall the
       image wants to grow. */
   }
+}
+
+/* NEW — a real dividing edge between media and footer, so pills never
+   blend into the image's blurred backdrop no matter its aspect ratio. */
+.ef-card-preview {
+  background: var(--card-bg);
+  border-top: 1px solid var(--line);
+  position: relative;
+  z-index: 2;
+}
+
+/* NEW — Join button and Done chip now render inside the exact same
+   fixed box. min-width covers the widest label ("🏁 Join Live Race")
+   so the slot's size and position never change between states. */
+.ef-card-preview-cta-slot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 140px;
+  min-height: 2.4rem;
+}
+.ef-card-preview-cta-slot .ef-card-preview-cta { width: 100%; text-align: center; }
+.ef-card-preview-cta-slot .ef-done-chip-wrap,
+.ef-card-preview-cta-slot .ef-done-chip { width: 100%; text-align: center; }
+
+@media (max-width: 768px) {
+  .ef-card-preview-cta-slot { min-width: 0; }
 }

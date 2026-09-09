@@ -385,6 +385,7 @@ const CardPreview = ({ post, onPlay, completion }) => {
           </div>
         </div>
 
+<div className="ef-card-preview-cta-slot"></div>
         {completion ? (
   <DoneChip points={completion.points} />
 ) : (
@@ -451,6 +452,7 @@ const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => 
           <div className="ef-card-preview-stats-line">{statsLine}</div>
         </div>
 
+<div className="ef-card-preview-cta-slot"></div>
         {completion ? (
           <DoneChip points={completion.points} />
         ) : (
