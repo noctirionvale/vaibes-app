@@ -385,18 +385,19 @@ const CardPreview = ({ post, onPlay, completion }) => {
           </div>
         </div>
 
-<div className="ef-card-preview-cta-slot"></div>
-        {completion ? (
-  <DoneChip points={completion.points} />
-) : (
-          <button
-            className="ef-card-preview-cta"
-            onClick={(e) => { e.stopPropagation(); onPlay(); }}
-            type="button"
-          >
-            {ctaLabel}
-          </button>
-        )}
+<div className="ef-card-preview-cta-slot">
+          {completion ? (
+            <DoneChip points={completion.points} />
+          ) : (
+            <button
+              className="ef-card-preview-cta"
+              onClick={(e) => { e.stopPropagation(); onPlay(); }}
+              type="button"
+            >
+              {ctaLabel}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -480,13 +481,12 @@ const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
   }) {
     const [post] = useState(initialPost)
     const [commentsOpen, setCommentsOpen] = useState(false)
+const [hasOpenedComments, setHasOpenedComments] = useState(false)
     const [deleteState, setDeleteState] = useState('idle')
     const [commentCount] = useState(post.comment_count ?? 0)
     const [showPlayModal, setShowPlayModal] = useState(false)
     const [hasOpenedQuiz, setHasOpenedQuiz] = useState(false)
     const [shared, setShared] = useState(false)
-    // undefined = checking, null = never taken, {points} = already completed.
-    // Community rooms (selfContained) have their own separate scoring path.
     const [completion, setCompletion] = useState(selfContained ? null : undefined)
 
     useEffect(() => {
@@ -505,13 +505,21 @@ const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
     const handleDelete = () => setDeleteState('confirm')
     const handleCancel = () => setDeleteState('idle')
 
+    // open always flips hasOpenedComments on; close just hides it — the
+    // modal stays mounted after first open so CommentsSection's draft text
+    // and loaded list survive being closed and reopened.
+    const handleToggleComments = () => {
+      if (commentsOpen) { setCommentsOpen(false); return }
+      setHasOpenedComments(true)
+      setCommentsOpen(true)
+    }
+
     const handleShare = async () => {
-  const isCommunityPost = post.type === 'community' || post.community_data?.is_community
-  const shareUrl = `${window.location.origin}/share/quiz/${post.id}`
-  const plain = (post.title || post.quiz_data?.question || post.quiz_data?.questions?.[0]?.question || '').trim()
-  const teaser = plain.length > 120 ? plain.slice(0, 120).trim() + '…' : plain
-  const shareText = `${isCommunityPost ? '🏆' : '🧠'} ${post.title} — Play it on vAIbes →\n\n${teaser}`
-  // rest unchanged
+      const isCommunityPost = post.type === 'community' || post.community_data?.is_community
+      const shareUrl = `${window.location.origin}/share/quiz/${post.id}`
+      const plain = (post.title || post.quiz_data?.question || post.quiz_data?.questions?.[0]?.question || '').trim()
+      const teaser = plain.length > 120 ? plain.slice(0, 120).trim() + '…' : plain
+      const shareText = `${isCommunityPost ? '🏆' : '🧠'} ${post.title} — Play it on vAIbes →\n\n${teaser}`
 
       if (navigator.share) {
         try { await navigator.share({ title: post.title, text: shareText, url: shareUrl }); return }
@@ -527,37 +535,30 @@ const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
     }
 
     const handleConfirmDelete = async () => {
-  setDeleteState('deleting')
+      setDeleteState('deleting')
 
-  // Community posts are a thin wrapper around a community_rooms row.
-  // Deleting just the post left the room live — the banner had no idea it was gone.
-  if (isCommunity && post.community_id) {
-    const { error: roomError } = await supabase
-      .from('community_rooms')
-      .update({ status: 'ended', show_in_banner: false })
-      .eq('id', post.community_id)
-    if (roomError) console.error('❌ Failed to end room before delete:', roomError)
+      if (isCommunity && post.community_id) {
+        const { error: roomError } = await supabase
+          .from('community_rooms')
+          .update({ status: 'ended', show_in_banner: false })
+          .eq('id', post.community_id)
+        if (roomError) console.error('❌ Failed to end room before delete:', roomError)
 
-    // Rooms are only ever soft-ended (status flip), never row-deleted, so a
-    // DB-level ON DELETE CASCADE on community_room_winners would never fire.
-    // Purge its wins here instead — otherwise a deleted quiz keeps padding
-    // the Player Spotlight leaderboard forever.
-    const { error: winnersError } = await supabase
-      .from('community_room_winners')
-      .delete()
-      .eq('room_id', post.community_id)
-    if (winnersError) console.error('❌ Failed to purge winners for deleted room:', winnersError)
-  }
+        const { error: winnersError } = await supabase
+          .from('community_room_winners')
+          .delete()
+          .eq('room_id', post.community_id)
+        if (winnersError) console.error('❌ Failed to purge winners for deleted room:', winnersError)
+      }
 
-  const { error: compError } = await supabase
-    .from('edufeed_quiz_completions').delete().eq('post_id', post.id)
-  if (compError) console.error('❌ Failed to purge completions for deleted post:', compError)
+      const { error: compError } = await supabase
+        .from('edufeed_quiz_completions').delete().eq('post_id', post.id)
+      if (compError) console.error('❌ Failed to purge completions for deleted post:', compError)
 
-
-  const { error } = await supabase.from('edufeed_posts').delete().eq('id', post.id)
-  if (!error) onPostDeleted(post.id)
-  else setDeleteState('idle')
-}
+      const { error } = await supabase.from('edufeed_posts').delete().eq('id', post.id)
+      if (!error) onPostDeleted(post.id)
+      else setDeleteState('idle')
+    }
 
     const openQuiz = () => { if (completion) return; setHasOpenedQuiz(true); setShowPlayModal(true) }
 
@@ -565,8 +566,8 @@ const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
     const isCommunity = post.type === 'community' || post.community_data?.is_community
 
     return (
-  <div className="edufeed-card-inner">
-    <CardHeader post={post} locked={locked} onToggleLock={onToggleLock} badges={badges} onOpenDashboard={onOpenDashboard} />
+      <div className="edufeed-card-inner">
+        <CardHeader post={post} locked={locked} onToggleLock={onToggleLock} badges={badges} onOpenDashboard={onOpenDashboard} />
 
         {shouldShowAttachments && (
           <CardAttachments attachments={post.attachments} variant={isCommunity ? 'community' : 'quiz'} />
@@ -583,7 +584,7 @@ const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
 
         <CardFooter
           post={post} onLike={onLike} liked={liked} user={user} isPro={isPro}
-          onToggleComments={() => setCommentsOpen(o => !o)} commentsOpen={commentsOpen}
+          onToggleComments={handleToggleComments} commentsOpen={commentsOpen}
           localCommentCount={commentCount}
           onEdit={handleEdit} onDelete={handleDelete}
           deleteState={deleteState} onConfirmDelete={handleConfirmDelete} onCancelDelete={handleCancel}
@@ -591,18 +592,21 @@ const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
           onShare={handleShare} shared={shared}
         />
 
-        {commentsOpen && createPortal(
-  <div className="modal-overlay edufeed-portal-overlay" onClick={() => setCommentsOpen(false)}>
-    <div className="modal-content ef-comments-modal" onClick={e => e.stopPropagation()}>
-      <div className="ef-modal-header">
-        <span className="ef-modal-title">💬 Comments</span>
-        <button className="ef-modal-close" onClick={() => setCommentsOpen(false)} aria-label="Close">✕</button>
-      </div>
-      <CommentsSection post={{ ...post, comment_count: commentCount }} user={user} />
-    </div>
-  </div>,
-  document.body
-)}
+        {hasOpenedComments && createPortal(
+          <div
+            className={`modal-overlay edufeed-portal-overlay ${commentsOpen ? '' : 'ef-quiz-play-hidden'}`}
+            onClick={() => setCommentsOpen(false)}
+          >
+            <div className="modal-content ef-comments-modal" onClick={e => e.stopPropagation()}>
+              <div className="ef-modal-header">
+                <span className="ef-modal-title">💬 Comments</span>
+                <button className="ef-modal-close" onClick={() => setCommentsOpen(false)} aria-label="Close">✕</button>
+              </div>
+              <CommentsSection post={{ ...post, comment_count: commentCount }} user={user} />
+            </div>
+          </div>,
+          document.body
+        )}
 
         {!selfContained && hasOpenedQuiz && createPortal(
           <div

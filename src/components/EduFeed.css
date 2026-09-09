@@ -1469,12 +1469,13 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
   .ef-card-preview { padding: 0.55rem 0.7rem; }
 
-  /* Spread badges left-to-right instead of stacking them all on the left —
-     status glues to the far right via margin-left:auto no matter how many
-     badges come before it. */
-  .ef-card-preview-top-row,
+  /* .ef-card-preview-meta (regular quiz badges) still benefits from
+     spreading out. .ef-card-preview-top-row (community subject + status)
+     should stay grouped like on desktop — the old space-between +
+     margin-left:auto combo made sense with 3-4 badges, but now that
+     we've trimmed it to 2-3 it just strands "Live" away from "Music". */
   .ef-card-preview-meta { justify-content: space-between; gap: 0.3rem; }
-  .community-status { margin-left: auto; }
+  .ef-card-preview-top-row { justify-content: flex-start; gap: 0.4rem; }
 
   .ef-card-preview-badge,
   .community-subject-tag,
@@ -1709,7 +1710,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
 
 .ef-done-toast {
-  position: absolute; bottom: calc(100% + 8px); left: 0;
+  position: absolute; bottom: calc(100% + 8px); right: 0;   /* was: left: 0 */
   white-space: nowrap; padding: 0.45rem 0.75rem; border-radius: 10px;
   background: var(--surface-1); border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
   color: var(--success); font-size: 0.75rem; font-weight: 700;

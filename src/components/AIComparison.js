@@ -234,9 +234,9 @@ vAIbes is an all-in-one educational platform designed for students. It combines:
 - ✏️ Creative Workspace - Rich text editor with image/video uploads, file attachments
 - 📚 EduFeed - Community learning feed with quizzes, subject quizzes, flashcards
 - 🏆 Community Rooms - Live game/trivia rooms where students compete
-- 💬 Unified Messaging - Direct messages, group chats, and student marketplace
+- 💬 Study rooms - Group chats, Group Live Session 
 - 📺 VidFeed - Curated YouTube feed from channels users choose
-- 🎧 Study Widget - Music player, clock, timer, and focus tools
+- 🎧 Study Widget - Music player, clock, timer
 - 🧱 Vibe Wall - Personal creative gallery to save and share work
 - 📊 Study Dashboard - Track learning patterns, strengths, and weak areas
 

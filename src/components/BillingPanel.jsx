@@ -162,7 +162,7 @@ const BillingPanel = ({ onClose, embedded = false }) => {
             <li>50 AI credits added to wallet</li>
             <li>All AI modes (Explain, Summarize, Analyze, Draft &amp; Edit, Quiz Me)</li>
             <li>Creative Workspace (rich editor, images, videos, files)</li>
-            <li>Unified Messaging (DMs, groups, marketplace)</li>
+            <li>Study rooms (Group chats, Group Live Session )</li>
             <li>Personal Vibe Wall</li>
             <li>Create EduFeed posts (notes, quizzes, flashcards)</li>
           </ul>
