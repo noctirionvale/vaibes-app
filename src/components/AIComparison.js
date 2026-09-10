@@ -6,8 +6,8 @@ import AuthModal from './AuthModal';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
 import TypingCat from './TypingCat';
-import { saveToWall } from '../lib/saveToWall';
 import { renderMarkdown } from '../lib/markdown';
+import { saveToWall } from '../lib/saveToWall';
 import './AIComparison.css';
 
 const MOBILE_BREAKPOINT = 768;
@@ -21,7 +21,7 @@ const LampToggle = ({ isDark, onClick, size = 28 }) => (
 const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const { getContextForVaibey, scanUserData } = useVaibey();
+  const { scanUserData } = useVaibey();
 
   useEffect(() => {
     if (user?.id) scanUserData();
@@ -72,6 +72,16 @@ const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
   const [historySearching, setHistorySearching] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [activeThread, setActiveThread] = useState(null); // {id, mode, title, messages, readOnly}
+
+    const [lastQuestionText, setLastQuestionText] = useState('');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [pendingSaveContent, setPendingSaveContent] = useState('');
+  const [saveTitle, setSaveTitle] = useState('');
+  const [saveMediaFiles, setSaveMediaFiles] = useState([]); // [{ file, previewUrl }]
+  const [savingToWall, setSavingToWall] = useState(false);
+  const [savedToWall, setSavedToWall] = useState(false);
+  const saveMediaInputRef = useRef(null);
+  const saveMediaFilesRef = useRef([]);
 
   const dropdownRef = useRef(null);
   const textareaRef = useRef(null);
@@ -156,42 +166,20 @@ const AIComparison = ({ onOpenUpgrade, onInjectToCanvas }) => {
     setTimeout(() => document.querySelector('.thread-view')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
-  const closeThread = () => setActiveThread(null);
-
-  // ✅ UPDATED: Get system prompt WITH Vaibey context (no more "continuing" hack)
-  const getSystemPromptWithContext = (mode) => {
-    let prompt = systemPrompts[mode];
-    const vaibeyContext = getContextForVaibey();
-    
-    if (vaibeyContext && Object.keys(vaibeyContext).length > 0) {
-      prompt += `\n\n🧠 USER CONTEXT (from VaibeyContext):\n`;
-      
-      if (vaibeyContext.notes?.length > 0) {
-        prompt += `\nRecent Notes:\n`;
-        vaibeyContext.notes.slice(0, 5).forEach(note => {
-          prompt += `- ${note.title} (${note.subject}): ${note.content?.substring(0, 150)}...\n`;
-        });
-      }
-      
-      if (vaibeyContext.quizHistory?.length > 0) {
-        prompt += `\nQuiz Performance:\n`;
-        vaibeyContext.quizHistory.slice(0, 3).forEach(quiz => {
-          prompt += `- ${quiz.topic}: ${quiz.score}% (${new Date(quiz.completed_at).toLocaleDateString()})\n`;
-        });
-      }
-      
-      if (vaibeyContext.weakAreas?.length > 0) {
-        prompt += `\nWeak Areas to Focus On:\n`;
-        vaibeyContext.weakAreas.forEach(area => {
-          prompt += `- ${area.topic} (avg: ${area.average_score}%)\n`;
-        });
-      }
-      
-      prompt += `\nUse this context to provide personalized, relevant responses. Reference their notes and quiz performance when appropriate.`;
-    }
-    
-    return prompt;
+    const closeThread = () => {
+    setActiveThread(null);
+    setSavedToWall(false); setShowSaveModal(false); clearSaveMediaFiles();   // NEW
   };
+
+  // Mode instructions only. Personalization (notes, quiz history, weak
+  // areas) is injected server-side in /api/ai's fetchUserContext, which
+  // queries fresh data straight from the DB on every request. Building
+  // the same context again here and appending it client-side just
+  // doubled the tokens sent to DeepSeek — two overlapping "here's what I
+  // know about this student" blocks stacked in one system message — with
+  // no upside, since the backend's copy is fresher and can't be tampered
+  // with client-side.
+  const getSystemPrompt = (mode) => systemPrompts[mode];
 
   const createThread = async (mode, userMsg, aiMsg) => {
     if (!user?.id) return null;
@@ -385,7 +373,62 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
   setCopied(true); setTimeout(() => setCopied(false), 2000);
 };
 
-  const resetAll = () => {
+  useEffect(() => { saveMediaFilesRef.current = saveMediaFiles; }, [saveMediaFiles]);
+  useEffect(() => () => { saveMediaFilesRef.current.forEach(item => URL.revokeObjectURL(item.previewUrl)); }, []);
+
+  // Saved state tracks the *currently displayed* answer, not the session —
+  // reset it whenever a new answer arrives so the button doesn't stay
+  // stuck on "✓ Saved" for content that was never actually saved.
+  useEffect(() => { setSavedToWall(false); }, [response]);
+  useEffect(() => { setSavedToWall(false); }, [activeThread?.messages?.length]);
+
+  const clearSaveMediaFiles = () => {
+    setSaveMediaFiles(prev => { prev.forEach(item => URL.revokeObjectURL(item.previewUrl)); return []; });
+  };
+
+  const openSaveToWall = (contentToSave, defaultTitle) => {
+    if (!user) { setShowAuthModal(true); return; }
+    clearSaveMediaFiles();
+    setPendingSaveContent(contentToSave);
+    setSaveTitle((defaultTitle || '').slice(0, 80));
+    setShowSaveModal(true);
+  };
+
+  const handleSaveMediaSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    const items = files.map(file => ({ file, previewUrl: URL.createObjectURL(file) }));
+    setSaveMediaFiles(prev => [...prev, ...items].slice(0, 4));
+    e.target.value = '';
+  };
+
+  const removeSaveMediaFile = (idx) => {
+    setSaveMediaFiles(prev => {
+      const target = prev[idx];
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
+  const confirmSaveToWall = async () => {
+    setSavingToWall(true);
+    try {
+      await saveToWall(supabase, user, {
+        title: saveTitle,
+        content: `<p>${renderMarkdown(pendingSaveContent)}</p>`,
+        mediaFiles: saveMediaFiles.map(item => item.file),
+      });
+      setSavedToWall(true);
+      setShowSaveModal(false);
+      clearSaveMediaFiles();
+    } catch (err) {
+      console.error('[AIComparison] save to wall failed:', err);
+      alert('Failed to save to Wall: ' + (err.message || 'Unknown error'));
+    } finally {
+      setSavingToWall(false);
+    }
+  };
+
+    const resetAll = () => {
     setResponse(''); setSummarizeDone(false); setIsTranscriptPasted(false);
     setPersistedVideoId(null); setShowVideoPreview(false); setInputText('');
     setFetchedUrl(''); setTranscriptError(''); setUrlError('');
@@ -395,6 +438,7 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setActiveThread(null);
+    setSavedToWall(false); setShowSaveModal(false); clearSaveMediaFiles();   // NEW
   };
 
   const handleSend = async (overrideText = null) => {
@@ -404,6 +448,8 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
     const textToSend = typeof overrideText === 'string' ? overrideText : inputText;
     if (!textToSend.trim()) return;
 
+    setLastQuestionText(textToSend);
+
     setIsLoading(true);
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (audioBlobUrl) { URL.revokeObjectURL(audioBlobUrl); setAudioBlobUrl(null); }
@@ -411,7 +457,7 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
 
     const { data: { session } } = await supabase.auth.getSession();
     const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` };
-    const systemPrompt = getSystemPromptWithContext(currentMode);
+    const systemPrompt = getSystemPrompt(currentMode);
 
     try {
       let userContent = textToSend;
@@ -453,23 +499,10 @@ When responding to users, be aware of the full vAIbes ecosystem and help them na
         setActiveThread(prev => ({ ...prev, messages: updatedMessages }));
         setInputText('');
       } else {
-  setResponse(replyText);
-  const newThread = await createThread(currentMode, textToSend, replyText);
-  if (newThread) setActiveThread(newThread);
+        setResponse(replyText);
+        const newThread = await createThread(currentMode, textToSend, replyText);
+        if (newThread) setActiveThread(newThread);
 
-  // Auto-save to the Wall — skipping quizMe since those probably belong in
-  // EduFeed, not as a Wall note. Add/remove modes here as you like.
-  const AUTO_SAVE_MODES = ['explain', 'summarize', 'analyze', 'writeDraft'];
-if (AUTO_SAVE_MODES.includes(currentMode)) {
-  try {
-    await saveToWall(supabase, user, {
-      title: textToSend,
-      content: `<p>${renderMarkdown(replyText)}</p>`,
-    });
-  } catch (e) {
-    console.error('[AIComparison] failed to auto-save to Wall', e);
-  }
-}
         if (currentMode === 'summarize') {
           setSummarizeDone(true); setIsTranscriptPasted(false); setShowVideoPreview(false);
           setInputText(''); setPersistedVideoId(null); setFetchedUrl('');
@@ -809,6 +842,16 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
         >
           {copied ? '✓ Copied' : 'Copy'}
         </button>
+        <button
+          className={`action-btn action-btn-save ${savedToWall ? 'saved' : ''}`}
+          onClick={() => openSaveToWall(
+            activeThread.messages[activeThread.messages.length - 1]?.content || '',
+            lastQuestionText || activeThread.title
+          )}
+          disabled={savedToWall}
+        >
+          {savedToWall ? '✓ Saved' : '💾 Save to Wall'}
+        </button>
         <button className="action-btn action-btn-reset" onClick={closeThread} title="Close thread">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -828,7 +871,6 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
     </div>
   </div>
 ) : response && (
-  // ...unchanged plain response card...
         <div className="ai-response-card" style={{ marginTop: '2rem', position: 'relative', zIndex: 1 }}>
           <div className="ai-response-header">
             <div className="response-header-left">
@@ -837,6 +879,13 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
             <div className="response-actions">
               <button className={`action-btn action-btn-copy ${copied ? 'copied' : ''}`} onClick={handleCopy}>
                 {copied ? '✓ Copied' : 'Copy'}
+              </button>
+              <button
+                className={`action-btn action-btn-save ${savedToWall ? 'saved' : ''}`}
+                onClick={() => openSaveToWall(response, lastQuestionText)}
+                disabled={savedToWall}
+              >
+                {savedToWall ? '✓ Saved' : '💾 Save to Wall'}
               </button>
               <button className="action-btn action-btn-reset" onClick={resetAll}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -884,6 +933,71 @@ const showThreadView = !!activeThread && (activeThread.readOnly !== undefined ||
                 <button className="feedback-submit" onClick={handleFeedbackSubmit} disabled={!feedbackText.trim()||feedbackSending}>{feedbackSending ? 'Sending...' : 'Send →'}</button>
               </>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+            {showSaveModal && createPortal(
+        <div className="save-wall-modal-overlay" onClick={() => !savingToWall && setShowSaveModal(false)}>
+          <div className="save-wall-modal" onClick={e => e.stopPropagation()}>
+            <div className="save-wall-modal-header">
+              <h4>💾 Save to Wall</h4>
+              <button className="save-wall-close" onClick={() => setShowSaveModal(false)} disabled={savingToWall}>✕</button>
+            </div>
+
+            <label className="save-wall-label">Title</label>
+            <input
+              type="text"
+              className="save-wall-title-input"
+              value={saveTitle}
+              onChange={e => setSaveTitle(e.target.value)}
+              placeholder="Give this a title..."
+              maxLength={80}
+            />
+
+            <label className="save-wall-label">Attach media (optional)</label>
+            <input
+              ref={saveMediaInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={handleSaveMediaSelect}
+            />
+            <button
+              type="button"
+              className="save-wall-attach-btn"
+              onClick={() => saveMediaInputRef.current?.click()}
+              disabled={saveMediaFiles.length >= 4}
+            >
+              📎 Add image or video {saveMediaFiles.length > 0 && `(${saveMediaFiles.length}/4)`}
+            </button>
+
+            {saveMediaFiles.length > 0 && (
+              <div className="save-wall-media-grid">
+                {saveMediaFiles.map((item, i) => (
+                  <div key={i} className="save-wall-media-thumb">
+                    {item.file.type.startsWith('video/') ? (
+                      <div className="save-wall-video-thumb">
+                        <span className="save-wall-video-icon">🎬</span>
+                        <span className="save-wall-video-name">{item.file.name}</span>
+                      </div>
+                    ) : (
+                      <img src={item.previewUrl} alt={item.file.name} />
+                    )}
+                    <button type="button" className="save-wall-media-remove" onClick={() => removeSaveMediaFile(i)}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="save-wall-actions">
+              <button className="save-wall-cancel" onClick={() => setShowSaveModal(false)} disabled={savingToWall}>Cancel</button>
+              <button className="save-wall-confirm" onClick={confirmSaveToWall} disabled={savingToWall}>
+                {savingToWall ? 'Saving…' : '💾 Save'}
+              </button>
+            </div>
           </div>
         </div>,
         document.body
