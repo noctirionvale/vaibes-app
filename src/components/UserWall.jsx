@@ -332,6 +332,7 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
     if (!group) { alert('No study room exists for this content yet.'); return; }
     const { error } = await supabase.from('join_requests').insert({
       group_id: group.id, item_id: item.id,
+      requester_id: user.id,
       requester_email: user.email,
       requester_name: user.user_metadata?.display_name || user.email,
     });
