@@ -1203,7 +1203,7 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
                 <select className="edufeed-subject-select" value={eduSubject}
                   onChange={e => setEduSubject(e.target.value)}>
                   {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics', 'Astronomy',
-                    'History', 'English', 'Filipino', 'Programming', 'Arts', 'Television', 'Animals', 'Movies', 'Sports', 'Felip', 'SB19', 'Other']
+                    'History', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Television', 'Animals', 'Movies', 'Sports', 'Felip', 'SB19', 'Other']
                     .map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <label className="edufeed-crosspost">
@@ -1275,7 +1275,7 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
                 <select className="edufeed-subject-select" value={eduSubject}
                   onChange={e => setEduSubject(e.target.value)}>
                   {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics',
-                    'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Arts', 'Television', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Felip', 'SB19', 'Other']
+                    'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Felip', 'SB19', 'Other']
                     .map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>

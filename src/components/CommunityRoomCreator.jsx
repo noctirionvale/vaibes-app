@@ -515,7 +515,7 @@ const CommunityRoomCreator = ({ onRoomCreated, onClose, editItem = null }) => {
           <div className="crc-config-field">
             <label>Subject</label>
             <select value={subject} onChange={e => setSubject(e.target.value)}>
-              {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics', 'Astronomy', 'History', 'English', 'Filipino', 'Programming', 'Arts', 'Television', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Felip', 'SB19', 'Other']
+              {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics', 'Astronomy', 'History', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Felip', 'SB19', 'Other']
                 .map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>

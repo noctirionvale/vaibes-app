@@ -399,10 +399,19 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
           )}
 
           {type === 'video' && videoAtt && (
-            <div className="media-video-container">
-              <video src={videoAtt.url} controls className="media-video" onClick={e => e.stopPropagation()} />
-            </div>
-          )}
+  <div className="media-video-container">
+    <video
+      src={videoAtt.url}
+      controls
+      autoPlay
+      muted
+      loop
+      playsInline
+      className="media-video"
+      onClick={e => e.stopPropagation()}
+    />
+  </div>
+)}
 
           {type === 'image' && imageAtts.length > 0 && (
             <div className={`media-images ${imgClass}`}>
@@ -516,8 +525,10 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
             </div>
           )}
           {type === 'video' && videoAtt && (
-            <div className="modal-video-area"><video src={videoAtt.url} controls /></div>
-          )}
+  <div className="modal-video-area">
+    <video src={videoAtt.url} controls autoPlay muted loop playsInline />
+  </div>
+)}
           {type === 'image' && imageAtts.length > 0 && (
             <div className="modal-image-area">
               <div className={`modal-image-grid ${imgClass}`}>
