@@ -42,11 +42,16 @@ export function useOnboardingTour(user, profile, isMobile) {
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!user || !profile || profile.onboarding_seen || startedRef.current) return;
+    // Requires onboarding_completed too, not just onboarding_seen. Without
+    // it, this fired 500ms after a brand-new signup — while AppShellContent
+    // was still rendering ONLY <OnboardingFlow/>, before any [data-tour]
+    // element existed. driver.js found nothing to highlight, closed
+    // instantly, and still marked onboarding_seen = true — burning the
+    // user's one shot at this tour before it ever had a chance to render.
+    if (!user || !profile || !profile.onboarding_completed || profile.onboarding_seen || startedRef.current) return;
     startedRef.current = true;
 
     const markDone = async () => {
-      // Added await for proper async handling, though fire-and-forget works here too
       await supabase.from('profiles').update({ onboarding_seen: true }).eq('id', user.id);
     };
 

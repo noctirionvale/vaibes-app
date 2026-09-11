@@ -584,7 +584,7 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
     );
   };
 
-  const renderMyRoomsModal = () => {
+    const renderMyRoomsModal = () => {
     if (!showMyRooms) return null;
     return createPortal(
       <div className="creation-modal-overlay" onClick={() => setShowMyRooms(false)}>
@@ -619,7 +619,8 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
             ))}
           </div>
         </div>
-      </div>
+      </div>,
+      document.body   // ← the fix
     );
   };
 
