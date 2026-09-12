@@ -407,46 +407,6 @@ const InlineChatView = ({ type = 'dm', conversation, otherUser, group, product, 
           </svg>
         </button>
 
-        <div className="icv-av">
-          {type === 'dm' && otherUser?.avatar_url
-            ? <img src={otherUser.avatar_url} alt="" />
-            : type === 'group'
-              ? (group?.icon || '👥')
-              : getInitial()}
-        </div>
-
-        <div className="icv-head-info">
-          {!showTopicBar && <div className="icv-head-name">{getName()}</div>}
-          <div className="icv-head-status" style={{ color: getStatusColor() }}>{getStatusLabel()}</div>
-        </div>
-
-        <div className="icv-head-actions">
-          {/* ...voice call / live pill / invite / video / theme buttons, unchanged... */}
-        </div>
-      </div>
-
-      {/* ── Topic bar: the room's single, clickable title ── */}
-      {showTopicBar && (
-        <button type="button" className="icv-topic-bar" onClick={() => setTopicOpen(o => !o)} disabled={!topic}>
-          <div className="icv-topic-thumb-circle">
-            {topicImages.length > 0
-              ? <img src={topicImages[0].url} alt="" />
-              : (topic ? topicTypeEmoji(topic) : (group?.icon || '📚'))}
-          </div>
-          <div className="icv-topic-info">
-            <div className="icv-head-name">{topic?.title || 'Loading topic…'}</div>
-            <div className="icv-topic-cta">{topicOpen ? 'Close topic ▴' : 'View topic ▾'}</div>
-          </div>
-        </button>
-      )}
-
-      <div className="icv-header">
-        <button className="icv-back" onClick={onBack} aria-label="Back">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-
         {/* Topic title now lives inline in the header itself — no more
             separate full-width strip underneath. On desktop this sits
             compactly to the left of the action icons; on mobile it wraps
@@ -528,21 +488,6 @@ const InlineChatView = ({ type = 'dm', conversation, otherUser, group, product, 
           )}
         </div>
       </div>
-
-      {/* ── Topic bar: the room's single, clickable title ── */}
-      {showTopicBar && !topicOpen && (
-        <button type="button" className="icv-topic-bar" onClick={() => setTopicOpen(o => !o)} disabled={!topic}>
-          <div className="icv-topic-thumb-circle">
-            {topicImages.length > 0
-              ? <img src={topicImages[0].url} alt="" />
-              : (topic ? topicTypeEmoji(topic) : (group?.icon || '📚'))}
-          </div>
-          <div className="icv-topic-info">
-            <div className="icv-head-name">{topic?.title || 'Loading topic…'}</div>
-            <div className="icv-topic-cta">{topicOpen ? 'Close topic ▴' : 'View topic ▾'}</div>
-          </div>
-        </button>
-      )}
 
             {/* ── Topic panel: right slide-over, out of flow — chat never shifts ── */}
       {showTopicBar && topicOpen && topic && (
