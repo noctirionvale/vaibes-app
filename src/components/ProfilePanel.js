@@ -20,47 +20,61 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
   const [error, setError] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [usernameChecking, setUsernameChecking] = useState(false);
+  const [savedUsername, setSavedUsername] = useState('');
 
-  useEffect(() => {
-    if (profile) {
-      setDisplayName(profile.display_name || '');
-      setUsername(profile.username || '');
-      setAvatarUrl(profile.avatar_url || '');
-    } else if (user?.user_metadata) {
-      setDisplayName(user.user_metadata.display_name || user.user_metadata.full_name || '');
-      setUsername(user.user_metadata.username || '');
-      setAvatarUrl(user.user_metadata.avatar_url || '');
-    }
-  }, [profile, user]);
+  // update the profile-load effect to also capture the baseline:
+useEffect(() => {
+  if (profile) {
+    setDisplayName(profile.display_name || '');
+    setUsername(profile.username || '');
+    setSavedUsername((profile.username || '').toLowerCase());
+    setAvatarUrl(profile.avatar_url || '');
+  } else if (user?.user_metadata) {
+    setDisplayName(user.user_metadata.display_name || user.user_metadata.full_name || '');
+    setUsername(user.user_metadata.username || '');
+    setSavedUsername((user.user_metadata.username || '').toLowerCase());
+    setAvatarUrl(user.user_metadata.avatar_url || '');
+  }
+}, [profile, user]);
 
   useEffect(() => {
     return () => { isMounted.current = false; };
   }, []);
 
-  /* Debounced username availability check */
-  useEffect(() => {
-    if (!username || username.length < 3) {
-      setUsernameError('');
-      return;
+  // update the debounced check to skip entirely when nothing changed:
+useEffect(() => {
+  if (!username || username.length < 3) {
+    setUsernameError('');
+    return;
+  }
+  // Skip the check when the field still matches what's already saved —
+  // nothing changed, so there's nothing to verify. Without this, simply
+  // opening Settings re-ran a "is this available" check against the
+  // user's OWN existing username every time, which both wasted a query
+  // and produced a confusing "available!" message for a username the
+  // user wasn't trying to change at all.
+  if (username.toLowerCase() === savedUsername) {
+    setUsernameError('');
+    return;
+  }
+  const handler = setTimeout(async () => {
+    setUsernameChecking(true);
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username.toLowerCase())
+        .neq('id', user.id)
+        .maybeSingle();
+      if (isMounted.current) setUsernameError(data ? 'Username already taken' : '');
+    } catch (err) {
+      console.error('Username check failed:', err);
+    } finally {
+      if (isMounted.current) setUsernameChecking(false);
     }
-    const handler = setTimeout(async () => {
-      setUsernameChecking(true);
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('username', username.toLowerCase())
-          .neq('id', user.id)
-          .maybeSingle();
-        if (isMounted.current) setUsernameError(data ? 'Username already taken' : '');
-      } catch (err) {
-        console.error('Username check failed:', err);
-      } finally {
-        if (isMounted.current) setUsernameChecking(false);
-      }
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [username, user.id]);
+  }, 500);
+  return () => clearTimeout(handler);
+}, [username, user.id, savedUsername]);
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
@@ -107,8 +121,11 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
         .from('profiles')
         .update({ display_name: displayName, avatar_url: avatarUrl, username: cleanUsername })
         .eq('id', user.id);
+      // in handleSave, after a successful save, move the baseline forward
+// so the "available" state clears again until the next real edit:
       if (dbError) throw dbError;
 
+      setSavedUsername(cleanUsername);   // NEW
       fetchProfile().catch(err => console.error('Background profile refresh failed:', err));
 
       if (isMounted.current) {
@@ -123,7 +140,10 @@ const ProfilePanel = ({ onClose, embedded = false }) => {
     }
   };
 
-  const usernameOk = username && username.length >= 3 && !usernameError && !usernameChecking;
+  // update usernameOk to require an actual change:
+const usernameOk = username && username.length >= 3
+  && username.toLowerCase() !== savedUsername
+  && !usernameError && !usernameChecking;
 
   return (
     <div className={embedded ? 'profile-panel-embedded' : 'profile-panel'}>

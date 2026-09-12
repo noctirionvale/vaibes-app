@@ -72,7 +72,7 @@ const InlineChatView = ({ type = 'dm', conversation, otherUser, group, product, 
   const [docFile,      setDocFile]      = useState(null);
   const [lightbox,     setLightbox]     = useState(null);
 
-  const [theme, setTheme] = useState(() => loadTheme(type));
+  const [theme, setTheme] = useState(() => loadTheme(type, idValue));
   const [showTheme, setShowTheme] = useState(false);
 
   const [senderProfiles, setSenderProfiles] = useState({});
