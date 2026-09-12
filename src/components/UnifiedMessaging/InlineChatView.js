@@ -465,7 +465,7 @@ const InlineChatView = ({ type = 'dm', conversation, otherUser, group, product, 
       </div>
 
       {/* ── Topic bar: the room's single, clickable title ── */}
-      {showTopicBar && (
+      {showTopicBar && !topicOpen && (
         <button type="button" className="icv-topic-bar" onClick={() => setTopicOpen(o => !o)} disabled={!topic}>
           <div className="icv-topic-thumb-circle">
             {topicImages.length > 0
