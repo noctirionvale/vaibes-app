@@ -572,11 +572,7 @@
   justify-content: center; font-size: 15px;
 }
 
-.icv-topic-preview { padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
-.icv-topic-title { font-size: 0.8rem; font-weight: 700; color: var(--text); }
-.icv-topic-snippet { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
-.icv-topic-thumb { max-width: 100%; max-height: 120px; border-radius: 8px; object-fit: cover; margin-top: 4px; }
-.icv-topic-loading, .icv-topic-missing { font-size: 0.72rem; color: var(--muted); font-style: italic; }
+.icv-topic-missing { font-size: 0.72rem; color: var(--muted); font-style: italic; }
 
 /* ── Live session bar ── */
 .icv-live-bar {
@@ -641,21 +637,6 @@
   animation: icvDrawerIn 0.18s ease; pointer-events: none;
 }
 
-/* ── Topic bar ── */
-/* was: z-index: 60; */
-.icv-topic-bar {
-  width: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px; background: transparent; border: none;
-  border-bottom: 1px solid var(--border); cursor: pointer;
-  text-align: left; transition: background 0.15s; flex-shrink: 0;
-  font-family: 'Inter', sans-serif; position: relative; z-index: 10;
-  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
-  pointer-events: auto;
-}
-.icv-topic-bar:hover:not(:disabled) { background: var(--surface-2); }
-.icv-topic-bar:disabled { cursor: default; }
-
 .icv-topic-thumb-circle {
   width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
   overflow: hidden; background: var(--surface-1);
@@ -665,16 +646,6 @@
 .icv-topic-thumb-circle img { width: 100%; height: 100%; object-fit: cover; }
 .icv-topic-info { flex: 1; min-width: 0; }
 .icv-topic-cta { font-size: 0.66rem; color: var(--glow); margin-top: 1px; }
-
-.icv-topic-drawer {
-  flex-shrink: 0; max-height: 190px; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 8px; padding: 8px 12px;
-  background: var(--surface-2); border-bottom: 1px solid var(--border);
-  animation: icvDrawerIn 0.18s ease;
-}
-.icv-topic-drawer-img { width: 100%; max-height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: zoom-in; }
-.icv-topic-drawer-content { font-size: 0.72rem; line-height: 1.5; color: var(--text); }
-.icv-topic-drawer-content p { margin: 0 0 0.5em; }
 
 /* ── Topic panel (slide-over) ── */
 .icv-topic-panel {
@@ -1241,7 +1212,6 @@
 
 @media (max-width: 768px) {
   .um-conv-delete { opacity: 0.55; }
-  .icv-topic-bar { min-height: 48px; z-index: 100; }
 }
 
 @media (max-width: 500px) {
@@ -1250,8 +1220,6 @@
 }
 
 @media (max-width: 480px) {
-  .icv-topic-bar { min-height: 48px; }
-  .icv-topic-drawer { max-height: 160px; }
   .icv-live-pill-txt { display: none; }
   .icv-topic-panel { width: 100%; }
 }
@@ -1334,8 +1302,36 @@ body.light-mode .um-groups-items::-webkit-scrollbar-thumb:hover,
 body.light-mode .um-prod-grid::-webkit-scrollbar-thumb:hover,
 body.light-mode .icv-messages::-webkit-scrollbar-thumb:hover { background: var(--accent-20); }
 
-body.light-mode .icv-topic-drawer { background: var(--accent-08); }
-body.light-mode .icv-topic-bar:hover:not(:disabled) { background: var(--accent-08); }
-body.light-mode .icv-topic-modal { background: var(--surface-1); }
-
 body.light-mode .icv-topic-panel { background: var(--surface-1); border-right-color: var(--border); }
+
+.icv-topic-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  transition: opacity 0.15s ease;
+}
+.icv-topic-inline:hover:not(:disabled) { opacity: 0.8; }
+.icv-topic-inline:disabled { cursor: default; }
+.icv-topic-inline .icv-topic-thumb-circle {
+  width: 30px; height: 30px; font-size: 0.85rem;   /* matches .icv-av sizing for a tidy single row */
+}
+
+@media (max-width: 480px) {
+  .icv-header { flex-wrap: wrap; row-gap: 6px; }
+  .icv-back { order: 1; }
+  .icv-head-actions { order: 2; margin-left: auto; }
+  .icv-topic-inline {
+    order: 3;
+    flex: 1 1 100%;   /* forces it onto its own full-width line, recreating the old mobile bar look */
+  }
+  .icv-topic-inline .icv-topic-thumb-circle { width: 36px; height: 36px; font-size: 1rem; }
+}
