@@ -181,6 +181,12 @@ const CardHeader = ({ post, locked, onToggleLock, badges, onOpenDashboard }) => 
     displayLabel = '🃏 Flashcard'
     displayClass = 'type-flashcard'
   }
+
+  // Was only ever shown in CardPreview's footer — a height-squeezed zone
+  // (the media above it grows via flex:1), which is exactly why it got
+  // crowded out on wide/tall layouts like the center column. The header
+  // is fixed-height and always fully rendered, so it's a stable home.
+  const creatorName = post.profiles?.display_name || post.profiles?.username || 'Student'
   
   return (
     <div className="edufeed-card-header">
@@ -190,6 +196,7 @@ const CardHeader = ({ post, locked, onToggleLock, badges, onOpenDashboard }) => 
             {post.profiles?.display_name?.[0]?.toUpperCase() || '?'}
           </div>}
       <div className="edufeed-user-info">
+        <div className="edufeed-username">{creatorName}</div>
         <div className="edufeed-meta" style={{ marginTop: 0, gap: '0.5rem', flexWrap: 'wrap' }}>
           <span className={`edufeed-type-badge ${displayClass}`}>
             {displayLabel}
@@ -356,8 +363,6 @@ const CardPreview = ({ post, onPlay, completion }) => {
     ? post.attachments?.find(a => a.type?.startsWith('image/'))
     : null
 
-  const creatorName = post.profiles?.display_name || post.profiles?.username || 'Student'
-
   return (
     <div className="ef-card-preview">
       <div className="ef-card-preview-scroll">
@@ -370,13 +375,10 @@ const CardPreview = ({ post, onPlay, completion }) => {
         <div className="ef-card-preview-teaser">{teaser}</div>
       </div>
 
-      {/* title/creator/labels live here now — flex-shrink:0 means they
-          never get squeezed out, even when the video above grows tall */}
       <div className="ef-card-preview-footer">
         <div className="ef-card-preview-footer-info">
           <div className="ef-card-preview-title-row">
             <h3 className="ef-card-preview-title">{post.title || 'Untitled Quiz'}</h3>
-            <span className="ef-card-preview-creator">by {creatorName}</span>
           </div>
           <div className="ef-card-preview-meta">
             {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
@@ -385,7 +387,7 @@ const CardPreview = ({ post, onPlay, completion }) => {
           </div>
         </div>
 
-<div className="ef-card-preview-cta-slot">
+        <div className="ef-card-preview-cta-slot">
           {completion ? (
             <DoneChip points={completion.points} />
           ) : (

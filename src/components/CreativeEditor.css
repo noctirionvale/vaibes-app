@@ -2392,6 +2392,16 @@
   color: var(--text);
 }
 
+.ce-template-btn--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ce-template-btn--disabled:hover {
+  background: var(--accent-08);
+  border-color: var(--accent-25);
+  color: var(--glow);
+}
+
 .ce-template-dialog { 
   max-width: 560px; 
 }

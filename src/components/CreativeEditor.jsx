@@ -513,6 +513,10 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
     clearDraft();
   }, [editItem, editor, clearDraft]);
 
+   useEffect(() => {
+    setAlsoPostToWall(false);
+  }, [eduType]);
+
   // ── Reset ──
   const resetForm = () => {
     setEditingId(null);
@@ -885,7 +889,14 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
             onChange={e => setFormTitle(e.target.value)}
             className="ce-title-input"
           />
-          <button type="button" className="ce-template-btn" onClick={() => setTemplateModalOpen(true)} title="Start from a template">
+          <button
+            type="button"
+            className={`ce-template-btn ${eduOpen ? 'ce-template-btn--disabled' : ''}`}
+            onClick={() => { if (!eduOpen) setTemplateModalOpen(true); }}
+            title={eduOpen
+              ? "Templates fill Wall content, which EduFeed quiz/flashcard cards don't display — open Wall to use one"
+              : 'Start from a template'}
+          >
             📐 Template
           </button>
         </div>
