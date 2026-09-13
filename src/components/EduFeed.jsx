@@ -165,7 +165,7 @@ const CommentsSection = ({ post, user }) => {
 
 // ── Card Header ──
 // ── Card Header ──
-const CardHeader = ({ post, locked, onToggleLock, badges, onOpenDashboard }) => {
+const CardHeader = ({ post, locked, onToggleLock, badges, onOpenDashboard, extra }) => {
   const isCommunity = post.type === 'community' || post.community_data?.is_community
   
   let displayLabel = '🧠 Quiz'
@@ -191,13 +191,12 @@ const CardHeader = ({ post, locked, onToggleLock, badges, onOpenDashboard }) => 
           </div>}
       <div className="edufeed-user-info">
         <div className="edufeed-meta" style={{ marginTop: 0, gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span className={`edufeed-type-badge ${displayClass}`}>
-            {displayLabel}
-          </span>
-          <span>{new Date(post.created_at).toLocaleDateString()}</span>
-          {post.is_pro_only && <span className="edufeed-pro-badge">PRO</span>}
-          {badges?.length > 0 && <BadgeRow badges={badges} onClick={onOpenDashboard} />}
-        </div>
+    <span className={`edufeed-type-badge ${displayClass}`}>{displayLabel}</span>
+    <span>{new Date(post.created_at).toLocaleDateString()}</span>
+    {post.is_pro_only && <span className="edufeed-pro-badge">PRO</span>}
+    {badges?.length > 0 && <BadgeRow badges={badges} onClick={onOpenDashboard} />}
+    {extra}
+  </div>
       </div>
       <button
         className={`edufeed-lock-btn ${locked ? 'locked' : ''}`}
@@ -443,29 +442,23 @@ const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => 
 
       <div className="ef-card-preview-footer">
         <div className="ef-card-preview-footer-info">
-          <div className="ef-card-preview-top-row">
-            {isRace && <span className="community-race-badge">🏁 LIVE RACE</span>}
-            <span className="community-subject-tag">{community.subject}</span>
-            <span className={`community-status ${community.status}`}>
-              {community.status === 'live' ? '🟢 Live' : '🔴 Ended'}
-            </span>
-          </div>
           <div className="ef-card-preview-stats-line">{statsLine}</div>
         </div>
 
-<div className="ef-card-preview-cta-slot"></div>
-        {completion ? (
-          <DoneChip points={completion.points} />
-        ) : (
-          <button
-            className="ef-card-preview-cta"
-            onClick={(e) => { e.stopPropagation(); onPrimaryClick(e); }}
-            disabled={ended}
-            type="button"
-          >
-            {ended ? '🔒 Room Ended' : isRace ? '🏁 Join Live Race' : '🎮 Join Quiz'}
-          </button>
-        )}
+        <div className="ef-card-preview-cta-slot">
+          {completion ? (
+            <DoneChip points={completion.points} />
+          ) : (
+            <button
+              className="ef-card-preview-cta"
+              onClick={(e) => { e.stopPropagation(); onPrimaryClick(e); }}
+              disabled={ended}
+              type="button"
+            >
+              {ended ? '🔒 Room Ended' : isRace ? '🏁 Join Live Race' : '🎮 Join Quiz'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -481,8 +474,9 @@ const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
   }) {
     const [post] = useState(initialPost)
     const [commentsOpen, setCommentsOpen] = useState(false)
-const [hasOpenedComments, setHasOpenedComments] = useState(false)
+    const [hasOpenedComments, setHasOpenedComments] = useState(false)
     const [deleteState, setDeleteState] = useState('idle')
+    const [headerExtra, setHeaderExtra] = useState(null)
     const [commentCount] = useState(post.comment_count ?? 0)
     const [showPlayModal, setShowPlayModal] = useState(false)
     const [hasOpenedQuiz, setHasOpenedQuiz] = useState(false)
@@ -567,18 +561,19 @@ const [hasOpenedComments, setHasOpenedComments] = useState(false)
 
     return (
       <div className="edufeed-card-inner">
-        <CardHeader post={post} locked={locked} onToggleLock={onToggleLock} badges={badges} onOpenDashboard={onOpenDashboard} />
+        <CardHeader post={post} locked={locked} onToggleLock={onToggleLock} badges={badges} onOpenDashboard={onOpenDashboard} extra={headerExtra} />
 
         {shouldShowAttachments && (
           <CardAttachments attachments={post.attachments} variant={isCommunity ? 'community' : 'quiz'} />
         )}
 
         {selfContained ? (
-          <BodyComponent
-            post={post} locked={locked} onToggleLock={onToggleLock}
-            user={user} isPro={isPro} onOpenRacePlay={onOpenRacePlay}
-          />
-        ) : (
+  <BodyComponent
+    post={post} locked={locked} onToggleLock={onToggleLock}
+    user={user} isPro={isPro} onOpenRacePlay={onOpenRacePlay}
+    onHeaderExtra={setHeaderExtra}
+  />
+) : (
           <CardPreview post={post} onPlay={openQuiz} completion={completion} />
         )}
 
@@ -1208,7 +1203,7 @@ const QuizBody = ({ post, user }) => {
 }
 
 // ── Community Body ──
-const CommunityBody = ({ post, user, isPro, onOpenRacePlay }) => {
+const CommunityBody = ({ post, user, isPro, onOpenRacePlay, onHeaderExtra }) => {
   const [loading, setLoading] = useState(true)
   const [community, setCommunity] = useState(null)
   const [hasOpenedQuiz, setHasOpenedQuiz] = useState(false)
@@ -1266,6 +1261,20 @@ const CommunityBody = ({ post, user, isPro, onOpenRacePlay }) => {
     if (onOpenRacePlay) onOpenRacePlay(community.id)
     else setShowRacePlay(true)
   }
+
+  useEffect(() => {
+  if (!community || !onHeaderExtra) return
+  const race = community.room_mode === 'race'
+  onHeaderExtra(
+    <>
+      {race && <span className="community-race-badge">🏁 LIVE RACE</span>}
+      <span className="community-subject-tag">{community.subject}</span>
+      <span className={`community-status ${community.status}`}>
+        {community.status === 'live' ? '🟢 Live' : '🔴 Ended'}
+      </span>
+    </>
+  )
+}, [community, onHeaderExtra])
 
   if (loading) return <div className="edufeed-loading">Loading community...</div>
   if (!community) return <div className="edufeed-empty">Community not found</div>
