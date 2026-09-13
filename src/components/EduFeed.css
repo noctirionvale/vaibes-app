@@ -66,6 +66,7 @@
 .edufeed-card-header {
   display: flex; align-items: center; gap: 0.55rem;
   padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
 }
 .edufeed-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 .edufeed-avatar-placeholder {
@@ -1857,5 +1858,3 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 @media (max-width: 768px) {
   .ef-card-preview-cta-slot { min-width: 0; }
 }
-
-.edufeed-card-header { flex-shrink: 0; }
