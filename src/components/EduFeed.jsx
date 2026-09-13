@@ -7,7 +7,6 @@ import QuizArenaModal from './QuizArenaModal';
 import PlayerSpotlight from './PlayerSpotlight';
 import LiveChallengeBanner from './LiveChallengeBanner';
 import PointsDashboard from './PointsDashboard';
-import BadgeRow from './BadgeRow';
 import { attachBadges } from '../lib/badgeQueries';
 import './EduFeed.css'
 
@@ -165,50 +164,35 @@ const CommentsSection = ({ post, user }) => {
 
 // ── Card Header ──
 // ── Card Header ──
-const CardHeader = ({ post, locked, onToggleLock, badges, onOpenDashboard }) => {
-  const isCommunity = post.type === 'community' || post.community_data?.is_community
-  
-  let displayLabel = '🧠 Quiz'
-  let displayClass = 'type-quiz'
-  
-  if (isCommunity) {
-    displayLabel = '🏆 Community'
-    displayClass = 'type-community'
-  } else if (post.type === 'subject_quiz' || post.quiz_data?.mode === 'subject_qa') {
-    displayLabel = '📚 Subject Quiz'
-    displayClass = 'type-subject-quiz'
-  } else if (post.type === 'flashcard' || post.quiz_data?.mode === 'flashcard') {
-    displayLabel = '🃏 Flashcard'
-    displayClass = 'type-flashcard'
-  }
-  
+const CardHeader = ({ post, locked, onToggleLock }) => {
   return (
-    <div className="edufeed-card-header">
+    <div className="ef-relocated-meta">
       {post.profiles?.avatar_url
         ? <img src={post.profiles.avatar_url} alt="" className="edufeed-avatar" />
         : <div className="edufeed-avatar-placeholder">
             {post.profiles?.display_name?.[0]?.toUpperCase() || '?'}
           </div>}
       <div className="edufeed-user-info">
-        <div className="edufeed-meta" style={{ marginTop: 0, gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span className={`edufeed-type-badge ${displayClass}`}>
-            {displayLabel}
-          </span>
+        <div className="ef-card-preview-teaser" style={{ WebkitLineClamp: 1 }}>
+          {post.title || ''}
+        </div>
+        <div className="edufeed-meta" style={{ marginTop: 0 }}>
           <span>{new Date(post.created_at).toLocaleDateString()}</span>
           {post.is_pro_only && <span className="edufeed-pro-badge">PRO</span>}
-          {badges?.length > 0 && <BadgeRow badges={badges} onClick={onOpenDashboard} />}
         </div>
       </div>
       <button
         className={`edufeed-lock-btn ${locked ? 'locked' : ''}`}
         onClick={onToggleLock}
-        title={locked ? 'Unlock scroll' : 'Lock scroll'}
+        type="button"
       >
         {locked ? '🔒' : '🔓'}
       </button>
     </div>
   )
 }
+
+
 
 // ── Card Footer ──
 const CardFooter = ({
@@ -218,7 +202,7 @@ const CardFooter = ({
   onCreateClick, onShare, shared,
 }) => {
   const isOwner = user?.id === post.user_id || user?.id === post.profiles?.id
-  
+
   return (
     <div className="edufeed-card-footer">
       <button
@@ -281,6 +265,8 @@ const CardFooter = ({
 }
 
 // ── Card Attachments ──
+
+// ── Card Attachments ──
 const CardAttachments = ({ attachments, variant = 'quiz' }) => {
   if (!attachments?.length) return null
 
@@ -335,18 +321,15 @@ const CardPreview = ({ post, onPlay, completion }) => {
   const isFlashcard = post.type === 'flashcard' || quiz.mode === 'flashcard'
   const isInteractiveQuiz = quiz.questions && quiz.questions.length > 0
 
-  let icon = '🧠', typeLabel = 'Quiz'
   let meta = isInteractiveQuiz ? `${quiz.questions.length} question${quiz.questions.length > 1 ? 's' : ''}` : '1 question'
   let teaser = post.title || quiz.question || 'Tap play to test your knowledge.'
   let ctaLabel = '▶ Start Quiz'
 
   if (isSubjectQuiz) {
-    icon = '📚'; typeLabel = 'Subject Quiz'
     teaser = quiz.question || post.title || 'A question is waiting for your answer.'
     meta = 'Free response'
     ctaLabel = '✍️ Answer This'
   } else if (isFlashcard) {
-    icon = '🃏'; typeLabel = 'Flashcard'
     teaser = quiz.question || post.title || 'Guess the answer on the flashcard.'
     meta = 'Flip to check'
     ctaLabel = '👀 Flip & Guess'
@@ -380,7 +363,6 @@ const CardPreview = ({ post, onPlay, completion }) => {
           </div>
           <div className="ef-card-preview-meta">
             {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
-            <span className="ef-card-preview-badge">{icon} {typeLabel}</span>
             <span className="ef-card-preview-count">{meta}</span>
           </div>
         </div>
@@ -566,8 +548,8 @@ const [hasOpenedComments, setHasOpenedComments] = useState(false)
     const isCommunity = post.type === 'community' || post.community_data?.is_community
 
     return (
-      <div className="edufeed-card-inner">
-        <CardHeader post={post} locked={locked} onToggleLock={onToggleLock} badges={badges} onOpenDashboard={onOpenDashboard} />
+  <div className="edufeed-card-inner ef-media-first">
+    <CardHeader post={post} locked={locked} onToggleLock={onToggleLock} badges={badges} onOpenDashboard={onOpenDashboard} />
 
         {shouldShowAttachments && (
           <CardAttachments attachments={post.attachments} variant={isCommunity ? 'community' : 'quiz'} />
