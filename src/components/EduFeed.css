@@ -1301,10 +1301,10 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
     padding-top: 1rem;
   }
   .edufeed-wrapper .edufeed-attachments-top .edufeed-att-frame {
-    aspect-ratio: auto;
-    max-height: none;
-    border-radius: 0;
-  }
+  aspect-ratio: auto;
+  max-height: min(520px, 52vh);
+  border-radius: 0;
+}
   .edufeed-wrapper .ef-card-preview {
     flex: 0 0 auto; max-height: 100%;
   }
@@ -1856,4 +1856,8 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
 @media (max-width: 768px) {
   .ef-card-preview-cta-slot { min-width: 0; }
+}
+
+.edufeed-wrapper .edufeed-attachments-top {
+  overflow: hidden;
 }
