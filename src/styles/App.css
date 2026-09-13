@@ -794,3 +794,5 @@ body.light-mode .qa-input:focus {
   .center-view-wrapper--edufeed .community-description { font-size: 0.85rem; }
   .center-view-wrapper--edufeed .community-join-btn { font-size: 0.92rem; padding: 0.75rem 1.25rem; }
 }
+
+.edufeed-card-header { flex-shrink: 0; }
