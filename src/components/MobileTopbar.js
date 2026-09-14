@@ -246,10 +246,7 @@ const MobileTopbar = ({
       icon: <IconPencil />,
       label: 'Create',
       action: () => {
-        if (userTier !== 'pro' && user?.email !== 'noctirionvale@gmail.com') {
-          onOpenUpgrade?.();
-          return;
-        }
+        
         setShowCreative(true);
       },
     },

@@ -244,6 +244,7 @@ Do not rewrite the text. Do not add markdown formatting. Return raw JSON only.`;
 const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'free', onOpenBilling, editItem, onEditDone, draftKey = 'main' }) => {
   const { user } = useAuth();
   const isAdmin = user?.email === 'noctirionvale@gmail.com';
+  const isPro = isAdmin || userTier === 'pro';
   const draftStorageKey = user ? `creative_draft_${user.id}_${draftKey}` : null;
 
   // ── Core state ──
@@ -469,49 +470,60 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
     return () => clearTimeout(autoSaveTimer.current);
   }, [formTitle, editorContent, attachments, saveDraft]);
 
-  // ── Load editItem ──
-  useEffect(() => {
-    if (!editItem || !editor) return;
-    setEditingId(editItem.id);
-    setFormTitle(editItem.title || '');
-    editor.commands.setContent(editItem.content || '');
-    setAttachments(editItem.attachments || []);
+  // add these near your other refs, before the "Load editItem" effect
+const onOpenBillingRef = useRef(onOpenBilling);
+const onEditDoneRef = useRef(onEditDone);
+useEffect(() => {
+  onOpenBillingRef.current = onOpenBilling;
+  onEditDoneRef.current = onEditDone;
+});
 
-    const isEduPost = ['quiz', 'subject_quiz', 'flashcard'].includes(editItem.type);
+// ── Load editItem ──
+useEffect(() => {
+  if (!editItem || !editor) return;
 
-    if (isEduPost) {
-      const quiz = editItem.quiz_data || {};
-      setEduType(editItem.type);
-      setEduSubject(editItem.subject || 'General');
-      if (editItem.type === 'quiz') {
-        setQuizQuestions(
-          quiz.questions?.length
-            ? quiz.questions.map(q => ({
-                id: q.id ?? Date.now() + Math.random(),
-                timestamp: q.timestamp ?? 0,
-                question: q.question || '',
-                options: [...(q.options || []), '', '', '', ''].slice(0, 4),
-                correct_index: q.correct_index ?? 0,
-                points: q.points ?? 5,
-              }))
-            : [{ id: Date.now(), timestamp: 0, question: '', options: ['', '', '', ''], correct_index: 0, points: 5 }]
-        );
-      } else if (editItem.type === 'subject_quiz') {
-        setSubjectQuizQuestion(quiz.question || '');
-        setSubjectQuizAnswer(quiz.answer || '');
-        setQuizMedia(quiz.media || []);
-      } else if (editItem.type === 'flashcard') {
-        setFlashFront(quiz.question || '');
-        setFlashBack(quiz.answer || '');
-      }
-      setEduOpen(true);
-      setWallOpen(false);
-    } else {
-      setWallOpen(true);
+  const isEduPost = ['quiz', 'subject_quiz', 'flashcard'].includes(editItem.type);
+  if (!isEduPost && !isPro) {
+    onOpenBillingRef.current?.();
+    onEditDoneRef.current?.();
+    return;
+  }
+
+  setEditingId(editItem.id);
+
+  if (isEduPost) {
+    const quiz = editItem.quiz_data || {};
+    setEduType(editItem.type);
+    setEduSubject(editItem.subject || 'General');
+    if (editItem.type === 'quiz') {
+      setQuizQuestions(
+        quiz.questions?.length
+          ? quiz.questions.map(q => ({
+              id: q.id ?? Date.now() + Math.random(),
+              timestamp: q.timestamp ?? 0,
+              question: q.question || '',
+              options: [...(q.options || []), '', '', '', ''].slice(0, 4),
+              correct_index: q.correct_index ?? 0,
+              points: q.points ?? 5,
+            }))
+          : [{ id: Date.now(), timestamp: 0, question: '', options: ['', '', '', ''], correct_index: 0, points: 5 }]
+      );
+    } else if (editItem.type === 'subject_quiz') {
+      setSubjectQuizQuestion(quiz.question || '');
+      setSubjectQuizAnswer(quiz.answer || '');
+      setQuizMedia(quiz.media || []);
+    } else if (editItem.type === 'flashcard') {
+      setFlashFront(quiz.question || '');
+      setFlashBack(quiz.answer || '');
     }
+    setEduOpen(true);
+    setWallOpen(false);
+  } else {
+    setWallOpen(true);
+  }
 
-    clearDraft();
-  }, [editItem, editor, clearDraft]);
+  clearDraft();
+}, [editItem, editor, clearDraft, isPro]);
 
    useEffect(() => {
     setAlsoPostToWall(false);
@@ -593,7 +605,6 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
           subject: eduSubject,
           question: subjectQuizQuestion,
           answer: subjectQuizAnswer,
-          media: quizMedia.map(m => ({ url: m.url, type: m.type, name: m.name })),
         };
         postType = 'subject_quiz';
       }
@@ -615,7 +626,7 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
 
       const { error } = await supabase.from('edufeed_posts').insert({
         ...payload, user_id: user.id,
-        is_pro_only: eduType === 'quiz' || eduType === 'flashcard' || eduType === 'subject_quiz',
+        is_pro_only: false, // manual EduFeed creation is free tier now — only AI-generated Community Rooms stay pro-flagged
         is_published: true,
       });
       return error;
@@ -631,7 +642,7 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
     if (destination === 'edufeed') {
       const err = await postToEdufeed();
       if (err) errors.push(err.message);
-      if (alsoPostToWall) {
+      if (alsoPostToWall && isPro) {
         const wallErr = await postToWall();
         if (wallErr) errors.push(wallErr.message);
       }
@@ -817,10 +828,15 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
     }
   };
 
-  const toggleWallPanel = () => { setWallOpen(o => !o); setEduOpen(false); setRoomOpen(false); };
-  const toggleEduPanel  = () => { setEduOpen(o => !o); setWallOpen(false); setRoomOpen(false); };
-  const toggleRoomPanel = () => { setRoomOpen(o => !o); setWallOpen(false); setEduOpen(false); };
-
+  const toggleWallPanel = () => {
+  if (!isPro) { onOpenBilling?.(); return; }
+  setWallOpen(o => !o); setEduOpen(false); setRoomOpen(false);
+};
+const toggleEduPanel  = () => { setEduOpen(o => !o); setWallOpen(false); setRoomOpen(false); };
+const toggleRoomPanel = () => {
+  if (!isPro) { onOpenBilling?.(); return; }
+  setRoomOpen(o => !o); setWallOpen(false); setEduOpen(false);
+};
   const handleRoomCreated = () => {
     setRoomOpen(false);
     if (onContentCreated) onContentCreated();
@@ -838,21 +854,6 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
       <input type="file" accept={accept} onChange={onChange} disabled={disabled} style={{ display: 'none' }} />
     </label>
   );
-
-  if (!isAdmin && userTier !== 'pro') {
-    return (
-      <div className="creative-editor-paywall">
-        <div className="paywall-icon">✏️</div>
-        <h3>Creative Workspace is a Pro Feature</h3>
-        <p>Upgrade to Pro to unlock the rich text editor, file attachments, image uploads, and your personal Vibe Wall.</p>
-        <button className="upgrade-btn" onClick={() => {
-          if (onClose) onClose();
-          if (onOpenBilling) onOpenBilling();
-        }}>Upgrade to Pro</button>
-        <p className="paywall-note">✨ Free users still have access to Study Mode and live cams.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="creative-editor">
@@ -1087,8 +1088,8 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
       <div className="ce-dest-header">
         <button type="button" className={`ce-dest-btn ce-wall-btn ${wallOpen ? 'active' : ''}`} onClick={toggleWallPanel}>
           <span className="ce-dest-icon">🎨</span>
-          <span className="ce-dest-label">Wall</span>
-          <span className="ce-dest-tools">{!wallOpen && <span className="ce-dest-hint">text · image · video · audio · file</span>}</span>
+          <span className="ce-dest-label">Wall{!isPro && ' 🔒'}</span>
+          <span className="ce-dest-tools">{!wallOpen && <span className="ce-dest-hint">{isPro ? 'text · image · video · audio · file' : 'Pro feature'}</span>}</span>
           <span className={`ce-dest-chevron ${wallOpen ? 'open' : ''}`}>›</span>
         </button>
 
@@ -1101,8 +1102,8 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
 
         <button type="button" className={`ce-dest-btn ce-room-btn ${roomOpen ? 'active' : ''}`} onClick={toggleRoomPanel}>
           <span className="ce-dest-icon">🎮</span>
-          <span className="ce-dest-label">Room</span>
-          <span className="ce-dest-tools">{!roomOpen && <span className="ce-dest-hint">live quiz race</span>}</span>
+          <span className="ce-dest-label">Room{!isPro && ' 🔒'}</span>
+          <span className="ce-dest-tools">{!roomOpen && <span className="ce-dest-hint">{isPro ? 'live quiz race' : 'Pro feature'}</span>}</span>
           <span className={`ce-dest-chevron ${roomOpen ? 'open' : ''}`}>›</span>
         </button>
       </div>
@@ -1217,11 +1218,13 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
                     'History', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Television', 'Animals', 'Movies', 'Sports', 'Felip', 'SB19', 'Other']
                     .map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <label className="edufeed-crosspost">
-                  <input type="checkbox" checked={alsoPostToWall}
-                    onChange={e => setAlsoPostToWall(e.target.checked)} />
-                  <span>Also post to Wall</span>
-                </label>
+                {isPro && (
+  <label className="edufeed-crosspost">
+    <input type="checkbox" checked={alsoPostToWall}
+      onChange={e => setAlsoPostToWall(e.target.checked)} />
+    <span>Also post to Wall</span>
+  </label>
+)}
               </div>
 
               {quizQuestions.map((q, index) => (
@@ -1390,11 +1393,13 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
                 </div>
               </div>
 
-              <label className="edufeed-crosspost" style={{ marginTop: '0.5rem' }}>
-                <input type="checkbox" checked={alsoPostToWall}
-                  onChange={e => setAlsoPostToWall(e.target.checked)} />
-                <span>Also post to Wall</span>
-              </label>
+              {isPro && (
+  <label className="edufeed-crosspost">
+    <input type="checkbox" checked={alsoPostToWall}
+      onChange={e => setAlsoPostToWall(e.target.checked)} />
+    <span>Also post to Wall</span>
+  </label>
+)}
             </div>
           )}
 

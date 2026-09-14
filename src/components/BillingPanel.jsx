@@ -133,7 +133,7 @@ const BillingPanel = ({ onClose, embedded = false }) => {
         </div>
         <p className="billing-usage">
           {/* Updated copy to reflect the new credit-wallet architecture instead of daily limits */}
-          {userTier === 'pro' ? '✅ Pro access · All features unlocked' : 'Free plan — 3 daily trial credits'}
+          {userTier === 'pro' ? '✅ Pro access · All features unlocked' : 'Free plan — 3 daily AI trial credits, plus free manual quiz creation'}
         </p>
       </div>
 
@@ -148,6 +148,7 @@ const BillingPanel = ({ onClose, embedded = false }) => {
             <li>Study Mode (lo-fi, jazz, focus music, YouTube links)</li>
             <li>VidFeed — YouTube video feed</li>
             <li>EduFeed — view, like, comment, answer quizzes</li>
+            <li>Create your own Studio Quiz, Subject Quiz &amp; Flashcards</li>
           </ul>
           {userTier === 'free' && <div className="tier-current-label">Your current plan</div>}
         </div>
@@ -164,7 +165,7 @@ const BillingPanel = ({ onClose, embedded = false }) => {
             <li>Creative Workspace (rich editor, images, videos, files)</li>
             <li>Study rooms (Group chats, Group Live Session )</li>
             <li>Personal Vibe Wall</li>
-            <li>Create EduFeed posts (notes, quizzes, flashcards)</li>
+            <li>AI-generated quiz rooms from your notes or chat history</li>
           </ul>
           {userTier !== 'pro' ? (
             <>

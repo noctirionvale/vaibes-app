@@ -1922,3 +1922,11 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   height: 28px;
   font-size: 0.72rem;
 }
+
+.edufeed-att-audio {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.65rem 0.8rem; background: var(--field-bg);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.edufeed-att-audio-icon { font-size: 1.1rem; flex-shrink: 0; }
+.edufeed-att-audio-player { flex: 1; min-width: 0; height: 32px; }

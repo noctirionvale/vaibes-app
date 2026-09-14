@@ -309,6 +309,13 @@ const CardAttachments = ({ attachments, variant = 'quiz' }) => {
               <img src={att.url} alt={att.name} className="edufeed-att-media" />
             </div>
           )
+          if (att.type?.startsWith('audio/'))
+  return (
+    <div key={idx} className="edufeed-att-audio">
+      <span className="edufeed-att-audio-icon">🎵</span>
+      <audio src={att.url} controls className="edufeed-att-audio-player" />
+    </div>
+  )
         return <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" className="edufeed-att-file"> {att.name}</a>
       })}
     </div>
@@ -544,16 +551,13 @@ const [hasOpenedComments, setHasOpenedComments] = useState(false)
 
     const openQuiz = () => { if (completion) return; setHasOpenedQuiz(true); setShowPlayModal(true) }
 
-    const shouldShowAttachments = post.type !== 'flashcard'
     const isCommunity = post.type === 'community' || post.community_data?.is_community
 
-    return (
+return (
   <div className="edufeed-card-inner ef-media-first">
     <CardHeader post={post} locked={locked} onToggleLock={onToggleLock} badges={badges} onOpenDashboard={onOpenDashboard} />
 
-        {shouldShowAttachments && (
-          <CardAttachments attachments={post.attachments} variant={isCommunity ? 'community' : 'quiz'} />
-        )}
+    <CardAttachments attachments={post.attachments} variant={isCommunity ? 'community' : 'quiz'} />
 
         {selfContained ? (
           <BodyComponent
@@ -961,7 +965,15 @@ const QuizBody = ({ post, user }) => {
                   </div>
                 );
               }
-              return null;
+              if (att.type?.startsWith('audio/')) {
+  return (
+    <div key={idx} className="subject-qa-media-item edufeed-att-audio">
+      <span className="edufeed-att-audio-icon">🎵</span>
+      <audio src={att.url} controls className="edufeed-att-audio-player" />
+    </div>
+  );
+}
+return null;
             })}
           </div>
         )}
@@ -1378,11 +1390,7 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
   }
 
   const handleCreateClick = () => {
-  if (isPro) {
-    if (onEditPost) onEditPost(null)
-  } else {
-    setShowProModal(true)
-  }
+  if (onEditPost) onEditPost(null)
 }
 
   const handlePostDeleted = (postId) => setPosts(prev => prev.filter(p => p.id !== postId))
