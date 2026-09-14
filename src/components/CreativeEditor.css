@@ -1395,7 +1395,10 @@
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
-  min-height: 48px;
+  min-height: 100px;   /* was 48px — now matches .media-preview-img/video
+    so an audio card doesn't look squished next to image/video cards
+    sharing the same grid row */
+  background: var(--inset-bg);
 }
 
 .media-preview-img,
@@ -2638,3 +2641,17 @@
   color: var(--text); 
   line-height: 1.5; 
 }
+
+.q-image-preview {
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-top: 0.3rem;
+  background: var(--inset-bg);
+  border: 1px solid var(--border);
+}
+
+.ce-title-prompt-overlay { z-index: 1000000 !important; }
+.ce-title-prompt-dialog { max-width: 360px; }
+.ce-title-prompt-dialog .ce-modal-body { gap: 0.75rem; }

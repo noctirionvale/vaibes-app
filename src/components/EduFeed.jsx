@@ -328,15 +328,18 @@ const CardPreview = ({ post, onPlay, completion }) => {
   const isFlashcard = post.type === 'flashcard' || quiz.mode === 'flashcard'
   const isInteractiveQuiz = quiz.questions && quiz.questions.length > 0
 
+  let icon = '🧠', typeLabel = 'Quiz'
   let meta = isInteractiveQuiz ? `${quiz.questions.length} question${quiz.questions.length > 1 ? 's' : ''}` : '1 question'
   let teaser = post.title || quiz.question || 'Tap play to test your knowledge.'
   let ctaLabel = '▶ Start Quiz'
 
   if (isSubjectQuiz) {
+    icon = '📚'; typeLabel = 'Subject Quiz'
     teaser = quiz.question || post.title || 'A question is waiting for your answer.'
     meta = 'Free response'
     ctaLabel = '✍️ Answer This'
   } else if (isFlashcard) {
+    icon = '🃏'; typeLabel = 'Flashcard'
     teaser = quiz.question || post.title || 'Guess the answer on the flashcard.'
     meta = 'Flip to check'
     ctaLabel = '👀 Flip & Guess'
@@ -345,8 +348,6 @@ const CardPreview = ({ post, onPlay, completion }) => {
   const previewImage = isFlashcard
     ? post.attachments?.find(a => a.type?.startsWith('image/'))
     : null
-
-  const creatorName = post.profiles?.display_name || post.profiles?.username || 'Student'
 
   return (
     <div className="ef-card-preview">
@@ -360,21 +361,16 @@ const CardPreview = ({ post, onPlay, completion }) => {
         <div className="ef-card-preview-teaser">{teaser}</div>
       </div>
 
-      {/* title/creator/labels live here now — flex-shrink:0 means they
-          never get squeezed out, even when the video above grows tall */}
       <div className="ef-card-preview-footer">
         <div className="ef-card-preview-footer-info">
-          <div className="ef-card-preview-title-row">
-            <h3 className="ef-card-preview-title">{post.title || 'Untitled Quiz'}</h3>
-            <span className="ef-card-preview-creator">by {creatorName}</span>
-          </div>
           <div className="ef-card-preview-meta">
             {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
+            <span className="ef-card-preview-badge">{icon} {typeLabel}</span>
             <span className="ef-card-preview-count">{meta}</span>
           </div>
         </div>
 
-<div className="ef-card-preview-cta-slot">
+        <div className="ef-card-preview-cta-slot">
           {completion ? (
             <DoneChip points={completion.points} />
           ) : (
@@ -940,43 +936,41 @@ const QuizBody = ({ post, user }) => {
         {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
         
         {post.attachments && post.attachments.length > 0 && (
-          <div className="subject-qa-media">
-            {post.attachments.map((att, idx) => {
-              if (att.type === 'youtube') {
-                return (
-                  <div key={idx} className="subject-qa-media-item">
-                    <iframe 
-                      src={att.embedUrl || `https://www.youtube-nocookie.com/embed/${att.url.split('v=')[1]}`}
-                      width="100%" height="200" frameBorder="0" allowFullScreen title={att.name} className="edufeed-att-media" />
-                  </div>
-                );
-              }
-              if (att.type?.startsWith('video/')) {
-                return (
-                  <div key={idx} className="subject-qa-media-item">
-                    <video src={att.url} controls className="edufeed-att-media" />
-                  </div>
-                );
-              }
-              if (att.type?.startsWith('image/')) {
-                return (
-                  <div key={idx} className="subject-qa-media-item">
-                    <img src={att.url} alt={att.name} className="edufeed-att-media" />
-                  </div>
-                );
-              }
-              if (att.type?.startsWith('audio/')) {
-  return (
-    <div key={idx} className="subject-qa-media-item edufeed-att-audio">
-      <span className="edufeed-att-audio-icon">🎵</span>
-      <audio src={att.url} controls className="edufeed-att-audio-player" />
-    </div>
-  );
-}
-return null;
-            })}
+  <div className="subject-qa-media">
+    {post.attachments.filter(att => att.type?.startsWith('audio/')).map((att, idx) => (
+      <div key={`audio-${idx}`} className="subject-qa-audio-item">
+        <span className="subject-qa-audio-icon">🎵</span>
+        <audio src={att.url} controls className="subject-qa-audio-player" />
+      </div>
+    ))}
+    {post.attachments.filter(att => !att.type?.startsWith('audio/')).map((att, idx) => {
+      if (att.type === 'youtube') {
+        return (
+          <div key={idx} className="subject-qa-media-item">
+            <iframe 
+              src={att.embedUrl || `https://www.youtube-nocookie.com/embed/${att.url.split('v=')[1]}`}
+              width="100%" height="200" frameBorder="0" allowFullScreen title={att.name} className="edufeed-att-media" />
           </div>
-        )}
+        );
+      }
+      if (att.type?.startsWith('video/')) {
+        return (
+          <div key={idx} className="subject-qa-media-item">
+            <video src={att.url} controls className="edufeed-att-media" />
+          </div>
+        );
+      }
+      if (att.type?.startsWith('image/')) {
+        return (
+          <div key={idx} className="subject-qa-media-item">
+            <img src={att.url} alt={att.name} className="edufeed-att-media" />
+          </div>
+        );
+      }
+      return null;
+    })}
+  </div>
+)}
         
         <div className="sq-block sq-question-block">
           <div className="sq-label">❓ Question</div>

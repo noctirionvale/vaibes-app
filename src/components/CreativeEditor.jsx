@@ -278,9 +278,9 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
 
   // ── Studio Quiz state ──
   const [quizQuestions, setQuizQuestions] = useState([{
-    id: Date.now(), timestamp: 0, question: '',
-    options: ['', '', '', ''], correct_index: 0, points: 5,
-  }]);
+  id: Date.now(), timestamp: 0, question: '',
+  options: ['', '', '', ''], correct_index: 0, points: 5, image_url: null,
+}]);
 
   const autoSaveTimer = useRef(null);
   const fileInputRef = useRef(null);
@@ -295,6 +295,9 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
   const [targetWordCount, setTargetWordCount] = useState(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [templateCategory, setTemplateCategory] = useState('academic');
+  const [titlePromptOpen, setTitlePromptOpen] = useState(false);
+const [titlePromptValue, setTitlePromptValue] = useState('');
+const [pendingSaveDestination, setPendingSaveDestination] = useState(null);
   
   // ✅ FIX 2: Added Feedback Mode state
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -352,11 +355,11 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
 
   // ── Studio Quiz handlers ──
   const addQuizQuestion = () => {
-    setQuizQuestions(prev => [...prev, {
-      id: Date.now(), timestamp: 0, question: '',
-      options: ['', '', '', ''], correct_index: 0, points: 5,
-    }]);
-  };
+  setQuizQuestions(prev => [...prev, {
+    id: Date.now(), timestamp: 0, question: '',
+    options: ['', '', '', ''], correct_index: 0, points: 5, image_url: null,
+  }]);
+};
 
   const updateQuizQuestion = (id, field, value) =>
     setQuizQuestions(prev => prev.map(q => q.id === id ? { ...q, [field]: value } : q));
@@ -376,6 +379,23 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
       e.target.value = '';
     }
   };
+
+  const handleQuizQuestionImage = async (qId, e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { alert('Please select an image file'); e.target.value = ''; return; }
+  if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); e.target.value = ''; return; }
+  setFileUploading(true);
+  try {
+    const att = await uploadFile(file, 'quiz-question-media');
+    updateQuizQuestion(qId, 'image_url', att.url);
+  } catch (err) {
+    alert('Upload failed: ' + (err.message || 'Unknown error'));
+  } finally {
+    setFileUploading(false);
+    e.target.value = '';
+  }
+};
 
   const handleAddQuizYoutube = () => {
     if (!quizYoutubeUrl.trim()) return;
@@ -553,12 +573,47 @@ useEffect(() => {
     setQuizYoutubeUrl('');
     setShowQuizYoutubeInput(false);
     if (onEditDone) onEditDone();
+    setTitlePromptOpen(false);
+    setPendingSaveDestination(null);
+    setTitlePromptValue('');
   };
 
-  // ── Save ──
-  const handleSave = async (destination) => {
-    if (!formTitle.trim()) { alert('Please add a title'); return; }
-    if (!editor) return;
+    // ── Save ──
+  // A missing title used to just alert() and bail — but the destination
+  // modal (Wall/EduFeed) is a full-screen overlay sitting on top of the
+  // shared Title input, so there was no way to type one without closing
+  // this modal first, then reopening it to try saving again. Now a small
+  // prompt surfaces ON TOP of the current modal instead, so nothing closes.
+  const handleSave = (destination) => {
+    if (!formTitle.trim()) {
+      setTitlePromptValue('');
+      setPendingSaveDestination(destination);
+      setTitlePromptOpen(true);
+      return;
+    }
+    performSave(destination);
+  };
+
+  const closeTitlePrompt = () => {
+    setTitlePromptOpen(false);
+    setPendingSaveDestination(null);
+  };
+
+  const confirmTitlePrompt = () => {
+    const trimmed = titlePromptValue.trim();
+    if (!trimmed) return;
+    setFormTitle(trimmed); // keeps the shared Title field in sync once the modal closes
+    const destination = pendingSaveDestination;
+    setTitlePromptOpen(false);
+    setPendingSaveDestination(null);
+    // Pass the title directly — setFormTitle above won't have landed yet
+    // within this same synchronous call.
+    performSave(destination, trimmed);
+  };
+
+  const performSave = async (destination, titleOverride = null) => {
+    const titleToUse = (titleOverride ?? formTitle).trim();
+    if (!titleToUse || !editor) return;
     setSaving(true);
 
     const content = editor.getHTML();
@@ -574,7 +629,7 @@ useEffect(() => {
       : allAttachments.some(a => a.type?.startsWith('image/')) ? 'image' : 'note';
 
     const postToWall = async () => {
-      const payload = { title: formTitle, content, attachments: allAttachments, media_type: mediaType, updated_at: new Date().toISOString() };
+      const payload = { title: titleToUse, content, attachments: allAttachments, media_type: mediaType, updated_at: new Date().toISOString() };
       if (editingId) {
         const { error } = await supabase.from('user_creatives').update(payload).eq('id', editingId);
         return error;
@@ -615,7 +670,7 @@ useEffect(() => {
       }
 
       const payload = {
-        type: postType, title: formTitle, content: plainContent || null,
+        type: postType, title: titleToUse, content: plainContent || null,
         attachments: allAttachments, media_type: mediaType, subject: eduSubject, quiz_data,
       };
 
@@ -626,7 +681,7 @@ useEffect(() => {
 
       const { error } = await supabase.from('edufeed_posts').insert({
         ...payload, user_id: user.id,
-        is_pro_only: false, // manual EduFeed creation is free tier now — only AI-generated Community Rooms stay pro-flagged
+        is_pro_only: false,
         is_published: true,
       });
       return error;
@@ -1055,6 +1110,37 @@ const toggleRoomPanel = () => {
         document.body
       )}
 
+      {titlePromptOpen && createPortal(
+  <div className="ce-modal-overlay ce-title-prompt-overlay" onClick={closeTitlePrompt}>
+    <div className="ce-modal-dialog ce-title-prompt-dialog" onClick={e => e.stopPropagation()}>
+      <div className="ce-modal-header">
+        <span className="ce-modal-title">📝 Add a Title</span>
+        <button type="button" className="ce-modal-close" onClick={closeTitlePrompt}>✕</button>
+      </div>
+      <div className="ce-modal-body">
+        <input
+          type="text"
+          autoFocus
+          placeholder="Give it a title…"
+          value={titlePromptValue}
+          onChange={e => setTitlePromptValue(e.target.value)}
+          className="ce-title-input"
+          onKeyDown={e => { if (e.key === 'Enter' && titlePromptValue.trim()) confirmTitlePrompt(); }}
+        />
+        <button
+          type="button"
+          className="ce-post-btn ce-post-wall"
+          onClick={confirmTitlePrompt}
+          disabled={!titlePromptValue.trim()}
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>,
+  document.body
+)}
+
       {/* ── SHARED: Attachments preview ── */}
       {attachments.length > 0 && (
         <div className="creative-attachments">
@@ -1239,7 +1325,25 @@ const toggleRoomPanel = () => {
                     </div>
                   </div>
                   <input className="edufeed-quiz-q-input" placeholder="Type your question here..."
-                    value={q.question} onChange={e => updateQuizQuestion(q.id, 'question', e.target.value)} />
+  value={q.question} onChange={e => updateQuizQuestion(q.id, 'question', e.target.value)} />
+
+<div className="q-media-row">
+  <label className="media-upload-btn">
+    📷 {q.image_url ? 'Change Image' : 'Add Image'}
+    <input type="file" accept="image/*" style={{ display: 'none' }}
+      onChange={(e) => handleQuizQuestionImage(q.id, e)} disabled={fileUploading} />
+  </label>
+  {q.image_url && (
+    <button type="button" className="delete-q-btn" onClick={() => updateQuizQuestion(q.id, 'image_url', null)} title="Remove image">
+      ✕ Remove
+    </button>
+  )}
+</div>
+{q.image_url && <img src={q.image_url} alt="Question" className="q-image-preview" />}
+
+<div className="edufeed-overlay-label" style={{ marginTop: '0.4rem', fontSize: '0.6rem' }}>
+  Options — tap ✓ to mark correct
+</div>
                   <div className="edufeed-overlay-label" style={{ marginTop: '0.4rem', fontSize: '0.6rem' }}>
                     Options — tap ✓ to mark correct
                   </div>
@@ -1437,16 +1541,16 @@ const toggleRoomPanel = () => {
                 {attachments.filter(a => a.type?.startsWith('image/')).length > 0 && (
                   <div className="flashcard-image-preview">
                     {attachments.filter(a => a.type?.startsWith('image/')).map((img, idx) => (
-                      <div key={idx} className="preview-image-item">
-                        <img src={img.url} alt="Flashcard" className="preview-image" />
-                        <button 
-                          className="remove-preview-btn"
-                          onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+  <div key={idx} className="preview-image-item">
+    <img src={img.url} alt="Flashcard" className="preview-image" />
+    <button 
+      className="remove-preview-btn"
+      onClick={() => setAttachments(prev => prev.filter(a => a !== img))}
+    >
+      ✕
+    </button>
+  </div>
+))}
                   </div>
                 )}
               </div>
