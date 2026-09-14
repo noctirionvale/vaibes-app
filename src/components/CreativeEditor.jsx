@@ -490,8 +490,6 @@ useEffect(() => {
   }
 
   setEditingId(editItem.id);
-  setFormTitle(editItem.title || '');                          // ← fixes the missing title, for every type
-  editor.commands.setContent(isEduPost ? '' : (editItem.content || '')); // edu posts don't use rich content; Wall does
 
   if (isEduPost) {
     const quiz = editItem.quiz_data || {};
@@ -513,16 +511,14 @@ useEffect(() => {
     } else if (editItem.type === 'subject_quiz') {
       setSubjectQuizQuestion(quiz.question || '');
       setSubjectQuizAnswer(quiz.answer || '');
-      setQuizMedia(editItem.attachments || []);              // ← read the real attachments, not the stale quiz_data.media copy
+      setQuizMedia(quiz.media || []);
     } else if (editItem.type === 'flashcard') {
       setFlashFront(quiz.question || '');
       setFlashBack(quiz.answer || '');
-      setAttachments(editItem.attachments || []);             // ← fixes the flashcard image vanishing on edit
     }
     setEduOpen(true);
     setWallOpen(false);
   } else {
-    setAttachments(editItem.attachments || []);               // ← fixes Wall edits silently wiping attachments on save
     setWallOpen(true);
   }
 
