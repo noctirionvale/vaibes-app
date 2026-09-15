@@ -270,54 +270,56 @@ const CardFooter = ({
 const CardAttachments = ({ attachments, variant = 'quiz' }) => {
   if (!attachments?.length) return null
 
-  return (
-    <div className={`edufeed-attachments edufeed-attachments-top is-${variant}`}>
-      {attachments.map((att, idx) => {
-        if (att.type === 'youtube')
-          return (
-            <div key={idx} className="edufeed-att-frame">
-              <iframe 
-                src={att.embedUrl} 
-                width="100%" 
-                height="200" 
-                frameBorder="0" 
-                allowFullScreen 
-                className="edufeed-att-media" 
-                title={att.name}
-                allow="autoplay; encrypted-media"
-              />
-            </div>
-          )
-        if (att.type?.startsWith('video/'))
-          return (
-            <div key={idx} className="edufeed-att-frame">
-              <video 
-                src={att.url} 
-                controls 
-                autoPlay 
-                muted 
-                loop
-                playsInline
-                className="edufeed-att-media" 
-              />
-            </div>
-          )
-        if (att.type?.startsWith('image/'))
-          return (
-            <div key={idx} className="edufeed-att-frame">
-              <div className="edufeed-att-frame-bg" style={{ backgroundImage: `url(${att.url})` }} aria-hidden="true" />
-              <img src={att.url} alt={att.name} className="edufeed-att-media" />
-            </div>
-          )
-          if (att.type?.startsWith('audio/'))
-  return (
-    <div key={idx} className="edufeed-att-audio">
+  const audioAtts = attachments.filter(att => att.type?.startsWith('audio/'))
+  const mediaAtts = attachments.filter(att => !att.type?.startsWith('audio/'))
+  // Only overlay when there's media to sit on top of — audio-only posts
+  // render inline/centered like before.
+  const overlayAudio = audioAtts.length > 0 && mediaAtts.length > 0
+
+  const renderAudio = (att, idx) => (
+    <div key={`audio-${idx}`} className="edufeed-att-audio">
       <span className="edufeed-att-audio-icon">🎵</span>
       <audio src={att.url} controls className="edufeed-att-audio-player" />
     </div>
   )
-        return <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" className="edufeed-att-file"> {att.name}</a>
-      })}
+
+  const renderMedia = (att, idx) => {
+    if (att.type === 'youtube')
+      return (
+        <div key={idx} className="edufeed-att-frame">
+          <iframe
+            src={att.embedUrl}
+            width="100%"
+            height="200"
+            frameBorder="0"
+            allowFullScreen
+            className="edufeed-att-media"
+            title={att.name}
+            allow="autoplay; encrypted-media"
+          />
+        </div>
+      )
+    if (att.type?.startsWith('video/'))
+      return (
+        <div key={idx} className="edufeed-att-frame">
+          <video src={att.url} controls autoPlay muted loop playsInline className="edufeed-att-media" />
+        </div>
+      )
+    if (att.type?.startsWith('image/'))
+      return (
+        <div key={idx} className="edufeed-att-frame">
+          <div className="edufeed-att-frame-bg" style={{ backgroundImage: `url(${att.url})` }} aria-hidden="true" />
+          <img src={att.url} alt={att.name} className="edufeed-att-media" />
+        </div>
+      )
+    return <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" className="edufeed-att-file"> {att.name}</a>
+  }
+
+  return (
+    <div className={`edufeed-attachments edufeed-attachments-top is-${variant}`}>
+      {overlayAudio && <div className="edufeed-att-audio-overlay">{audioAtts.map(renderAudio)}</div>}
+      {mediaAtts.map(renderMedia)}
+      {!overlayAudio && audioAtts.map(renderAudio)}
     </div>
   )
 }

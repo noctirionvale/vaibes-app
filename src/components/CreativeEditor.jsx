@@ -515,7 +515,7 @@ useEffect(() => {
     const quiz = editItem.quiz_data || {};
     setEduType(editItem.type);
     setEduSubject(editItem.subject || 'General');
-    if (editItem.type === 'quiz') {
+        if (editItem.type === 'quiz') {
       setQuizQuestions(
         quiz.questions?.length
           ? quiz.questions.map(q => ({
@@ -525,8 +525,9 @@ useEffect(() => {
               options: [...(q.options || []), '', '', '', ''].slice(0, 4),
               correct_index: q.correct_index ?? 0,
               points: q.points ?? 5,
+              image_url: q.image_url ?? null,   // ← was missing
             }))
-          : [{ id: Date.now(), timestamp: 0, question: '', options: ['', '', '', ''], correct_index: 0, points: 5 }]
+          : [{ id: Date.now(), timestamp: 0, question: '', options: ['', '', '', ''], correct_index: 0, points: 5, image_url: null }]
       );
     } else if (editItem.type === 'subject_quiz') {
       setSubjectQuizQuestion(quiz.question || '');
