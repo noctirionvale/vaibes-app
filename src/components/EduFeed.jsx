@@ -562,6 +562,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
   const recordedRef = useRef(false)
   const reviewScrollRef = useRef(null)
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_LIMIT)
+  const [showReview, setShowReview] = useState(false)
 
   const totalQuestions = questions.length
   const currentQuestion = questions[currentQuestionIndex]
@@ -688,32 +689,37 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
               </div>
             </div>
           </div>
-          <div className="quiz-review-section">
-            <div className="quiz-review-header-row">
-              <h4>Review Answers</h4>
-              {answers.length > 2 && (
-                <div className="review-scroll-nav">
-                  <button type="button" className="review-scroll-btn" onClick={() => scrollReview(-1)} aria-label="Scroll left">‹</button>
-                  <button type="button" className="review-scroll-btn" onClick={() => scrollReview(1)} aria-label="Scroll right">›</button>
-                </div>
-              )}
-            </div>
-            <div className="review-questions-scroll" ref={reviewScrollRef}>
-              {answers.map((answer, idx) => (
-                <button
-                  key={idx}
-                  className={`review-question-card ${answer.isCorrect ? 'correct' : 'wrong'}`}
-                  onClick={() => goToQuestion(idx)}
-                >
-                  <div className="review-q-number">Q{idx + 1}</div>
-                  <div className="review-q-text">{answer.question}</div>
-                  <div className="review-q-result">
-                    {answer.isCorrect ? '✅' : answer.timedOut ? '⌛' : '❌'} {answer.isCorrect ? 'Correct' : answer.timedOut ? 'Timed Out' : 'Wrong'}
+          <button type="button" className="mq-review-toggle-btn" onClick={() => setShowReview(v => !v)}>
+            {showReview ? '▲ Hide Review' : `▼ Review Answers (${correctAnswers}/${totalQuestions})`}
+          </button>
+          {showReview && (
+            <div className="quiz-review-section">
+              <div className="quiz-review-header-row">
+                <h4>Review Answers</h4>
+                {answers.length > 2 && (
+                  <div className="review-scroll-nav">
+                    <button type="button" className="review-scroll-btn" onClick={() => scrollReview(-1)} aria-label="Scroll left">‹</button>
+                    <button type="button" className="review-scroll-btn" onClick={() => scrollReview(1)} aria-label="Scroll right">›</button>
                   </div>
-                </button>
-              ))}
+                )}
+              </div>
+              <div className="review-questions-scroll" ref={reviewScrollRef}>
+                {answers.map((answer, idx) => (
+                  <button
+                    key={idx}
+                    className={`review-question-card ${answer.isCorrect ? 'correct' : 'wrong'}`}
+                    onClick={() => goToQuestion(idx)}
+                  >
+                    <div className="review-q-number">Q{idx + 1}</div>
+                    <div className="review-q-text">{answer.question}</div>
+                    <div className="review-q-result">
+                      {answer.isCorrect ? '✅' : answer.timedOut ? '⌛' : '❌'} {answer.isCorrect ? 'Correct' : answer.timedOut ? 'Timed Out' : 'Wrong'}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           <div className="mq-retake-sticky">
             <button
               className="edufeed-quiz-unlock-btn"
@@ -726,6 +732,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
                 setPointsEarned(0)
                 setTimeLeft(QUESTION_TIME_LIMIT)
                 recordedRef.current = false
+                setShowReview(false)
               }}
               style={{ width: '100%' }}
             >
@@ -811,15 +818,17 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
                   ? `⌛ Time's up — Answer: ${currentOptions[currentCorrect]}`
                   : `❌ Answer: ${currentOptions[currentCorrect]}`}
             </div>
-            {currentQuestionIndex < totalQuestions - 1 ? (
-              <button className="edufeed-quiz-unlock-btn next-btn" onClick={handleNextQuestion}>
-                Next Question →
-              </button>
-            ) : (
-              <button className="edufeed-quiz-unlock-btn see-results-btn" onClick={handleNextQuestion}>
-                🎉 See Results
-              </button>
-            )}
+            <div className="mq-sticky-cta">
+              {currentQuestionIndex < totalQuestions - 1 ? (
+                <button className="edufeed-quiz-unlock-btn next-btn" onClick={handleNextQuestion}>
+                  Next Question →
+                </button>
+              ) : (
+                <button className="edufeed-quiz-unlock-btn see-results-btn" onClick={handleNextQuestion}>
+                  🎉 See Results
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -925,9 +934,11 @@ const QuizBody = ({ post, user, completion }) => {
                 onChange={e => setSqAnswer(e.target.value)}
                 rows={3}
               />
-              <button className="mq-check-btn" onClick={handleCheck} disabled={!sqAnswer.trim()}>
-                ✓ Check Answer
-              </button>
+              <div className="mq-sticky-cta">
+                <button className="mq-check-btn" onClick={handleCheck} disabled={!sqAnswer.trim()} style={{ width: '100%' }}>
+                  ✓ Check Answer
+                </button>
+              </div>
             </>
           ) : (
             <>
@@ -946,7 +957,9 @@ const QuizBody = ({ post, user, completion }) => {
                   <div className="mq-correct-answer-text">{quiz.answer || 'No answer provided'}</div>
                 </div>
               )}
-              <button className="mq-retry-btn" onClick={resetSq}>↺ Try Another Answer</button>
+              <div className="mq-sticky-cta">
+                <button className="mq-retry-btn" onClick={resetSq} style={{ width: '100%' }}>↺ Try Another Answer</button>
+              </div>
             </>
           )}
         </div>

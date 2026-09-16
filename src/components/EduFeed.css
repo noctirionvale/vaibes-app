@@ -683,7 +683,8 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   width: 100%; margin-top: 0.5rem;
 }
 
-.mq-retake-sticky {
+.mq-retake-sticky,
+.mq-sticky-cta {
   position: sticky;
   bottom: 0;
   z-index: 3;
@@ -694,6 +695,25 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
     color-mix(in srgb, var(--card-bg) 90%, transparent) 35%,
     color-mix(in srgb, var(--card-bg) 90%, transparent) 100%);
 }
+
+.mq-review-toggle-btn {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--accent-25);
+  background: var(--accent-08);
+  color: var(--glow);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.mq-review-toggle-btn:hover { background: var(--accent-12); border-color: var(--accent-40); }
 .edufeed-quiz-unlock-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-40); }
 .edufeed-quiz-unlock-btn.next-btn { box-shadow: 0 4px 14px var(--accent-25); }
 .edufeed-quiz-unlock-btn.see-results-btn {
