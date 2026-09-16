@@ -739,9 +739,14 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
 
   return (
     <div className={`mq-body ${currentQuestion.image_url ? '' : 'mq-body--no-image'}`}>
-      {currentQuestion.image_url
-        ? <div className="mq-bg" style={{ backgroundImage: `url(${currentQuestion.image_url})` }} aria-hidden="true" />
-        : <div className="mq-bg mq-bg-none" aria-hidden="true" />}
+      {currentQuestion.image_url ? (
+        <>
+          <div className="mq-bg" style={{ backgroundImage: `url(${currentQuestion.image_url})` }} aria-hidden="true" />
+          <img src={currentQuestion.image_url} alt="" className="mq-fg-img" />
+        </>
+      ) : (
+        <div className="mq-bg mq-bg-none" aria-hidden="true" />
+      )}
       <div className="mq-scrim" aria-hidden="true" />
       <div className="mq-panel edufeed-quiz-body">
         <CompletionBanner completion={completion} />
@@ -891,9 +896,14 @@ const QuizBody = ({ post, user, completion }) => {
 
     return (
       <div className={`mq-body ${firstImage ? '' : 'mq-body--no-image'}`}>
-        {firstImage
-          ? <div className="mq-bg" style={{ backgroundImage: `url(${firstImage.url})` }} aria-hidden="true" />
-          : <div className="mq-bg mq-bg-none" aria-hidden="true" />}
+        {firstImage ? (
+          <>
+            <div className="mq-bg" style={{ backgroundImage: `url(${firstImage.url})` }} aria-hidden="true" />
+            <img src={firstImage.url} alt="" className="mq-fg-img" />
+          </>
+        ) : (
+          <div className="mq-bg mq-bg-none" aria-hidden="true" />
+        )}
         <div className="mq-scrim" aria-hidden="true" />
         <div className="mq-panel mq-panel--subject">
           <CompletionBanner completion={completion} />
@@ -968,7 +978,10 @@ const QuizBody = ({ post, user, completion }) => {
           <div className="mq-flip-inner">
             <div className="mq-flip-face mq-flip-front">
               {firstImage ? (
-                <img src={firstImage.url} alt="" className="mq-flip-image" />
+                <>
+                  <div className="mq-flip-bg" style={{ backgroundImage: `url(${firstImage.url})` }} aria-hidden="true" />
+                  <img src={firstImage.url} alt="" className="mq-flip-image" />
+                </>
               ) : (
                 <div className="mq-flip-text-prompt">{quiz.question || post.title}</div>
               )}

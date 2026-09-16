@@ -1742,30 +1742,39 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 }
 .mq-bg {
   position: absolute;
-  inset: 0;
+  inset: -20px;
   background-size: cover;
   background-position: center;
-  filter: blur(3px) brightness(0.5) saturate(1.15);
-  transform: scale(1.06);
+  filter: blur(24px) brightness(0.55) saturate(1.3);
+  transform: scale(1.15);
   z-index: 0;
 }
 .mq-bg-none {
   background: linear-gradient(160deg, var(--accent-08), var(--card-bg));
   filter: none;
   transform: none;
+  inset: 0;
+}
+.mq-fg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 1;
 }
 .mq-scrim {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--bg) 25%, transparent) 0%,
-    color-mix(in srgb, var(--bg) 62%, transparent) 100%);
-  z-index: 1;
+    color-mix(in srgb, var(--bg) 15%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 68%, transparent) 100%);
+  z-index: 2;
 }
 .mq-body--no-image .mq-scrim { display: none; }
 .mq-panel {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -1898,7 +1907,16 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 .mq-flip-card:not(.is-flipped) .mq-flip-front { pointer-events: auto; }
 .mq-flip-card.is-flipped .mq-flip-back { pointer-events: auto; }
 .mq-flip-front { justify-content: flex-end; background: linear-gradient(160deg, var(--accent-08), var(--card-bg)); }
-.mq-flip-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mq-flip-bg {
+  position: absolute;
+  inset: -20px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(24px) brightness(0.55) saturate(1.3);
+  transform: scale(1.15);
+  z-index: 0;
+}
+.mq-flip-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
 .mq-flip-text-prompt {
   position: relative; flex: 1; display: flex; align-items: center; justify-content: center;
   padding: 1.5rem 1rem; text-align: center; font-size: 1.1rem; font-weight: 600; color: var(--text);
