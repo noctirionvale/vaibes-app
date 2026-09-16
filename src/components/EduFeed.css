@@ -29,7 +29,15 @@
 /* ══════════════════════════════════════════════
    WRAPPER & FILTER BAR
    ══════════════════════════════════════════════ */
-.edufeed-wrapper { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+.edufeed-wrapper {
+  display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;
+  /* NEW — makes every @container rule below respond to this panel's actual
+     rendered width, not the browser viewport. Fixes sizing that assumed
+     "desktop viewport = wide card" even when EduFeed sits in a narrow
+     right-side panel on a wide screen. */
+  container-type: inline-size;
+  container-name: edufeed;
+}
 
 .edufeed-type-filter-bar {
   display: flex; justify-content: space-between; align-items: center;
@@ -114,18 +122,18 @@
 .edufeed-note-content { font-size: 0.83rem; color: var(--text); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
 
 /* ══════════════════════════════════════════════
-   ATTACHMENTS
+   ATTACHMENTS (Community only — manual quizzes render
+   their own background/media treatment, see MANUAL QUIZ below)
    ══════════════════════════════════════════════ */
 .edufeed-attachments { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
 .edufeed-attachments-top {
   width: 100%; flex-shrink: 0; border-bottom: 1px solid var(--line); margin-bottom: 0.3rem;
 }
 
-/* ── Fix: Allow natural image sizing instead of forced 16/10 aspect ratio ── */
 .edufeed-att-media {
   width: 100%;
   height: auto;
-  max-height: 500px; /* Reasonable cap to prevent massive images breaking layout */
+  max-height: 500px;
   object-fit: contain;
   background: var(--inset-bg);
   border-radius: 10px;
@@ -139,13 +147,12 @@
   overflow: hidden;
   border-radius: 10px;
   border: 1px solid var(--line);
-  height: auto; /* Allow frame to collapse/expand to content naturally */
+  height: auto;
 }
-
 
 .edufeed-att-frame-bg {
   position: absolute;
-  inset: -20px; /* Keep negative inset for blur bleed, clipped by parent overflow: hidden */
+  inset: -20px;
   background-size: cover;
   background-position: center;
   filter: blur(26px) brightness(0.48) saturate(1.3);
@@ -166,8 +173,6 @@
   display: block;
 }
 
-/* Remove forced constraints for quiz/community frames */
-/* Replace the aspect-ratio/max-height rule from last time with this: */
 .edufeed-attachments-top.is-quiz .edufeed-att-frame,
 .edufeed-attachments-top.is-community .edufeed-att-frame {
   aspect-ratio: auto;
@@ -176,7 +181,6 @@
   flex: 0 0 auto;
 }
 
-/* ── NEW: Styling for the relocated Title & Creator ── */
 .ef-card-preview-title-row {
   display: flex;
   flex-direction: column;
@@ -207,7 +211,8 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 
 
 /* ══════════════════════════════════════════════
-   QUIZ
+   QUIZ — shared multiple-choice styling. Used both by
+   Studio Quiz (inline, manual) and Community race/solo play.
    ══════════════════════════════════════════════ */
 .edufeed-quiz-body { padding: 0.6rem 0.75rem; }
 .edufeed-quiz-question { font-size: 0.92rem; font-weight: 600; color: var(--text); margin-bottom: 0.55rem; line-height: 1.4; }
@@ -272,90 +277,6 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   border-color: color-mix(in srgb, var(--danger) 35%, transparent);
   color: var(--danger); animation: ef-timer-pulse 1s ease-in-out infinite;
 }
-
-/* ══════════════════════════════════════════════
-   FLASHCARD
-   ══════════════════════════════════════════════ */
-.edufeed-flashcard-wrap { padding: 0.6rem 0.5rem; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
-.edufeed-flashcard {
-  width: 100%; min-height: 260px; max-height: 500px;
-  border-radius: 16px; border: 2px solid var(--accent-25);
-  background: linear-gradient(135deg, var(--accent-08), color-mix(in srgb, var(--glow) 6%, transparent));
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 1rem; padding: 1.25rem 1rem; text-align: center;
-  position: relative; user-select: none;
-  box-shadow: 0 8px 32px var(--accent-12), inset 0 1px 0 color-mix(in srgb, var(--text) 10%, transparent);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.edufeed-flashcard:hover {
-  transform: translateY(-2px); border-color: var(--accent-40);
-  box-shadow: 0 12px 40px var(--accent-20), inset 0 1px 0 color-mix(in srgb, var(--text) 15%, transparent);
-}
-.edufeed-flashcard.flipped {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--success) 10%, transparent), color-mix(in srgb, var(--success) 8%, transparent));
-  border-color: color-mix(in srgb, var(--success) 40%, transparent);
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--success) 20%, transparent), inset 0 1px 0 color-mix(in srgb, var(--text) 10%, transparent);
-}
-
-.edufeed-flashcard-side {
-  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.1em; opacity: 0.7; color: var(--muted);
-  padding: 0.3rem 0.8rem; background: var(--field-bg); border-radius: 20px;
-}
-.edufeed-flashcard.flipped .edufeed-flashcard-side {
-  color: var(--success); background: color-mix(in srgb, var(--success) 15%, transparent);
-}
-
-.edufeed-flashcard-text {
-  font-size: 1.3rem; font-weight: 600; color: var(--text);
-  line-height: 1.5; max-width: 100%; word-wrap: break-word; padding: 0.5rem 1rem;
-}
-.edufeed-flashcard-hint { font-size: 0.7rem; color: var(--muted); opacity: 0.7; margin-top: 0.5rem; font-style: italic; }
-
-.flashcard-image-container {
-  width: 100%; max-height: 220px; overflow: hidden;
-  border-radius: 12px; display: flex; align-items: center;
-  justify-content: center; margin-bottom: 0.5rem;
-}
-.flashcard-image { max-width: 100%; max-height: 220px; object-fit: contain; border-radius: 8px; }
-
-.flashcard-guess-section { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
-.flashcard-guess-input {
-  width: 100%; padding: 0.75rem 1rem; background: var(--field-bg);
-  border: 2px solid var(--accent-25); border-radius: 12px;
-  color: var(--text); font-size: 0.95rem; font-family: inherit;
-  outline: none; transition: all 0.2s; text-align: center;
-}
-.flashcard-guess-input:focus {
-  border-color: var(--accent-40); background: var(--accent-08);
-  box-shadow: 0 0 0 3px var(--accent-08);
-}
-.flashcard-guess-input::placeholder { color: color-mix(in srgb, var(--text) 30%, transparent); }
-
-.flashcard-submit-btn {
-  padding: 0.75rem 1.5rem; background: var(--grad-cta);
-  background-size: 200% auto; animation: shimmer 3s linear infinite;
-  border: none; border-radius: 12px; color: var(--on-accent);
-  font-size: 0.9rem; font-weight: 700; cursor: pointer;
-  transition: all 0.2s; box-shadow: 0 4px 14px var(--accent-25);
-}
-.flashcard-submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-40); }
-.flashcard-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.flashcard-correct-badge {
-  padding: 0.6rem 1.2rem; background: color-mix(in srgb, var(--success) 20%, transparent);
-  border: 2px solid var(--success); border-radius: 20px;
-  color: var(--success); font-size: 0.95rem; font-weight: 700;
-  margin-top: 0.5rem; animation: sqFadeIn 0.3s ease;
-}
-
-.flashcard-reset-btn {
-  margin-top: 1rem; padding: 0.6rem 1.5rem;
-  background: transparent; border: 2px solid var(--line-strong);
-  border-radius: 12px; color: var(--muted);
-  font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
-}
-.flashcard-reset-btn:hover { background: var(--field-bg); border-color: var(--accent-40); color: var(--text); }
 
 /* ══════════════════════════════════════════════
    CARD FOOTER
@@ -636,7 +557,8 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 .ef-modal-save:disabled { opacity: 0.4; cursor: default; }
 
 /* ══════════════════════════════════════════════
-   QUIZ ENHANCEMENTS
+   QUIZ ENHANCEMENTS — shared by Studio Quiz (inline) and
+   Community solo/race play summary screens
    ══════════════════════════════════════════════ */
 .points-gain-animation {
   position: absolute; top: 50%; left: 50%;
@@ -713,7 +635,6 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   gap: 0.3rem;
   flex-shrink: 0;
 }
-/* Only on real mouse/trackpad devices — phones already swipe this row fine */
 @media (hover: hover) and (pointer: fine) {
   .review-scroll-nav { display: flex; }
 }
@@ -759,6 +680,7 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   font-weight: 700; border: none; border-radius: 12px;
   box-shadow: 0 4px 14px var(--accent-25);
   cursor: pointer; transition: all 0.2s ease;
+  width: 100%; margin-top: 0.5rem;
 }
 .edufeed-quiz-unlock-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-40); }
 .edufeed-quiz-unlock-btn.next-btn { box-shadow: 0 4px 14px var(--accent-25); }
@@ -798,118 +720,8 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 .vqc-pro-gate-card { max-width: 420px; width: 100%; max-height: none; }
 
 /* ══════════════════════════════════════════════
-   SUBJECT QUIZ CARD
-   ══════════════════════════════════════════════ */
-.subject-quiz-body { display: flex; flex-direction: column; gap: 0.55rem; padding: 0; }
-.sq-block { background: var(--field-bg); border: 1px solid var(--line); border-radius: 12px; padding: 0.65rem 0.8rem; }
-.sq-question-block { border-left: none; }
-.sq-answer-block { border-left: none; animation: sqFadeIn 0.35s ease; }
-
-.sq-label {
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.45rem;
-}
-.sq-answer-label { color: var(--success); }
-.sq-text { font-size: 0.92rem; line-height: 1.55; color: var(--text); white-space: pre-wrap; word-wrap: break-word; }
-.sq-question-text { font-weight: 500; }
-.sq-answer-text { color: color-mix(in srgb, var(--success) 80%, white); font-weight: 500; }
-
-.sq-reveal-btn {
-  width: 100%; padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, var(--warning), color-mix(in srgb, var(--warning) 80%, black));
-  border: none; border-radius: 10px; color: var(--on-accent);
-  font-size: 0.85rem; font-weight: 700; cursor: pointer;
-  transition: all 0.2s; box-shadow: 0 4px 14px color-mix(in srgb, var(--warning) 30%, transparent);
-}
-.sq-reveal-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px color-mix(in srgb, var(--warning) 40%, transparent); }
-
-.sq-hide-btn {
-  margin-top: 0.6rem; background: transparent;
-  border: 1px solid var(--line-strong); color: var(--muted);
-  padding: 0.35rem 0.75rem; border-radius: 8px;
-  font-size: 0.72rem; font-weight: 600; cursor: pointer;
-  transition: all 0.2s; align-self: flex-start;
-}
-.sq-hide-btn:hover { background: var(--field-bg); color: var(--text); border-color: var(--accent-40); }
-
-.sq-self-grade {
-  margin-top: 0.75rem; padding-top: 0.75rem;
-  border-top: 1px dashed var(--line);
-  display: flex; flex-direction: column; gap: 0.5rem; align-items: center;
-}
-.sq-self-grade-prompt { font-size: 0.75rem; color: var(--muted); font-weight: 500; }
-.sq-self-grade-btns { display: flex; gap: 0.5rem; width: 100%; }
-.sq-grade-btn {
-  flex: 1; padding: 0.5rem; border-radius: 8px;
-  border: 1px solid var(--line-strong); background: var(--field-bg);
-  color: var(--text); font-size: 0.8rem; font-weight: 600;
-  cursor: pointer; transition: all 0.2s;
-}
-.sq-grade-correct:hover {
-  background: color-mix(in srgb, var(--success) 15%, transparent);
-  border-color: var(--success); color: var(--success);
-}
-.sq-grade-wrong:hover {
-  background: color-mix(in srgb, var(--danger) 15%, transparent);
-  border-color: var(--danger); color: var(--danger);
-}
-
-.sq-feedback {
-  margin-top: 0.6rem; padding: 0.6rem 0.85rem;
-  border-radius: 8px; font-size: 0.82rem; font-weight: 600;
-  text-align: center; animation: sqFadeIn 0.3s ease;
-}
-.sq-feedback-correct {
-  background: color-mix(in srgb, var(--success) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent); color: var(--success);
-}
-.sq-feedback-wrong {
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
-  color: color-mix(in srgb, var(--danger) 80%, white);
-}
-
-.sq-answer-input-wrapper { margin: 0.5rem 0; }
-.sq-answer-input {
-  width: 100%; padding: 0.85rem 1rem; background: var(--field-bg);
-  border: 2px solid var(--accent-20); border-radius: 12px;
-  color: var(--text); font-size: 0.9rem; font-family: inherit;
-  resize: vertical; min-height: 80px; outline: none; transition: all 0.2s ease;
-}
-.sq-answer-input:focus {
-  border-color: var(--accent-40); background: var(--accent-08);
-  box-shadow: 0 0 0 3px var(--accent-08);
-}
-.sq-answer-input::placeholder { color: color-mix(in srgb, var(--text) 30%, transparent); }
-
-.sq-submit-btn {
-  width: 100%; padding: 0.85rem 1rem; background: var(--grad-cta);
-  background-size: 200% auto; animation: shimmer 3s linear infinite;
-  border: none; border-radius: 12px; color: var(--on-accent);
-  font-size: 0.9rem; font-weight: 700; cursor: pointer;
-  transition: all 0.2s ease; box-shadow: 0 4px 14px var(--accent-25);
-}
-.sq-submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-40); }
-.sq-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.sq-user-answer {
-  background: color-mix(in srgb, var(--glow) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--glow) 20%, transparent);
-  border-radius: 12px; padding: 0.65rem 0.8rem; margin: 0.5rem 0;
-}
-.sq-user-answer .sq-label { color: var(--glow); margin-bottom: 0.5rem; }
-
-.sq-reset-btn {
-  margin-top: 0.75rem; background: transparent;
-  border: 1px solid var(--line-strong); color: var(--muted);
-  padding: 0.6rem 1rem; border-radius: 10px;
-  font-size: 0.8rem; font-weight: 600; cursor: pointer;
-  transition: all 0.2s; align-self: stretch;
-}
-.sq-reset-btn:hover { background: var(--field-bg); color: var(--text); border-color: var(--accent-40); }
-
-/* ══════════════════════════════════════════════
-   COMMUNITY ROOM
+   COMMUNITY ROOM (unchanged — outside the scope of the
+   manual-quiz redesign below)
    ══════════════════════════════════════════════ */
 .edufeed-community-body { padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-height: 0; overflow-y: auto; }
 .community-header-info { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
@@ -960,7 +772,6 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 .community-join-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px var(--accent-40); }
 .community-join-btn:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
 
-/* Race badge & button */
 .community-race-badge {
   display: inline-flex; align-items: center; gap: 0.3rem;
   margin-bottom: 0; padding: 0.15rem 0.55rem;
@@ -1015,7 +826,6 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 }
 .community-race-btn:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
 
-/* Community quiz active */
 .community-quiz-active { padding: 1rem 0.85rem; display: flex; flex-direction: column; gap: 0.85rem; flex: 1; min-height: 0; overflow-y: auto; }
 .quiz-progress-indicator { display: flex; flex-direction: column; gap: 0.5rem; }
 .quiz-progress-bar-active { width: 100%; height: 8px; background: var(--field-bg); border-radius: 10px; overflow: hidden; }
@@ -1065,7 +875,6 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 }
 .quiz-next-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-40); }
 
-/* Community quiz results */
 .community-quiz-results { padding: 1.25rem 1rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; flex: 1; justify-content: center; }
 .quiz-results-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
 .results-icon { font-size: 3rem; animation: bounce 1s ease infinite; }
@@ -1097,14 +906,16 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 .community-restart-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-40); }
 
 /* ══════════════════════════════════════════════
-   COMPACT CARD PREVIEW
+   COMPACT CARD PREVIEW — Community only. Manual quizzes
+   (Studio/Subject/Flashcard) no longer use a preview/CTA
+   gate; see MANUAL QUIZ section below.
    ══════════════════════════════════════════════ */
 .ef-card-preview { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0.7rem 0.875rem; }
 .ef-card-preview-scroll {
   flex: 1; min-height: 0; overflow-y: auto;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
   display: flex; flex-direction: column;
-  justify-content: flex-end;   /* was: center */
+  justify-content: flex-end;
   gap: 0.5rem;
 }
 .ef-card-preview-scroll::-webkit-scrollbar { display: none; }
@@ -1112,7 +923,7 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   flex-shrink: 0;
   padding-top: 0.5rem;
   display: flex;
-  flex-direction: row;       /* was: column */
+  flex-direction: row;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
@@ -1148,7 +959,7 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 }
 .ef-card-preview-count { font-size: 0.7rem; color: var(--muted); }
 .ef-card-preview-cta {
-  margin-top: 0; align-self: flex-end;   /* was: margin-top:0.25rem; align-self:flex-start */
+  margin-top: 0; align-self: flex-end;
   padding: 0.55rem 1rem; border: none; border-radius: 12px;
   background: var(--grad-cta); background-size: 200% auto;
   animation: shimmer 3s linear infinite;
@@ -1162,8 +973,8 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 
 .ef-card-preview-top-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 .ef-card-preview-done-badge {
-  align-self: flex-end;      /* was: flex-start */
-  margin-top: 0;             /* was: 0.25rem */
+  align-self: flex-end;
+  margin-top: 0;
   padding: 0.6rem 0.9rem;
   border-radius: 12px;
   background: color-mix(in srgb, var(--success) 12%, transparent);
@@ -1175,15 +986,6 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   flex-shrink: 0;
 }
 
-/* Quiz-play modals are createPortal'd straight to document.body, so they're
-   never real DOM descendants of .edufeed-wrapper — meaning
-   ".edufeed-wrapper .modal-overlay" (which does the centering) never
-   applied to them, on desktop OR mobile. The removed inline style used to
-   paper over this by hardcoding position/display/centering directly on the
-   element (along with the bad z-index). Now that it's gone, this class has
-   to carry ALL of that itself — not just z-index — or the overlay falls
-   back to the generic .modal-overlay definition, which isn't centering/
-   containing it, hence the clipped modal on desktop. */
 .modal-overlay.edufeed-portal-overlay {
   position: fixed !important;
   inset: 0 !important;
@@ -1208,14 +1010,15 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 }
 
 /* ══════════════════════════════════════════════
-   QUIZ PLAY MODAL (compact preview launch)
+   QUIZ PLAY MODAL — still used by Community's own solo-quiz
+   portal (see CommunityBody). Manual quizzes never open this.
    ══════════════════════════════════════════════ */
 .modal-content.ef-quiz-play-modal {
   max-width: 560px; width: 100%; padding: 1.25rem; max-height: 85vh;
   overflow-y: auto; background: var(--surface-1);
   border: 1px solid var(--accent-20); border-radius: 18px;
   scrollbar-width: thin; scrollbar-color: var(--accent-25) transparent;
-  position: relative; /* ← added */
+  position: relative;
 }
 .modal-content.ef-quiz-play-modal::-webkit-scrollbar { width: 6px; }
 .modal-content.ef-quiz-play-modal::-webkit-scrollbar-thumb {
@@ -1243,7 +1046,6 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 
 /* ══════════════════════════════════════════════
    EDUFEED MODAL OVERLAY — Landing Page Aesthetic
-   (consolidated — the original had 2 competing definitions)
    ══════════════════════════════════════════════ */
 .edufeed-wrapper .modal-overlay {
   position: fixed; inset: 0; z-index: 99999;
@@ -1288,9 +1090,12 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 }
 
 /* ══════════════════════════════════════════════
-   CENTER VIEW — Desktop EduFeed (absorb extra space)
+   CENTER VIEW — width-aware layout (Community only)
+   NOTE: converted from @media(min-width) to @container so this
+   responds to the panel's real rendered width, not the browser
+   viewport — this is what was breaking the right-side-bar layout.
    ══════════════════════════════════════════════ */
-@media (min-width: 769px) {
+@container edufeed (min-width: 520px) {
   .edufeed-wrapper .edufeed-card-inner {
     display: flex; flex-direction: column; height: 100%;
   }
@@ -1316,7 +1121,6 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 
 /* ══════════════════════════════════════════════
    SNAP-SLIDE INTERACTIVITY FIXES
-   (taps were being swallowed by snap-scroll drag handling)
    ══════════════════════════════════════════════ */
 .edufeed-snap-slide .edufeed-community-body,
 .edufeed-snap-slide .ef-card-preview,
@@ -1345,14 +1149,10 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 
 /* ══════════════════════════════════════════════
    LIGHT MODE — Minimal overrides
-   (tokens handle ~90% automatically)
    ══════════════════════════════════════════════ */
 body.light-mode .edufeed-type-filter-pill.active { color: var(--glow); }
 body.light-mode .ef-create-btn { color: var(--muted); }
 body.light-mode .ef-create-btn:hover { color: var(--glow); }
-
-body.light-mode .edufeed-flashcard-text { color: var(--text); }
-body.light-mode .flashcard-guess-input::placeholder { color: color-mix(in srgb, var(--text) 30%, transparent); }
 
 body.light-mode .ef-comments { background: var(--field-bg); }
 body.light-mode .ef-comment-body { background: var(--field-bg); }
@@ -1363,8 +1163,8 @@ body.light-mode .community-race-badge { color: var(--glow); }
 body.light-mode .ef-upgrade-dismiss { color: var(--muted); }
 body.light-mode .ef-upgrade-dismiss:hover { color: var(--text); }
 
-body.light-mode .sq-answer-text { color: color-mix(in srgb, var(--success) 70%, black); }
-body.light-mode .sq-feedback-wrong { color: color-mix(in srgb, var(--danger) 70%, black); }
+body.light-mode .mq-correct-answer-text { color: color-mix(in srgb, var(--success) 70%, black); }
+body.light-mode .mq-verdict.mq-wrong { color: color-mix(in srgb, var(--danger) 70%, black); }
 
 body.light-mode .edufeed-wrapper .modal-overlay {
   background: color-mix(in srgb, var(--bg) 85%, transparent);
@@ -1405,16 +1205,6 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
     max-width: 100%; max-height: 95vh; border-radius: 16px;
   }
 
-  .subject-quiz-body { padding: 0.5rem; }
-  .sq-block, .sq-question-block, .sq-answer-block,
-  .sq-answer-input-wrapper, .sq-answer-input,
-  .sq-submit-btn, .sq-reveal-btn, .sq-reset-btn,
-  .sq-self-grade-btns, .sq-grade-btn,
-  .sq-feedback, .sq-user-answer {
-    width: 100%; max-width: 100%; box-sizing: border-box;
-  }
-  .sq-self-grade-btns { flex-direction: column; }
-
   .score-circle { width: 120px; height: 120px; margin: 1rem auto; }
   .score-inner { width: 95px; height: 95px; }
   .score-percentage { font-size: 1.8rem; }
@@ -1441,13 +1231,6 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   .quiz-review-section { margin-top: 1.5rem; padding: 0 0.5rem; }
   .quiz-review-section h4 { font-size: 0.9rem; margin-bottom: 0.75rem; }
 
-  .edufeed-flashcard { min-height: 240px; padding: 1.5rem 1rem; }
-  .edufeed-flashcard.has-image { min-height: 320px; }
-  .edufeed-flashcard-text { font-size: 1.1rem; }
-  .flashcard-image-container { max-height: 180px; }
-  .flashcard-image { max-height: 180px; }
-  .flashcard-guess-section { max-width: 100%; }
-
   .edufeed-community-body { padding: 0.65rem 0.7rem; gap: 0.35rem; }
   .community-title { font-size: 0.95rem; }
   .community-description { font-size: 0.72rem; }
@@ -1470,21 +1253,12 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
   .ef-card-preview { padding: 0.55rem 0.7rem; }
 
-  /* .ef-card-preview-meta (regular quiz badges) still benefits from
-     spreading out. .ef-card-preview-top-row (community subject + status)
-     should stay grouped like on desktop — the old space-between +
-     margin-left:auto combo made sense with 3-4 badges, but now that
-     we've trimmed it to 2-3 it just strands "Live" away from "Music". */
   .ef-card-preview-meta { justify-content: space-between; gap: 0.3rem; }
   .ef-card-preview-top-row { justify-content: flex-start; gap: 0.4rem; }
 
   .ef-card-preview-badge,
   .community-subject-tag,
   .community-status { font-size: 0.62rem; padding: 0.15rem 0.5rem; }
-
-  /* Footer becomes a row so the CTA/Done chip sits to the right of the
-     badge cluster instead of stacking underneath as another line. */
-
 
   .edufeed-card-footer { flex-wrap: wrap; gap: 0.3rem; padding: 0.4rem 0.65rem; }
   .edufeed-action-btn { padding: 0.22rem 0.55rem; font-size: 0.68rem; }
@@ -1495,10 +1269,17 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   .community-join-btn, .community-race-btn {
     touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
+
+  /* Manual quiz — mobile */
+  .mq-qnav-pill { width: 27px; height: 27px; font-size: 0.7rem; }
+  .mq-flip-card { min-height: 220px; }
+  .mq-flip-inner { min-height: 220px; }
+  .mq-panel--subject { padding: 0.75rem 0.85rem 0.9rem; }
 }
 
   /* ══════════════════════════════════════════════
-   WRAPPER & FILTER BAR
+   WRAPPER & FILTER BAR (second definition — later rules win;
+   left as originally organized, not touched by this pass)
    ══════════════════════════════════════════════ */
 .edufeed-wrapper {
   display: flex;
@@ -1634,8 +1415,8 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 .ef-card-preview-cta,
 .community-join-btn,
 .edufeed-action-btn,
-.sq-submit-btn,
-.flashcard-submit-btn {
+.mq-check-btn,
+.mq-flip-check-btn {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
@@ -1686,11 +1467,11 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   }
   
   .edufeed-quiz-option {
-    min-height: 48px; /* Ensure touch targets are large enough */
+    min-height: 48px;
   }
 }
 
-.ef-done-chip-wrap { position: relative; margin-top: 0; align-self: flex-end; } /* was: margin-top:0.25rem; align-self:flex-start */
+.ef-done-chip-wrap { position: relative; margin-top: 0; align-self: flex-end; }
 
 .ef-done-chip {
   padding: 0.55rem 1rem; border-radius: 12px;
@@ -1704,7 +1485,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
 
 .ef-done-toast {
-  position: absolute; bottom: calc(100% + 8px); right: 0;   /* was: left: 0 */
+  position: absolute; bottom: calc(100% + 8px); right: 0;
   white-space: nowrap; padding: 0.45rem 0.75rem; border-radius: 10px;
   background: var(--surface-1); border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
   color: var(--success); font-size: 0.75rem; font-weight: 700;
@@ -1720,7 +1501,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
 .community-done-badge {
   width: 100%;
-  margin-top: 0.3rem;                 /* matches .community-join-btn */
+  margin-top: 0.3rem;
   padding: 0.6rem 1rem;
   border-radius: 14px;
   background: color-mix(in srgb, var(--success) 15%, transparent);
@@ -1738,9 +1519,6 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
 .ef-done-chip { padding: 0.5rem 0.75rem; font-size: 0.74rem; }
 
-/* NEW — the live tickers are now their own visual group, not just loose
-   elements sitting on top of the filter bar. flex-shrink:0 keeps them
-   from ever being squeezed by the card feed below. */
 .edufeed-live-header {
   display: flex;
   flex-direction: column;
@@ -1748,9 +1526,6 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   padding-bottom: 0.4rem;
 }
 
-/* Robust selector (beats the file's duplicate filter-bar rules regardless
-   of source order) — adds the missing breathing room before the first
-   quiz card, so it doesn't touch the filter pills directly. */
 .edufeed-wrapper .edufeed-type-filter-bar {
   margin-bottom: 0.5rem;
 }
@@ -1770,9 +1545,6 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   overflow: hidden;
 }
 
-/* Undo the inline-accordion sizing/animation now that this only ever
-   renders inside the modal — flex:1 lets the list claim all the leftover
-   height instead of being capped at the old 170px/240px accordion limit. */
 .ef-comments-modal .ef-comments {
   flex: 1;
   min-height: 0;
@@ -1799,9 +1571,6 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   }
 }
 
-/* NEW — replaces the old 3-pill .ef-card-preview-meta treatment for
-   community cards specifically. One quiet line instead of three bordered
-   boxes: less clutter, and far less prone to wrapping on narrow widths. */
 .ef-card-preview-stats-line {
   font-size: 0.72rem;
   color: var(--muted);
@@ -1815,17 +1584,10 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   .edufeed-wrapper .ef-card-preview {
     flex: 0 0 auto;
     max-height: 100%;
-    min-height: 168px;   /* NEW — this is the actual fix for the overlap.
-      Without it, flex:1 on the image above swallows every spare pixel,
-      leaving the badge row with nothing — hence it reading as "stamped
-      onto the image." This guarantees the footer always gets real,
-      solid-background space below the media, no matter how tall the
-      image wants to grow. */
+    min-height: 168px;
   }
 }
 
-/* NEW — a real dividing edge between media and footer, so pills never
-   blend into the image's blurred backdrop no matter its aspect ratio. */
 .ef-card-preview {
   background: var(--card-bg);
   border-top: 1px solid var(--line);
@@ -1833,9 +1595,6 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   z-index: 2;
 }
 
-/* NEW — Join button and Done chip now render inside the exact same
-   fixed box. min-width covers the widest label ("🏁 Join Live Race")
-   so the slot's size and position never change between states. */
 .ef-card-preview-cta-slot {
   flex-shrink: 0;
   display: flex;
@@ -1856,12 +1615,10 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   overflow: hidden;
 }
 
-/* hide the top header — contents move into the footer gap */
 .edufeed-card-inner.ef-media-first > .edufeed-card-header {
   display: none;
 }
 
-/* media eats every leftover pixel, but stays clipped */
 .edufeed-card-inner.ef-media-first > .edufeed-attachments-top {
   flex: 1 1 auto;
   min-height: 0;
@@ -1881,11 +1638,10 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 .edufeed-card-inner.ef-media-first .edufeed-att-frame .edufeed-att-media {
   width: 100%;
   height: 100%;
-  max-height: none;          /* full again — safe because parent clips */
+  max-height: none;
   object-fit: contain;
 }
 
-/* collapse the 168px hole; footer is only as tall as its row */
 .edufeed-card-inner.ef-media-first .ef-card-preview {
   flex: 0 0 auto;
   min-height: 0;
@@ -1894,7 +1650,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   border-top: 1px solid var(--line);
 }
 .edufeed-card-inner.ef-media-first .ef-card-preview-scroll {
-  display: none;             /* "ALL ABOUT CRYPTO" moves next to the tags */
+  display: none;
 }
 .edufeed-card-inner.ef-media-first .ef-card-preview-footer {
   display: flex;
@@ -1923,7 +1679,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   border: 1px solid var(--line); border-radius: 10px;
 }
 .edufeed-att-audio-icon { font-size: 1.1rem; flex-shrink: 0; }
-.edufeed-att-audio-player { flex: 1; min-width: 0; height: 32px; }/* Overlay sits on top of the media instead of fighting it for flex width */
+.edufeed-att-audio-player { flex: 1; min-width: 0; height: 32px; }
 .edufeed-att-audio-overlay {
   position: absolute;
   top: 0.6rem;
@@ -1943,19 +1699,228 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   border-color: color-mix(in srgb, var(--text) 14%, transparent);
 }
 
+.ef-card-preview-meta .edufeed-subject-tag { margin-bottom: 0; }
 
+/* ══════════════════════════════════════════════
+   MANUAL QUIZ — inline, no-modal play for Studio Quiz,
+   Subject Quiz, and Flashcard. Replaces the old .sq-* /
+   .edufeed-flashcard* front-back CSS. Community is untouched.
+   ══════════════════════════════════════════════ */
 
-.subject-qa-audio-item {
+.mq-completed-banner {
+  align-self: flex-start;
+  flex-shrink: 0;
+  padding: 0.35rem 0.7rem;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  color: var(--success);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* ── Shared background-image frame (Studio Quiz + Subject Quiz) ── */
+.mq-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.mq-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(3px) brightness(0.5) saturate(1.15);
+  transform: scale(1.06);
+  z-index: 0;
+}
+.mq-bg-none {
+  background: linear-gradient(160deg, var(--accent-08), var(--card-bg));
+  filter: none;
+  transform: none;
+}
+.mq-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--bg) 25%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 62%, transparent) 100%);
+  z-index: 1;
+}
+.mq-body--no-image .mq-scrim { display: none; }
+.mq-panel {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  scrollbar-width: none;
+}
+.mq-panel::-webkit-scrollbar { display: none; }
+.mq-panel--subject { padding: 0.9rem 1rem 1rem; }
+
+/* ── Question-tab nav (Studio Quiz — sequential unlock) ── */
+.mq-qnav-scroll {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0.15rem;
+  flex-shrink: 0;
+}
+.mq-qnav-scroll::-webkit-scrollbar { display: none; }
+.mq-qnav-pill {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--field-bg);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.65rem 0.8rem;
-  background: var(--field-bg);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  margin-bottom: 0.5rem;
+  justify-content: center;
+  font-family: inherit;
 }
-.subject-qa-audio-icon { font-size: 1.1rem; flex-shrink: 0; }
-.subject-qa-audio-player { flex: 1; min-width: 0; height: 34px; }
+.mq-qnav-pill.is-current { border-color: var(--glow); background: var(--accent-20); color: var(--glow); }
+.mq-qnav-pill.is-correct { border-color: var(--success); background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--success); }
+.mq-qnav-pill.is-wrong { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.mq-qnav-pill.is-locked { opacity: 0.4; cursor: not-allowed; }
 
-.ef-card-preview-meta .edufeed-subject-tag { margin-bottom: 0; }
+/* ── Subject Quiz Q&A ── */
+.mq-question { font-size: 0.95rem; font-weight: 700; color: var(--text); line-height: 1.5; }
+.mq-answer-input {
+  width: 100%; padding: 0.75rem 0.85rem;
+  background: color-mix(in srgb, var(--field-bg) 88%, transparent);
+  backdrop-filter: blur(6px);
+  border: 2px solid var(--accent-20); border-radius: 12px;
+  color: var(--text); font-size: 0.88rem; font-family: inherit;
+  resize: vertical; min-height: 76px; outline: none; transition: all 0.2s;
+}
+.mq-answer-input:focus { border-color: var(--accent-40); box-shadow: 0 0 0 3px var(--accent-08); }
+.mq-answer-input::placeholder { color: color-mix(in srgb, var(--text) 30%, transparent); }
+
+.mq-check-btn, .mq-retry-btn {
+  padding: 0.7rem 1rem; border-radius: 12px; border: none;
+  font-size: 0.85rem; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.mq-check-btn {
+  background: var(--grad-cta); background-size: 200% auto; animation: shimmer 3s linear infinite;
+  color: var(--on-accent); box-shadow: 0 4px 14px var(--accent-25);
+}
+.mq-check-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px var(--accent-40); }
+.mq-check-btn:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.mq-retry-btn {
+  background: color-mix(in srgb, var(--field-bg) 90%, transparent);
+  border: 1px solid var(--line-strong); color: var(--text);
+}
+.mq-retry-btn:hover { background: var(--accent-08); border-color: var(--accent-40); }
+
+.mq-field-label {
+  font-size: 0.63rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--muted); opacity: 0.85;
+}
+.mq-your-answer, .mq-correct-answer {
+  background: color-mix(in srgb, var(--field-bg) 85%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.75rem;
+  display: flex; flex-direction: column; gap: 0.25rem;
+}
+.mq-your-answer-text, .mq-correct-answer-text {
+  font-size: 0.85rem; color: var(--text); line-height: 1.5;
+  white-space: pre-wrap; word-wrap: break-word;
+}
+.mq-verdict {
+  padding: 0.55rem 0.8rem; border-radius: 10px;
+  font-size: 0.85rem; font-weight: 700; text-align: center;
+}
+.mq-verdict.mq-correct {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 35%, transparent); color: var(--success);
+}
+.mq-verdict.mq-wrong {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  color: color-mix(in srgb, var(--danger) 85%, white);
+}
+
+.mq-extra-media { display: flex; gap: 0.5rem; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+.mq-extra-media::-webkit-scrollbar { display: none; }
+.mq-extra-media-item {
+  flex-shrink: 0; width: 140px; height: 90px; object-fit: cover;
+  border-radius: 8px; border: 1px solid var(--line);
+}
+
+/* ── Flashcard — real 3D flip; type a guess, tap Check, card flips ── */
+.mq-flip-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.5rem; padding: 0.6rem; }
+.mq-flip-card { flex: 1; min-height: 240px; perspective: 1400px; }
+.mq-flip-inner {
+  position: relative; width: 100%; height: 100%; min-height: 240px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mq-flip-card.is-flipped .mq-flip-inner { transform: rotateY(180deg); }
+.mq-flip-face {
+  position: absolute; inset: 0;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border-radius: 16px; overflow: hidden;
+  border: 2px solid var(--accent-25);
+  display: flex; flex-direction: column;
+}
+.mq-flip-front { justify-content: flex-end; background: linear-gradient(160deg, var(--accent-08), var(--card-bg)); }
+.mq-flip-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mq-flip-text-prompt {
+  position: relative; flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem 1rem; text-align: center; font-size: 1.1rem; font-weight: 600; color: var(--text);
+}
+.mq-flip-overlay {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; gap: 0.45rem;
+  padding: 0.75rem; margin-top: auto;
+  background: linear-gradient(0deg, color-mix(in srgb, var(--bg) 75%, transparent) 30%, transparent 100%);
+}
+.mq-flip-input {
+  width: 100%; padding: 0.65rem 0.8rem;
+  background: color-mix(in srgb, var(--field-bg) 90%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--accent-25); border-radius: 10px;
+  color: var(--text); font-size: 0.85rem; font-family: inherit; outline: none;
+}
+.mq-flip-input:focus { border-color: var(--accent-40); }
+.mq-flip-input::placeholder { color: color-mix(in srgb, var(--text) 30%, transparent); }
+.mq-flip-check-btn {
+  padding: 0.6rem; border-radius: 10px; border: none;
+  background: var(--grad-cta); background-size: 200% auto; animation: shimmer 3s linear infinite;
+  color: var(--on-accent); font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.mq-flip-check-btn:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.mq-flip-back {
+  transform: rotateY(180deg);
+  align-items: center; justify-content: center; text-align: center; gap: 0.5rem;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--success) 10%, transparent), var(--card-bg));
+  padding: 1.25rem 1rem;
+}
+.mq-flip-answer-text { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mq-flip-inner { transition: none; }
+}
+
+@media (max-width: 480px) {
+  .mq-qnav-pill { width: 26px; height: 26px; font-size: 0.68rem; }
+  .mq-flip-card { min-height: 200px; }
+  .mq-flip-inner { min-height: 200px; }
+  .mq-extra-media-item { width: 110px; height: 74px; }
+  .mq-panel--subject { padding: 0.7rem 0.75rem 0.85rem; }
+}

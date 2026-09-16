@@ -44,7 +44,7 @@ const uploadFile = async (file, folder) => {
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
     const fileExt = file.name.split('.').pop();
-    const filePath = `${user.id}/${timestamp}_${randomStr}.${fileExt}`;
+    const filePath = `${user.id}/${folder}/${timestamp}_${randomStr}.${fileExt}`;
     const { error: uploadError } = await supabase.storage
       .from('creatives').upload(filePath, file, { cacheControl: '3600', upsert: false });
     if (uploadError) throw uploadError;

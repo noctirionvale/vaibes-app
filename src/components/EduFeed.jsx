@@ -163,7 +163,6 @@ const CommentsSection = ({ post, user }) => {
 }
 
 // ── Card Header ──
-// ── Card Header ──
 const CardHeader = ({ post, locked, onToggleLock }) => {
   return (
     <div className="ef-relocated-meta">
@@ -191,8 +190,6 @@ const CardHeader = ({ post, locked, onToggleLock }) => {
     </div>
   )
 }
-
-
 
 // ── Card Footer ──
 const CardFooter = ({
@@ -264,16 +261,13 @@ const CardFooter = ({
   )
 }
 
-// ── Card Attachments ──
-
-// ── Card Attachments ──
+// ── Card Attachments (Community only now — manual quizzes render their
+// own background/media treatment inside their body, see renderMqAttachment) ──
 const CardAttachments = ({ attachments, variant = 'quiz' }) => {
   if (!attachments?.length) return null
 
   const audioAtts = attachments.filter(att => att.type?.startsWith('audio/'))
   const mediaAtts = attachments.filter(att => !att.type?.startsWith('audio/'))
-  // Only overlay when there's media to sit on top of — audio-only posts
-  // render inline/centered like before.
   const overlayAudio = audioAtts.length > 0 && mediaAtts.length > 0
 
   const renderAudio = (att, idx) => (
@@ -324,74 +318,8 @@ const CardAttachments = ({ attachments, variant = 'quiz' }) => {
   )
 }
 
-const CardPreview = ({ post, onPlay, completion }) => {
-  const quiz = post.quiz_data || {}
-  const isSubjectQuiz = post.type === 'subject_quiz' || quiz.mode === 'subject_qa'
-  const isFlashcard = post.type === 'flashcard' || quiz.mode === 'flashcard'
-  const isInteractiveQuiz = quiz.questions && quiz.questions.length > 0
-
-  let icon = '🧠', typeLabel = 'Quiz'
-  let meta = isInteractiveQuiz ? `${quiz.questions.length} question${quiz.questions.length > 1 ? 's' : ''}` : '1 question'
-  let teaser = post.title || quiz.question || 'Tap play to test your knowledge.'
-  let ctaLabel = '▶ Start Quiz'
-
-  if (isSubjectQuiz) {
-    icon = '📚'; typeLabel = 'Subject Quiz'
-    teaser = quiz.question || post.title || 'A question is waiting for your answer.'
-    meta = 'Free response'
-    ctaLabel = '✍️ Answer This'
-  } else if (isFlashcard) {
-    icon = '🃏'; typeLabel = 'Flashcard'
-    teaser = quiz.question || post.title || 'Guess the answer on the flashcard.'
-    meta = 'Flip to check'
-    ctaLabel = '👀 Flip & Guess'
-  }
-
-  const previewImage = isFlashcard
-    ? post.attachments?.find(a => a.type?.startsWith('image/'))
-    : null
-
-  return (
-    <div className="ef-card-preview">
-      <div className="ef-card-preview-scroll">
-        {previewImage && (
-          <div className="ef-card-preview-thumb">
-            <div className="ef-card-preview-thumb-bg" style={{ backgroundImage: `url(${previewImage.url})` }} aria-hidden="true" />
-            <img src={previewImage.url} alt="" />
-          </div>
-        )}
-        <div className="ef-card-preview-teaser">{teaser}</div>
-      </div>
-
-      <div className="ef-card-preview-footer">
-        <div className="ef-card-preview-footer-info">
-          <div className="ef-card-preview-meta">
-            {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
-            <span className="ef-card-preview-badge">{icon} {typeLabel}</span>
-            <span className="ef-card-preview-count">{meta}</span>
-          </div>
-        </div>
-
-        <div className="ef-card-preview-cta-slot">
-          {completion ? (
-            <DoneChip points={completion.points} />
-          ) : (
-            <button
-              className="ef-card-preview-cta"
-              onClick={(e) => { e.stopPropagation(); onPlay(); }}
-              type="button"
-            >
-              {ctaLabel}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Compact "done" chip — replaces the old full-width persistent badge.
-// Tapping briefly shows points earned, then fades — no permanent space cost. ──
+// ── Compact "done" chip — Community only (its preview card still gates
+// on a CTA before joining, so a done state has a slot to replace it). ──
 const DoneChip = ({ points }) => {
   const [toastOn, setToastOn] = useState(false)
   const timeoutRef = useRef(null)
@@ -413,10 +341,37 @@ const DoneChip = ({ points }) => {
   )
 }
 
+// ── Manual-quiz completion banner — informational only, never gates replay ──
+const CompletionBanner = ({ completion }) => {
+  if (!completion) return null
+  return <div className="mq-completed-banner">✅ Completed — you scored {completion.points} pts</div>
+}
+
+// ── Renders one non-background attachment for manual quizzes. The first
+// image on the post becomes the card's background (see QuizBody), so this
+// only ever handles leftover video / audio / youtube / extra images. ──
+const renderMqAttachment = (att, idx) => {
+  if (att.type === 'youtube')
+    return (
+      <iframe key={idx} src={att.embedUrl} width="100%" height="160" frameBorder="0"
+        allowFullScreen className="mq-extra-media-item" title={att.name} />
+    )
+  if (att.type?.startsWith('video/'))
+    return <video key={idx} src={att.url} controls className="mq-extra-media-item" />
+  if (att.type?.startsWith('audio/'))
+    return (
+      <div key={idx} className="edufeed-att-audio">
+        <span className="edufeed-att-audio-icon">🎵</span>
+        <audio src={att.url} controls className="edufeed-att-audio-player" />
+      </div>
+    )
+  if (att.type?.startsWith('image/'))
+    return <img key={idx} src={att.url} alt={att.name} className="mq-extra-media-item" />
+  return <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" className="edufeed-att-file">📎 {att.name}</a>
+}
+
 const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => {
   const ended = community.status !== 'live'
-  // 3 separate bordered pills → 1 quiet line. Player count dropped —
-  // useful once you're in the room, not a deciding factor before joining.
   const statsLine = [
     `⏱️ ${community.time_limit_minutes ?? '∞'}m`,
     (community.difficulty || 'medium').replace(/^\w/, c => c.toUpperCase()),
@@ -458,9 +413,11 @@ const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => 
   )
 }
 
-
-// ── HOC: Media-First Layout ──
-const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
+// ── HOC: card chrome (header/footer/comments/share/delete) around any
+// post body. Manual quizzes (Studio/Subject/Flashcard) render fully inline
+// via ownsAttachments+fetchCompletion; Community keeps its own internal
+// join/race modal flow, untouched. ──
+const withCardActions = (BodyComponent, { ownsAttachments = false, fetchCompletion = false } = {}) => {
   return function WrappedCard({
     post: initialPost, onLike, liked, user, isPro,
     locked, onToggleLock, onPostDeleted, onEditPost,
@@ -468,16 +425,15 @@ const withCardActions = (BodyComponent, { selfContained = false } = {}) => {
   }) {
     const [post] = useState(initialPost)
     const [commentsOpen, setCommentsOpen] = useState(false)
-const [hasOpenedComments, setHasOpenedComments] = useState(false)
+    const [hasOpenedComments, setHasOpenedComments] = useState(false)
     const [deleteState, setDeleteState] = useState('idle')
     const [commentCount] = useState(post.comment_count ?? 0)
-    const [showPlayModal, setShowPlayModal] = useState(false)
-    const [hasOpenedQuiz, setHasOpenedQuiz] = useState(false)
     const [shared, setShared] = useState(false)
-    const [completion, setCompletion] = useState(selfContained ? null : undefined)
+    const [completion, setCompletion] = useState(fetchCompletion ? undefined : null)
 
     useEffect(() => {
-      if (selfContained || !user?.id) { setCompletion(null); return }
+      if (!fetchCompletion) return
+      if (!user?.id) { setCompletion(null); return }
       let cancelled = false
       supabase.from('edufeed_quiz_completions')
         .select('points')
@@ -492,9 +448,6 @@ const [hasOpenedComments, setHasOpenedComments] = useState(false)
     const handleDelete = () => setDeleteState('confirm')
     const handleCancel = () => setDeleteState('idle')
 
-    // open always flips hasOpenedComments on; close just hides it — the
-    // modal stays mounted after first open so CommentsSection's draft text
-    // and loaded list survive being closed and reopened.
     const handleToggleComments = () => {
       if (commentsOpen) { setCommentsOpen(false); return }
       setHasOpenedComments(true)
@@ -547,24 +500,21 @@ const [hasOpenedComments, setHasOpenedComments] = useState(false)
       else setDeleteState('idle')
     }
 
-    const openQuiz = () => { if (completion) return; setHasOpenedQuiz(true); setShowPlayModal(true) }
-
     const isCommunity = post.type === 'community' || post.community_data?.is_community
 
-return (
-  <div className="edufeed-card-inner ef-media-first">
-    <CardHeader post={post} locked={locked} onToggleLock={onToggleLock} badges={badges} onOpenDashboard={onOpenDashboard} />
+    return (
+      <div className="edufeed-card-inner ef-media-first">
+        <CardHeader post={post} locked={locked} onToggleLock={onToggleLock} badges={badges} onOpenDashboard={onOpenDashboard} />
 
-    <CardAttachments attachments={post.attachments} variant={isCommunity ? 'community' : 'quiz'} />
-
-        {selfContained ? (
-          <BodyComponent
-            post={post} locked={locked} onToggleLock={onToggleLock}
-            user={user} isPro={isPro} onOpenRacePlay={onOpenRacePlay}
-          />
-        ) : (
-          <CardPreview post={post} onPlay={openQuiz} completion={completion} />
+        {!ownsAttachments && (
+          <CardAttachments attachments={post.attachments} variant={isCommunity ? 'community' : 'quiz'} />
         )}
+
+        <BodyComponent
+          post={post} locked={locked} onToggleLock={onToggleLock}
+          user={user} isPro={isPro} onOpenRacePlay={onOpenRacePlay}
+          completion={completion}
+        />
 
         <CardFooter
           post={post} onLike={onLike} liked={liked} user={user} isPro={isPro}
@@ -591,22 +541,6 @@ return (
           </div>,
           document.body
         )}
-
-        {!selfContained && hasOpenedQuiz && createPortal(
-          <div
-            className={`modal-overlay edufeed-portal-overlay ${showPlayModal ? '' : 'ef-quiz-play-hidden'}`}
-            onClick={() => setShowPlayModal(false)}
-          >
-            <div className="modal-content ef-quiz-play-modal" onClick={e => e.stopPropagation()}>
-              <button className="ef-quiz-play-close" onClick={() => setShowPlayModal(false)} aria-label="Close">✕</button>
-              <BodyComponent
-                post={post} locked={locked} onToggleLock={onToggleLock}
-                user={user} isPro={isPro} onOpenRacePlay={onOpenRacePlay}
-              />
-            </div>
-          </div>,
-          document.body
-        )}
       </div>
     )
   }
@@ -614,7 +548,10 @@ return (
 
 const QUESTION_TIME_LIMIT = 20 // seconds — client-side deterrent only, not tamper-proof
 
-const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null, postId = null, postType = 'quiz', onComplete = null }) => {
+// ── Studio Quiz — plays inline, no modal. Questions are sequential-unlock:
+// the horizontal tab strip lets you jump back to review anything already
+// answered, but the next question stays locked until the current one is. ──
+const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null, postId = null, postType = 'quiz', onComplete = null, completion = null }) => {
   const [selected, setSelected] = useState(null)
   const [answered, setAnswered] = useState(false)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -680,21 +617,20 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
     }
   }
 
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < totalQuestions - 1) {
-      setCurrentQuestionIndex(prev => prev + 1)
-      setSelected(null)
-      setAnswered(false)
-    } else {
-      setShowSummary(true)
-    }
+  // Single nav primitive for both the horizontal question tabs and the
+  // summary screen's review strip. i is only reachable if it's an already-
+  // answered question or the single next unlocked one — sequential unlock.
+  const goToQuestion = (i) => {
+    if (i > answers.length) return
+    setCurrentQuestionIndex(i)
+    if (answers[i]) { setSelected(answers[i].selected); setAnswered(true) }
+    else { setSelected(null); setAnswered(false) }
+    setShowSummary(false)
   }
 
-    const handleReviewQuestion = (index) => {
-    setCurrentQuestionIndex(index)
-    setSelected(answers[index]?.selected ?? null)
-    setAnswered(true)
-    setShowSummary(false)
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < totalQuestions - 1) goToQuestion(currentQuestionIndex + 1)
+    else setShowSummary(true)
   }
 
   const scrollReview = (dir) => {
@@ -724,193 +660,200 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
 
   if (showSummary) {
     return (
-      <div className="edufeed-quiz-body">
-        <div className="quiz-summary-header">
-          <div className="summary-icon">🎉</div>
-          <h3>Quiz Complete!</h3>
-          <div className="summary-score">
-            <div className="score-circle" style={{
-              background: `conic-gradient(var(--accent1) ${percentage}%, rgba(255,255,255,0.1) ${percentage}%)`
-            }}>
-              <div className="score-inner">
-                <div className="score-percentage">{percentage}%</div>
-                <div className="score-fraction">{correctAnswers}/{totalQuestions}</div>
-              </div>
-            </div>
-          </div>
-          <div className="summary-stats">
-            <div className="stat-item">
-              <span className="stat-label">Points Earned</span>
-              <span className="stat-value points">+{pointsEarned}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Accuracy</span>
-              <span className="stat-value">{percentage}%</span>
-            </div>
-          </div>
-        </div>
-        <div className="quiz-review-section">
-          <div className="quiz-review-header-row">
-            <h4>Review Answers</h4>
-            {answers.length > 2 && (
-              <div className="review-scroll-nav">
-                <button type="button" className="review-scroll-btn" onClick={() => scrollReview(-1)} aria-label="Scroll left">‹</button>
-                <button type="button" className="review-scroll-btn" onClick={() => scrollReview(1)} aria-label="Scroll right">›</button>
-              </div>
-            )}
-          </div>
-          <div className="review-questions-scroll" ref={reviewScrollRef}>
-            {answers.map((answer, idx) => (
-              <button
-                key={idx}
-                className={`review-question-card ${answer.isCorrect ? 'correct' : 'wrong'}`}
-                onClick={() => handleReviewQuestion(idx)}
-              >
-                <div className="review-q-number">Q{idx + 1}</div>
-                <div className="review-q-text">{answer.question}</div>
-                <div className="review-q-result">
-                  {answer.isCorrect ? '✅' : answer.timedOut ? '⌛' : '❌'} {answer.isCorrect ? 'Correct' : answer.timedOut ? 'Timed Out' : 'Wrong'}
+      <div className="mq-body mq-body--no-image">
+        <div className="mq-bg mq-bg-none" aria-hidden="true" />
+        <div className="mq-panel edufeed-quiz-body">
+          <CompletionBanner completion={completion} />
+          <div className="quiz-summary-header">
+            <div className="summary-icon">🎉</div>
+            <h3>Quiz Complete!</h3>
+            <div className="summary-score">
+              <div className="score-circle" style={{
+                background: `conic-gradient(var(--accent1) ${percentage}%, rgba(255,255,255,0.1) ${percentage}%)`
+              }}>
+                <div className="score-inner">
+                  <div className="score-percentage">{percentage}%</div>
+                  <div className="score-fraction">{correctAnswers}/{totalQuestions}</div>
                 </div>
-              </button>
-            ))}
+              </div>
+            </div>
+            <div className="summary-stats">
+              <div className="stat-item">
+                <span className="stat-label">Points Earned</span>
+                <span className="stat-value points">+{pointsEarned}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Accuracy</span>
+                <span className="stat-value">{percentage}%</span>
+              </div>
+            </div>
           </div>
+          <div className="quiz-review-section">
+            <div className="quiz-review-header-row">
+              <h4>Review Answers</h4>
+              {answers.length > 2 && (
+                <div className="review-scroll-nav">
+                  <button type="button" className="review-scroll-btn" onClick={() => scrollReview(-1)} aria-label="Scroll left">‹</button>
+                  <button type="button" className="review-scroll-btn" onClick={() => scrollReview(1)} aria-label="Scroll right">›</button>
+                </div>
+              )}
+            </div>
+            <div className="review-questions-scroll" ref={reviewScrollRef}>
+              {answers.map((answer, idx) => (
+                <button
+                  key={idx}
+                  className={`review-question-card ${answer.isCorrect ? 'correct' : 'wrong'}`}
+                  onClick={() => goToQuestion(idx)}
+                >
+                  <div className="review-q-number">Q{idx + 1}</div>
+                  <div className="review-q-text">{answer.question}</div>
+                  <div className="review-q-result">
+                    {answer.isCorrect ? '✅' : answer.timedOut ? '⌛' : '❌'} {answer.isCorrect ? 'Correct' : answer.timedOut ? 'Timed Out' : 'Wrong'}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            className="edufeed-quiz-unlock-btn"
+            onClick={() => {
+              setShowSummary(false)
+              setCurrentQuestionIndex(0)
+              setSelected(null)
+              setAnswered(false)
+              setAnswers([])
+              setPointsEarned(0)
+              setTimeLeft(QUESTION_TIME_LIMIT)
+              recordedRef.current = false
+            }}
+            style={{ marginTop: '1rem', width: '100%' }}
+          >
+            🔄 Retake Quiz
+          </button>
         </div>
-        <button
-          className="edufeed-quiz-unlock-btn"
-          onClick={() => {
-            setShowSummary(false)
-            setCurrentQuestionIndex(0)
-            setSelected(null)
-            setAnswered(false)
-            setAnswers([])
-            setPointsEarned(0)
-            setTimeLeft(QUESTION_TIME_LIMIT)
-            recordedRef.current = false
-          }}
-          style={{ marginTop: '1rem', width: '100%' }}
-        >
-          🔄 Retake Quiz
-        </button>
       </div>
     )
   }
 
   return (
-    <div className="edufeed-quiz-body">
-      {subject && <span className="edufeed-subject-tag">{subject}</span>}
-      {showPointsAnimation && (
-        <div className="points-gain-animation">+{currentPoints} pts</div>
-      )}
-      <div className="quiz-progress-bar">
-        <div className="quiz-progress-fill"
-          style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }} />
-        <div className="quiz-progress-text">
-          Question {currentQuestionIndex + 1} of {totalQuestions}
-        </div>
-     </div>
-      {!answered && (
-        <div className={`ef-timer-chip ${timeLeft <= 5 ? 'urgent' : ''}`}>⏱ {timeLeft}s left</div>
-      )}
-      <div className="edufeed-quiz-question">{currentQuestion.question}</div>
-      {currentQuestion.image_url && (
-  <img 
-    src={currentQuestion.image_url} 
-    alt="Question" 
-    className="edufeed-att-media"
-    style={{ 
-      marginBottom: '1rem', 
-      borderRadius: '12px',
-      maxHeight: '420px',
-      width: '100%',
-      objectFit: 'contain'
-    }} 
-  />
-)}
-      <div className="edufeed-quiz-options">
-        {currentOptions.map((opt, i) => {
-          let cls = 'edufeed-quiz-option'
-          if (answered) {
-            if (i === currentCorrect) cls += ' reveal-correct'
-            if (i === selected && i !== currentCorrect) cls += ' selected-wrong'
-            if (i === selected && i === currentCorrect) cls += ' selected-correct'
-          }
-          return (
-            <button key={i} className={cls}
-              onClick={() => handleAnswer(i)}
-              disabled={answered}>
-              <span className="edufeed-option-letter">{letters[i]}</span>
-              {opt}
-            </button>
-          )
-        })}
-      </div>
-      {answered && (
-        <>
-          <div className={`edufeed-quiz-result ${selected === currentCorrect ? 'correct' : 'wrong'}`}>
-            {selected === currentCorrect
-              ? '✅ Correct!'
-              : selected === null
-                ? `⌛ Time's up — Answer: ${currentOptions[currentCorrect]}`
-                : `❌ Answer: ${currentOptions[currentCorrect]}`}
+    <div className={`mq-body ${currentQuestion.image_url ? '' : 'mq-body--no-image'}`}>
+      {currentQuestion.image_url
+        ? <div className="mq-bg" style={{ backgroundImage: `url(${currentQuestion.image_url})` }} aria-hidden="true" />
+        : <div className="mq-bg mq-bg-none" aria-hidden="true" />}
+      <div className="mq-scrim" aria-hidden="true" />
+      <div className="mq-panel edufeed-quiz-body">
+        <CompletionBanner completion={completion} />
+
+        {totalQuestions > 1 && (
+          <div className="mq-qnav-scroll">
+            {questions.map((_, i) => {
+              const ans = answers[i]
+              const locked = i > answers.length
+              let cls = 'mq-qnav-pill'
+              if (i === currentQuestionIndex) cls += ' is-current'
+              if (ans) cls += ans.isCorrect ? ' is-correct' : ' is-wrong'
+              if (locked) cls += ' is-locked'
+              return (
+                <button key={i} type="button" className={cls} disabled={locked} onClick={() => goToQuestion(i)}>
+                  {i + 1}
+                </button>
+              )
+            })}
           </div>
-          {currentQuestionIndex < totalQuestions - 1 ? (
-            <button className="edufeed-quiz-unlock-btn next-btn" onClick={handleNextQuestion}
-              style={{ marginTop: '0.5rem', width: '100%' }}>
-              Next Question →
-            </button>
-          ) : (
-            <button className="edufeed-quiz-unlock-btn see-results-btn" onClick={handleNextQuestion}
-              style={{ marginTop: '0.5rem', width: '100%',
-                      background: 'linear-gradient(135deg, #10b981, #059669)',
-                      color: 'white',
-                      fontWeight: '700',
-                      border: 'none',
-                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)' }}>
-              🎉 See Results
-            </button>
-          )}
-        </>
-      )}
+        )}
+
+        {subject && <span className="edufeed-subject-tag">{subject}</span>}
+        {showPointsAnimation && (
+          <div className="points-gain-animation">+{currentPoints} pts</div>
+        )}
+        <div className="quiz-progress-bar">
+          <div className="quiz-progress-fill"
+            style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }} />
+          <div className="quiz-progress-text">
+            Question {currentQuestionIndex + 1} of {totalQuestions}
+          </div>
+        </div>
+        {!answered && (
+          <div className={`ef-timer-chip ${timeLeft <= 5 ? 'urgent' : ''}`}>⏱ {timeLeft}s left</div>
+        )}
+        <div className="edufeed-quiz-question">{currentQuestion.question}</div>
+        <div className="edufeed-quiz-options">
+          {currentOptions.map((opt, i) => {
+            let cls = 'edufeed-quiz-option'
+            if (answered) {
+              if (i === currentCorrect) cls += ' reveal-correct'
+              if (i === selected && i !== currentCorrect) cls += ' selected-wrong'
+              if (i === selected && i === currentCorrect) cls += ' selected-correct'
+            }
+            return (
+              <button key={i} className={cls}
+                onClick={() => handleAnswer(i)}
+                disabled={answered}>
+                <span className="edufeed-option-letter">{letters[i]}</span>
+                {opt}
+              </button>
+            )
+          })}
+        </div>
+        {answered && (
+          <>
+            <div className={`edufeed-quiz-result ${selected === currentCorrect ? 'correct' : 'wrong'}`}>
+              {selected === currentCorrect
+                ? '✅ Correct!'
+                : selected === null
+                  ? `⌛ Time's up — Answer: ${currentOptions[currentCorrect]}`
+                  : `❌ Answer: ${currentOptions[currentCorrect]}`}
+            </div>
+            {currentQuestionIndex < totalQuestions - 1 ? (
+              <button className="edufeed-quiz-unlock-btn next-btn" onClick={handleNextQuestion}>
+                Next Question →
+              </button>
+            ) : (
+              <button className="edufeed-quiz-unlock-btn see-results-btn" onClick={handleNextQuestion}>
+                🎉 See Results
+              </button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
 
-// ── QuizBody — handles ALL quiz types: Studio Quiz, Subject Quiz, Flashcard ──
-const QuizBody = ({ post, user }) => {
-  // ── Subject Quiz hooks (always declared, used conditionally) ──
-  const [revealed, setRevealed] = useState(false)
-  const [selfGraded, setSelfGraded] = useState(null)
-  const [userAnswer, setUserAnswer] = useState('')
-  const [hasAnswered, setHasAnswered] = useState(false)
-
-  // ── Flashcard hooks ──
-  const [userGuess, setUserGuess] = useState('')
-  const [hasGuessed, setHasGuessed] = useState(false)
-
+// ── QuizBody — Studio Quiz, Subject Quiz, Flashcard. All three play inline,
+// no modal. An optional first image doubles as the card's background for
+// Studio (per-question) and Subject Quiz; Flashcard keeps the image as its
+// literal card face and flips it on check. ──
+const QuizBody = ({ post, user, completion }) => {
+  // Subject Quiz
+  const [sqAnswer, setSqAnswer] = useState('')
+  const [sqAnswered, setSqAnswered] = useState(false)
+  const [sqCorrect, setSqCorrect] = useState(null)
   const [sqTimeLeft, setSqTimeLeft] = useState(QUESTION_TIME_LIMIT)
   const [sqTimedOut, setSqTimedOut] = useState(false)
+
+  // Flashcard
+  const [fcGuess, setFcGuess] = useState('')
+  const [fcFlipped, setFcFlipped] = useState(false)
+  const [fcCorrect, setFcCorrect] = useState(null)
   const [fcTimeLeft, setFcTimeLeft] = useState(QUESTION_TIME_LIMIT)
   const [fcTimedOut, setFcTimedOut] = useState(false)
 
   useEffect(() => {
-    if (hasAnswered || sqTimedOut) return
+    if (sqAnswered || sqTimedOut) return
     if (sqTimeLeft <= 0) { setSqTimedOut(true); return }
     const id = setInterval(() => setSqTimeLeft(t => (t > 0 ? t - 1 : 0)), 1000)
     return () => clearInterval(id)
-  }, [hasAnswered, sqTimedOut, sqTimeLeft])
+  }, [sqAnswered, sqTimedOut, sqTimeLeft])
 
   useEffect(() => {
-    if (hasGuessed || fcTimedOut) return
+    if (fcFlipped || fcTimedOut) return
     if (fcTimeLeft <= 0) { setFcTimedOut(true); return }
     const id = setInterval(() => setFcTimeLeft(t => (t > 0 ? t - 1 : 0)), 1000)
     return () => clearInterval(id)
-  }, [hasGuessed, fcTimedOut, fcTimeLeft])
+  }, [fcFlipped, fcTimedOut, fcTimeLeft])
 
   const quiz = post.quiz_data || {}
-  
-  // Subject Quiz has no fixed point value (it's free-response, self-graded),
-  // so a correct self-grade is worth the same flat 5 pts the UI already
-  // promises below ("🎉 Great job! +5 points").
   const SUBJECT_QUIZ_POINTS = 5
   const FLASHCARD_POINTS = 5
 
@@ -926,256 +869,141 @@ const QuizBody = ({ post, user }) => {
     })
   }
 
-  const handleSelfGrade = (isCorrect) => {
-    setSelfGraded(isCorrect ? 'correct' : 'wrong')
-    recordCompletion(isCorrect && !sqTimedOut ? SUBJECT_QUIZ_POINTS : 0, 'subject_quiz')
-   }
-  
-  // ── Check if this is a Subject Quiz ──
+  const firstImage = post.attachments?.find(a => a.type?.startsWith('image/'))
+  const extraAttachments = post.attachments?.filter(a => a !== firstImage) || []
+
+  // ── SUBJECT QUIZ — type an answer, tap Check, immediate auto-graded
+  // green/red. Optional image renders as a background behind the panel. ──
   if (post.type === 'subject_quiz' || quiz.mode === 'subject_qa') {
-    return (
-      <div className="edufeed-quiz-body subject-quiz-body">
-        {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
-        
-        {post.attachments && post.attachments.length > 0 && (
-  <div className="subject-qa-media">
-    {post.attachments.filter(att => att.type?.startsWith('audio/')).map((att, idx) => (
-      <div key={`audio-${idx}`} className="subject-qa-audio-item">
-        <span className="subject-qa-audio-icon">🎵</span>
-        <audio src={att.url} controls className="subject-qa-audio-player" />
-      </div>
-    ))}
-    {post.attachments.filter(att => !att.type?.startsWith('audio/')).map((att, idx) => {
-      if (att.type === 'youtube') {
-        return (
-          <div key={idx} className="subject-qa-media-item">
-            <iframe 
-              src={att.embedUrl || `https://www.youtube-nocookie.com/embed/${att.url.split('v=')[1]}`}
-              width="100%" height="200" frameBorder="0" allowFullScreen title={att.name} className="edufeed-att-media" />
-          </div>
-        );
-      }
-      if (att.type?.startsWith('video/')) {
-        return (
-          <div key={idx} className="subject-qa-media-item">
-            <video src={att.url} controls className="edufeed-att-media" />
-          </div>
-        );
-      }
-      if (att.type?.startsWith('image/')) {
-        return (
-          <div key={idx} className="subject-qa-media-item">
-            <img src={att.url} alt={att.name} className="edufeed-att-media" />
-          </div>
-        );
-      }
-      return null;
-    })}
-  </div>
-)}
-        
-        <div className="sq-block sq-question-block">
-          <div className="sq-label">❓ Question</div>
-          <div className="sq-text sq-question-text">
-            {quiz.question || post.title || 'No question provided'}
-          </div>
-        </div>
-        
-        {!hasAnswered ? (
-          <>
-            <div className={`ef-timer-chip ${sqTimedOut || sqTimeLeft <= 5 ? 'urgent' : ''}`}>
-              {sqTimedOut ? "⏱️ Time's up — this one won't earn points, but go ahead and finish" : `⏱ ${sqTimeLeft}s to answer for points`}
-            </div>
-            <div className="sq-answer-input-wrapper">
-              <textarea
-                className="sq-answer-input"
-                placeholder="Type your answer here..."
-                value={userAnswer}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <button 
-              className="sq-submit-btn" 
-              onClick={() => setHasAnswered(true)}
-              disabled={!userAnswer.trim()}
-            >
-              ✓ Submit Answer
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="sq-user-answer">
-              <div className="sq-label">📝 Your Answer</div>
-              <div className="sq-text">{userAnswer}</div>
-            </div>
-            
-            {!revealed ? (
-              <button 
-                className="sq-reveal-btn" 
-                onClick={() => setRevealed(true)}
-              >
-                👀 Reveal Correct Answer
-              </button>
-            ) : (
-              <>
-                <div className="sq-block sq-answer-block">
-                  <div className="sq-label sq-answer-label">✅ Correct Answer</div>
-                  <div className="sq-text sq-answer-text">
-                    {quiz.answer || 'No answer provided'}
-                  </div>
-                </div>
-                
-                {!selfGraded ? (
-                  <div className="sq-self-grade">
-                    <div className="sq-self-grade-prompt">Did you get it right?</div>
-                    <div className="sq-self-grade-btns">
-                      <button 
-                        className="sq-grade-btn sq-grade-correct"
-                        onClick={() => handleSelfGrade(true)}
-                      >
-                        ✅ Yes, correct!
-                      </button>
-                      <button 
-                        className="sq-grade-btn sq-grade-wrong"
-                        onClick={() => handleSelfGrade(false)}
-                      >
-                        ❌ Need review
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={`sq-feedback sq-feedback-${selfGraded}`}>
-                    {selfGraded === 'correct'
-                      ? (sqTimedOut ? '⏱️ Correct — but time ran out, no points this round' : '🎉 Great job! +5 points')
-                      : '📚 Keep practicing!'}
-                  </div>
-                )}
-                
-                <button 
-                  className="sq-reset-btn" 
-                  onClick={() => { 
-                    setUserAnswer(''); 
-                    setHasAnswered(false); 
-                    setRevealed(false); 
-                    setSelfGraded(null); 
-                    setSqTimeLeft(QUESTION_TIME_LIMIT);
-                    setSqTimedOut(false);
-                  }}
-                >
-                  ↺ Try Another
-                </button>
-              </>
-            )}
-          </>
-        )}
-      </div>
-    )
-  }
-
-  // ── Check if this is a Flashcard ──
-  if (post.type === 'flashcard' || quiz.mode === 'flashcard') {
-    const hasImage = post.attachments?.some(a => a.type?.startsWith('image/'))
-
-    const handleFlashcardSubmit = () => {
-      const isCorrect = userGuess.trim().toLowerCase() === quiz.answer?.toLowerCase()
-      recordCompletion(isCorrect && !fcTimedOut ? FLASHCARD_POINTS : 0, 'flashcard')
-      setHasGuessed(true)
+    const handleCheck = () => {
+      if (!sqAnswer.trim()) return
+      const correct = sqAnswer.trim().toLowerCase() === (quiz.answer || '').trim().toLowerCase()
+      setSqCorrect(correct)
+      setSqAnswered(true)
+      recordCompletion(correct && !sqTimedOut ? SUBJECT_QUIZ_POINTS : 0, 'subject_quiz')
+    }
+    const resetSq = () => {
+      setSqAnswer(''); setSqAnswered(false); setSqCorrect(null)
+      setSqTimeLeft(QUESTION_TIME_LIMIT); setSqTimedOut(false)
     }
 
     return (
-      <div className="edufeed-flashcard-wrap">
-        {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
-        
-        {!hasGuessed ? (
-          <div className="edufeed-flashcard edufeed-flashcard-front">
-            {hasImage && (
-              <div className="flashcard-image-container">
-                {post.attachments.filter(a => a.type?.startsWith('image/')).map((img, idx) => (
-                  <img key={idx} src={img.url} alt="Flashcard question" className="flashcard-image" />
-                ))}
+      <div className={`mq-body ${firstImage ? '' : 'mq-body--no-image'}`}>
+        {firstImage
+          ? <div className="mq-bg" style={{ backgroundImage: `url(${firstImage.url})` }} aria-hidden="true" />
+          : <div className="mq-bg mq-bg-none" aria-hidden="true" />}
+        <div className="mq-scrim" aria-hidden="true" />
+        <div className="mq-panel mq-panel--subject">
+          <CompletionBanner completion={completion} />
+          {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
+          {extraAttachments.length > 0 && (
+            <div className="mq-extra-media">{extraAttachments.map((att, i) => renderMqAttachment(att, i))}</div>
+          )}
+          <div className="mq-question">{quiz.question || post.title || 'No question provided'}</div>
+
+          {!sqAnswered ? (
+            <>
+              <div className={`ef-timer-chip ${sqTimedOut || sqTimeLeft <= 5 ? 'urgent' : ''}`}>
+                {sqTimedOut ? "⏱️ Time's up — this one won't earn points, go ahead" : `⏱ ${sqTimeLeft}s to answer for points`}
               </div>
-            )}
-            
-            {!hasImage && (
-              <>
-                <span className="edufeed-flashcard-side">❓ Question</span>
-                <div className="edufeed-flashcard-text">
-                  {quiz.question || post.title}
-                </div>
-              </>
-            )}
-            
-            <div className={`ef-timer-chip ${fcTimedOut || fcTimeLeft <= 5 ? 'urgent' : ''}`}>
-              {fcTimedOut ? "⏱️ Time's up — won't earn points, but go ahead" : `⏱ ${fcTimeLeft}s to answer for points`}
-            </div>
-            <div className="flashcard-guess-section">
-              <input
-                type="text"
-                className="flashcard-guess-input"
-                placeholder="Type your answer..."
-                value={userGuess}
-                onChange={(e) => setUserGuess(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && userGuess.trim()) {
-                    handleFlashcardSubmit()
-                  }
-                }}
+              <textarea
+                className="mq-answer-input"
+                placeholder="Type your answer here…"
+                value={sqAnswer}
+                onChange={e => setSqAnswer(e.target.value)}
+                rows={3}
               />
-              <button 
-                className="flashcard-submit-btn"
-                onClick={handleFlashcardSubmit}
-                disabled={!userGuess.trim()}
-              >
-                Submit Answer
+              <button className="mq-check-btn" onClick={handleCheck} disabled={!sqAnswer.trim()}>
+                ✓ Check Answer
               </button>
-            </div>
-            
-            <span className="edufeed-flashcard-hint">
-              {hasImage ? 'Identify what\'s in the image' : 'Tap to reveal answer'}
-            </span>
-          </div>
-        ) : (
-          <div className="edufeed-flashcard edufeed-flashcard-back flipped">
-            {hasImage && (
-              <div className="flashcard-image-container">
-                {post.attachments.filter(a => a.type?.startsWith('image/')).map((img, idx) => (
-                  <img key={idx} src={img.url} alt="Flashcard question" className="flashcard-image" />
-                ))}
+            </>
+          ) : (
+            <>
+              <div className="mq-your-answer">
+                <span className="mq-field-label">Your answer</span>
+                <div className="mq-your-answer-text">{sqAnswer}</div>
               </div>
-            )}
-            
-            <span className="edufeed-flashcard-side">✅ Answer</span>
-            <div className="edufeed-flashcard-text">
-              {quiz.answer}
-            </div>
-            
-            {userGuess.trim().toLowerCase() === quiz.answer?.toLowerCase() && (
-              <div className="flashcard-correct-badge">
-                {fcTimedOut ? '⏱️ Correct — but over time, no points' : '✓ Correct!'}
+              <div className={`mq-verdict ${sqCorrect ? 'mq-correct' : 'mq-wrong'}`}>
+                {sqCorrect
+                  ? (sqTimedOut ? '⏱️ Correct — but time ran out, no points this round' : '✅ Correct! +5 points')
+                  : '❌ Not quite'}
               </div>
-            )}
-            
-            <button 
-              className="flashcard-reset-btn"
-              onClick={() => {
-                setUserGuess('')
-                setHasGuessed(false)
-                setFcTimeLeft(QUESTION_TIME_LIMIT)
-                setFcTimedOut(false)
-              }}
-            >
-              Try Again
-            </button>
-          </div>
-        )}
+              {!sqCorrect && (
+                <div className="mq-correct-answer">
+                  <span className="mq-field-label">Correct answer</span>
+                  <div className="mq-correct-answer-text">{quiz.answer || 'No answer provided'}</div>
+                </div>
+              )}
+              <button className="mq-retry-btn" onClick={resetSq}>↺ Try Another Answer</button>
+            </>
+          )}
+        </div>
       </div>
     )
   }
 
-  // ── Studio Quiz (multi-choice) — delegate to the shared player. Legacy
+  // ── FLASHCARD — front face is the image (or question text if none), a
+  // guess input + Check button sit over it, then the card flips to reveal
+  // the answer with a green/red verdict. ──
+  if (post.type === 'flashcard' || quiz.mode === 'flashcard') {
+    const handleFlip = () => {
+      if (fcFlipped || !fcGuess.trim()) return
+      const correct = fcGuess.trim().toLowerCase() === (quiz.answer || '').trim().toLowerCase()
+      setFcCorrect(correct)
+      recordCompletion(correct && !fcTimedOut ? FLASHCARD_POINTS : 0, 'flashcard')
+      setFcFlipped(true)
+    }
+    const resetFc = () => {
+      setFcGuess(''); setFcFlipped(false); setFcCorrect(null)
+      setFcTimeLeft(QUESTION_TIME_LIMIT); setFcTimedOut(false)
+    }
+
+    return (
+      <div className="mq-flip-wrap">
+        <CompletionBanner completion={completion} />
+        {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
+        <div className={`mq-flip-card ${fcFlipped ? 'is-flipped' : ''}`}>
+          <div className="mq-flip-inner">
+            <div className="mq-flip-face mq-flip-front">
+              {firstImage ? (
+                <img src={firstImage.url} alt="" className="mq-flip-image" />
+              ) : (
+                <div className="mq-flip-text-prompt">{quiz.question || post.title}</div>
+              )}
+              <div className="mq-flip-overlay">
+                <div className={`ef-timer-chip ${fcTimedOut || fcTimeLeft <= 5 ? 'urgent' : ''}`}>
+                  {fcTimedOut ? "⏱️ Time's up — won't earn points, go ahead" : `⏱ ${fcTimeLeft}s to answer for points`}
+                </div>
+                <input
+                  type="text"
+                  className="mq-flip-input"
+                  placeholder="Type your answer…"
+                  value={fcGuess}
+                  onChange={e => setFcGuess(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && fcGuess.trim()) handleFlip() }}
+                />
+                <button className="mq-flip-check-btn" onClick={handleFlip} disabled={!fcGuess.trim()}>
+                  ✓ Check
+                </button>
+              </div>
+            </div>
+            <div className="mq-flip-face mq-flip-back">
+              <div className={`mq-verdict ${fcCorrect ? 'mq-correct' : 'mq-wrong'}`}>
+                {fcCorrect ? (fcTimedOut ? '⏱️ Correct — but over time, no points' : '✅ Correct!') : '❌ Not quite'}
+              </div>
+              <span className="mq-field-label">Answer</span>
+              <div className="mq-flip-answer-text">{quiz.answer}</div>
+              <button className="mq-retry-btn" onClick={resetFc}>↺ Flip Back &amp; Retry</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── STUDIO QUIZ (multi-choice) — delegate to the shared player. Legacy
   // single-question posts (flat quiz.options/correct_index) get normalized
-  // into the same one-question-array shape the interactive format already uses. ──
+  // into the same one-question-array shape the interactive format uses. ──
   const isInteractiveQuiz = quiz.questions && quiz.questions.length > 0
   const studioQuestions = isInteractiveQuiz
     ? quiz.questions
@@ -1193,11 +1021,13 @@ const QuizBody = ({ post, user }) => {
       userId={user?.id}
       postId={post.id}
       postType="quiz"
+      completion={completion}
     />
   )
 }
 
-// ── Community Body ──
+// ── Community Body (unchanged — live rooms keep their own join/race modal
+// flow; these UX changes are scoped to manual quizzes only) ──
 const CommunityBody = ({ post, user, isPro, onOpenRacePlay }) => {
   const [loading, setLoading] = useState(true)
   const [community, setCommunity] = useState(null)
@@ -1262,9 +1092,6 @@ const CommunityBody = ({ post, user, isPro, onOpenRacePlay }) => {
 
   const isRace = community.room_mode === 'race'
 
-  // CommunityPreview is the only card face — no separate "in progress" view.
-  // The quiz modal, once opened, stays mounted+hidden via CSS (never
-  // unmounted), so closing it to browse the feed keeps progress intact.
   return (
     <>
       <CommunityPreview
@@ -1310,9 +1137,9 @@ const CommunityBody = ({ post, user, isPro, onOpenRacePlay }) => {
   )
 }
 
-const QuizCard = withCardActions(QuizBody)
-const CommunityCard = withCardActions(CommunityBody, { selfContained: true })
-      
+const QuizCard = withCardActions(QuizBody, { ownsAttachments: true, fetchCompletion: true })
+const CommunityCard = withCardActions(CommunityBody, { ownsAttachments: false, fetchCompletion: false })
+
 
 // ── Main EduFeed Component ──
 const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
