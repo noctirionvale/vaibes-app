@@ -682,6 +682,18 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
   cursor: pointer; transition: all 0.2s ease;
   width: 100%; margin-top: 0.5rem;
 }
+
+.mq-retake-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0 0.05rem;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--card-bg) 90%, transparent) 35%,
+    color-mix(in srgb, var(--card-bg) 90%, transparent) 100%);
+}
 .edufeed-quiz-unlock-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-40); }
 .edufeed-quiz-unlock-btn.next-btn { box-shadow: 0 4px 14px var(--accent-25); }
 .edufeed-quiz-unlock-btn.see-results-btn {
@@ -1874,10 +1886,17 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 .mq-flip-face {
   position: absolute; inset: 0;
   backface-visibility: hidden; -webkit-backface-visibility: hidden;
-  border-radius: 16px; overflow: hidden;
+  border-radius: 16px;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   border: 2px solid var(--accent-25);
   display: flex; flex-direction: column;
+  pointer-events: none;
 }
+.mq-flip-face::-webkit-scrollbar { display: none; }
+.mq-flip-card:not(.is-flipped) .mq-flip-front { pointer-events: auto; }
+.mq-flip-card.is-flipped .mq-flip-back { pointer-events: auto; }
 .mq-flip-front { justify-content: flex-end; background: linear-gradient(160deg, var(--accent-08), var(--card-bg)); }
 .mq-flip-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .mq-flip-text-prompt {
@@ -1924,3 +1943,8 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   .mq-extra-media-item { width: 110px; height: 74px; }
   .mq-panel--subject { padding: 0.7rem 0.75rem 0.85rem; }
 }
+
+.quiz-summary-header { padding: 0.85rem 1rem; margin-bottom: 0.6rem; /* was 1rem / 0.75rem */ }
+.summary-score { margin: 0.6rem 0; /* was 1rem 0 */ }
+.summary-stats { margin-top: 0.5rem; /* was 0.75rem */ }
+.quiz-review-section { margin-top: 0.75rem; /* was 1rem */ }

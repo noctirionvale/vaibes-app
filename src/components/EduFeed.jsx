@@ -714,22 +714,24 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
               ))}
             </div>
           </div>
-          <button
-            className="edufeed-quiz-unlock-btn"
-            onClick={() => {
-              setShowSummary(false)
-              setCurrentQuestionIndex(0)
-              setSelected(null)
-              setAnswered(false)
-              setAnswers([])
-              setPointsEarned(0)
-              setTimeLeft(QUESTION_TIME_LIMIT)
-              recordedRef.current = false
-            }}
-            style={{ marginTop: '1rem', width: '100%' }}
-          >
-            🔄 Retake Quiz
-          </button>
+          <div className="mq-retake-sticky">
+            <button
+              className="edufeed-quiz-unlock-btn"
+              onClick={() => {
+                setShowSummary(false)
+                setCurrentQuestionIndex(0)
+                setSelected(null)
+                setAnswered(false)
+                setAnswers([])
+                setPointsEarned(0)
+                setTimeLeft(QUESTION_TIME_LIMIT)
+                recordedRef.current = false
+              }}
+              style={{ width: '100%' }}
+            >
+              🔄 Retake Quiz
+            </button>
+          </div>
         </div>
       </div>
     )
