@@ -991,10 +991,10 @@ const QuizBody = ({ post, user, completion }) => {
           <div className="mq-flip-inner">
             <div className="mq-flip-face mq-flip-front">
               {firstImage ? (
-                <>
+                <div className="mq-flip-media">
                   <div className="mq-flip-bg" style={{ backgroundImage: `url(${firstImage.url})` }} aria-hidden="true" />
                   <img src={firstImage.url} alt="" className="mq-flip-image" />
-                </>
+                </div>
               ) : (
                 <div className="mq-flip-text-prompt">{quiz.question || post.title}</div>
               )}

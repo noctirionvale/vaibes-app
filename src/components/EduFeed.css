@@ -1927,6 +1927,12 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 .mq-flip-card:not(.is-flipped) .mq-flip-front { pointer-events: auto; }
 .mq-flip-card.is-flipped .mq-flip-back { pointer-events: auto; }
 .mq-flip-front { justify-content: flex-end; background: linear-gradient(160deg, var(--accent-08), var(--card-bg)); }
+.mq-flip-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
 .mq-flip-bg {
   position: absolute;
   inset: -20px;
