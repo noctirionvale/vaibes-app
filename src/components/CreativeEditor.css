@@ -1128,21 +1128,33 @@
 .ce-subject-trigger:hover { border-color: var(--accent-40); }
 .ce-subject-chevron { font-size: 0.62rem; opacity: 0.6; transition: transform 0.15s ease; }
 .ce-subject-chevron.open { transform: rotate(180deg); }
+/* Portaled to document.body + position:fixed (not absolute) — it used to
+   live inside .ce-modal-dialog, which clips via overflow:hidden, so long
+   subject lists got cut off at the dialog edge and forced a phantom
+   horizontal scrollbar on .ce-modal-body. Fixed + portal sidesteps both.
+   Background matches .ai-tool-dropdown's recipe (surface-1 + blur), not
+   card-bg, which read as too translucent for a floating surface here. */
 .ce-subject-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 50;
-  width: min(320px, 88vw);
-  background: var(--card-bg);
-  border: 1px solid var(--accent-20);
+  position: fixed;
+  z-index: 1000001;
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  max-height: min(60vh, 320px);
+  overflow-y: auto;
+  background: var(--surface-1);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--accent-25);
   border-radius: 12px;
-  padding: 0.5rem;
+  padding: 8px;
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 0.3rem;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+  scrollbar-width: none;
 }
+.ce-subject-menu::-webkit-scrollbar { display: none; }
 .ce-subject-pill {
   padding: 0.28rem 0.6rem;
   border-radius: 20px;
@@ -1155,6 +1167,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 .ce-subject-pill:hover { border-color: var(--line-strong); color: var(--text); }
 .ce-subject-pill.active { border-color: var(--glow); background: var(--accent-12); color: var(--accent-text); }

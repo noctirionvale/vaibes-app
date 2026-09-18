@@ -239,28 +239,55 @@ const ANAGRAM_SUBJECTS = ['General', 'Math', 'Science', 'Biology', 'Chemistry', 
   'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Other'];
 // (dropped Anagram's duplicate 'Filipino' entry while in here)
 
-// ── Custom subject dropdown — a native <select>'s option list ignores page
-// CSS on some browsers, so this renders its own listbox instead. No
-// max-height on purpose: options wrap into a compact grid, no scrolling. ──
+const SUBJECT_MENU_WIDTH = 300; // px — keep in sync with .ce-subject-menu width in CSS
+
 const SubjectDropdown = ({ value, options, onChange }) => {
   const [open, setOpen] = useState(false);
-  const wrapRef = useRef(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, openUp: false });
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
-    const onDocClick = (e) => { if (!wrapRef.current?.contains(e.target)) setOpen(false); };
+    const onDocClick = (e) => {
+      if (triggerRef.current?.contains(e.target)) return;
+      if (menuRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const onClose = () => setOpen(false);
     document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    window.addEventListener('scroll', onClose, true);
+    window.addEventListener('resize', onClose);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      window.removeEventListener('scroll', onClose, true);
+      window.removeEventListener('resize', onClose);
+    };
   }, [open]);
 
+  const toggleOpen = () => {
+    if (open) { setOpen(false); return; }
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const estMenuHeight = Math.min(280, Math.ceil(options.length / 3) * 38 + 20);
+    const openUp = window.innerHeight - rect.bottom < estMenuHeight && rect.top > estMenuHeight;
+    setMenuPos({
+      top: openUp ? rect.top - 6 : rect.bottom + 6,
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - SUBJECT_MENU_WIDTH - 8)),
+      openUp,
+    });
+    setOpen(true);
+  };
+
   return (
-    <div className="ce-subject-wrap" ref={wrapRef}>
-      <button type="button" className="ce-subject-trigger" onClick={() => setOpen(o => !o)}>
+    <div className="ce-subject-wrap">
+      <button type="button" ref={triggerRef} className="ce-subject-trigger" onClick={toggleOpen}>
         <span>{value}</span>
         <span className={`ce-subject-chevron ${open ? 'open' : ''}`}>▾</span>
       </button>
-      {open && (
-        <div className="ce-subject-menu" role="listbox">
+      {open && createPortal(
+        <div ref={menuRef} className="ce-subject-menu" role="listbox"
+          style={{ top: menuPos.top, left: menuPos.left, transform: menuPos.openUp ? 'translateY(-100%)' : 'none' }}>
           {options.map(s => (
             <button
               key={s}
@@ -273,7 +300,8 @@ const SubjectDropdown = ({ value, options, onChange }) => {
               {s}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
