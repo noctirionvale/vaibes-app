@@ -18,6 +18,49 @@ const POST_TYPES = [
   { key: 'leaderboard', label: '🏆 Leaderboard' },
 ]
 
+// ── Type filter dropdown — custom-rendered (not a native <select>) so the
+// open option list always matches the app's dark theme. Native <select>
+// popups ignore page CSS on some browsers (Chrome/Windows renders the
+// listbox with system colors regardless of `option{}` CSS) — that's what
+// caused the white dropdown.
+const TypeFilterDropdown = ({ value, onChange }) => {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+  const current = POST_TYPES.find(t => t.key === value) || POST_TYPES[0]
+
+  useEffect(() => {
+    if (!open) return
+    const onDocClick = (e) => { if (!wrapRef.current?.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [open])
+
+  return (
+    <div className="ef-select-wrap" ref={wrapRef}>
+      <button type="button" className="ef-select-trigger" onClick={() => setOpen(o => !o)}>
+        <span>{current.label}</span>
+        <span className={`ef-select-chevron ${open ? 'open' : ''}`}>▾</span>
+      </button>
+      {open && (
+        <div className="ef-select-menu" role="listbox">
+          {POST_TYPES.map(t => (
+            <button
+              key={t.key}
+              type="button"
+              role="option"
+              aria-selected={t.key === value}
+              className={`ef-select-option ${t.key === value ? 'active' : ''}`}
+              onClick={() => { onChange(t.key); setOpen(false) }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Pro Upgrade Modal ──
 const ProUpgradeModal = ({ onClose, onUpgrade }) => createPortal(
   <div className="modal-overlay" onClick={onClose}>
@@ -1549,15 +1592,7 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
       </div>
 
       <div className="edufeed-type-filter-bar">
-        <select
-          className="edufeed-type-select"
-          value={activeType}
-          onChange={e => setActiveType(e.target.value)}
-        >
-          {POST_TYPES.map(t => (
-            <option key={t.key} value={t.key}>{t.label}</option>
-          ))}
-        </select>
+        <TypeFilterDropdown value={activeType} onChange={setActiveType} />
       </div>
 
       <div className="edufeed-feed">

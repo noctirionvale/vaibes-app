@@ -1091,21 +1091,6 @@
   border-top: 1px solid var(--border);
 }
 
-.edufeed-subject-select {
-  padding: 0.3rem 0.55rem;
-  background: var(--inset-bg);
-  border: 1px solid var(--line-strong);
-  border-radius: 7px;
-  color: var(--text);
-  font-size: 0.72rem;
-  font-family: inherit;
-  outline: none;
-  cursor: pointer;
-}
-
-.edufeed-subject-select option { background: var(--bg); color: var(--text); }
-.edufeed-subject-select:focus { border-color: var(--glow); }
-
 .edufeed-crosspost {
   display: flex;
   align-items: center;
@@ -1121,6 +1106,58 @@
   accent-color: var(--glow);
   cursor: pointer;
 }
+
+/* ── Custom Subject Dropdown (replaces native <select> — Chrome/Windows
+   ignores page CSS for native <select> option lists) ── */
+.ce-subject-wrap { position: relative; display: inline-block; }
+.ce-subject-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.65rem;
+  background: var(--inset-bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.ce-subject-trigger:hover { border-color: var(--accent-40); }
+.ce-subject-chevron { font-size: 0.62rem; opacity: 0.6; transition: transform 0.15s ease; }
+.ce-subject-chevron.open { transform: rotate(180deg); }
+.ce-subject-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: min(320px, 88vw);
+  background: var(--card-bg);
+  border: 1px solid var(--accent-20);
+  border-radius: 12px;
+  padding: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+.ce-subject-pill {
+  padding: 0.28rem 0.6rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--inset-bg);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.ce-subject-pill:hover { border-color: var(--line-strong); color: var(--text); }
+.ce-subject-pill.active { border-color: var(--glow); background: var(--accent-12); color: var(--accent-text); }
 
 /* ── Quiz Mode Toggle ── */
 .quiz-mode-toggle {

@@ -230,6 +230,55 @@ const SEVERITY_META = {
   green:  { icon: '🟢', order: 2 },
 };
 
+// ── Subject option lists per quiz type (kept separate — they intentionally differ) ──
+const STUDIO_QUIZ_SUBJECTS = ['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics', 'Astronomy',
+  'History', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Television', 'Animals', 'Movies', 'Sports', 'Felip', 'SB19', 'Other'];
+const SUBJECT_QUIZ_SUBJECTS = ['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics',
+  'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Other'];
+const ANAGRAM_SUBJECTS = ['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics',
+  'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Other'];
+// (dropped Anagram's duplicate 'Filipino' entry while in here)
+
+// ── Custom subject dropdown — a native <select>'s option list ignores page
+// CSS on some browsers, so this renders its own listbox instead. No
+// max-height on purpose: options wrap into a compact grid, no scrolling. ──
+const SubjectDropdown = ({ value, options, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => { if (!wrapRef.current?.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
+  return (
+    <div className="ce-subject-wrap" ref={wrapRef}>
+      <button type="button" className="ce-subject-trigger" onClick={() => setOpen(o => !o)}>
+        <span>{value}</span>
+        <span className={`ce-subject-chevron ${open ? 'open' : ''}`}>▾</span>
+      </button>
+      {open && (
+        <div className="ce-subject-menu" role="listbox">
+          {options.map(s => (
+            <button
+              key={s}
+              type="button"
+              role="option"
+              aria-selected={s === value}
+              className={`ce-subject-pill ${s === value ? 'active' : ''}`}
+              onClick={() => { onChange(s); setOpen(false); }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const FEEDBACK_SYSTEM_PROMPT = `You are Vaibey, acting as a strict but encouraging writing tutor — not a ghostwriter. Review the student's text below like a teacher giving feedback, not rewriting it for them.
 
 Evaluate across these categories where relevant: argument, evidence, structure, grammar, clarity, tone (academic tone), originality, citations.
@@ -1334,12 +1383,7 @@ const toggleRoomPanel = () => {
           {eduType === 'quiz' && (
             <div className="quiz-studio-container">
               <div className="edufeed-options-row">
-                <select className="edufeed-subject-select" value={eduSubject}
-                  onChange={e => setEduSubject(e.target.value)}>
-                  {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics', 'Astronomy',
-                    'History', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Television', 'Animals', 'Movies', 'Sports', 'Felip', 'SB19', 'Other']
-                    .map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <SubjectDropdown value={eduSubject} options={STUDIO_QUIZ_SUBJECTS} onChange={setEduSubject} />
                 {isPro && (
   <label className="edufeed-crosspost">
     <input type="checkbox" checked={alsoPostToWall}
@@ -1426,12 +1470,7 @@ const toggleRoomPanel = () => {
             <div className="subject-quiz-container">
               <div className="subject-quiz-header">
                 <h4>📚 Subject Quiz</h4>
-                <select className="edufeed-subject-select" value={eduSubject}
-                  onChange={e => setEduSubject(e.target.value)}>
-                  {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics',
-                    'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Other']
-                    .map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <SubjectDropdown value={eduSubject} options={SUBJECT_QUIZ_SUBJECTS} onChange={setEduSubject} />
               </div>
 
               {/* Media Upload */}
@@ -1613,12 +1652,7 @@ const toggleRoomPanel = () => {
             <div className="subject-quiz-container">
               <div className="subject-quiz-header">
                 <h4>🔤 Anagram</h4>
-                <select className="edufeed-subject-select" value={eduSubject}
-                  onChange={e => setEduSubject(e.target.value)}>
-                  {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics',
-                    'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Entertainment', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Filipino', 'Other']
-                    .map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <SubjectDropdown value={eduSubject} options={ANAGRAM_SUBJECTS} onChange={setEduSubject} />
               </div>
 
               <div className="quiz-media-section">
