@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import SubjectDropdown from './SubjectDropdown';
 import './CommunityRoomCreator.css';
 
 const CHAT_MODE_LABELS = { explain: 'Explain', summarize: 'Summarize', analyze: 'Analyze', writeDraft: 'Draft & Edit', quizMe: 'Quiz Me' };
@@ -514,10 +515,11 @@ const CommunityRoomCreator = ({ onRoomCreated, onClose, editItem = null }) => {
         <div className="crc-config-grid">
           <div className="crc-config-field">
             <label>Subject</label>
-            <select value={subject} onChange={e => setSubject(e.target.value)}>
-              {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics', 'Astronomy', 'History', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Filipino', 'Other']
-                .map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <SubjectDropdown
+              value={subject}
+              onChange={setSubject}
+              options={['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics', 'Astronomy', 'History', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Other']}
+            />
           </div>
 
           <div className="crc-config-field">

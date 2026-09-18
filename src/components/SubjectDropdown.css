@@ -1,0 +1,81 @@
+/* ═══════════════════════════════════════════════
+   SubjectDropdown — unified vertical-list subject picker
+   Shared by CreativeEditor (Studio Quiz / Subject Quiz /
+   Anagram) and CommunityRoomCreator, so every subject
+   picker in the app looks and behaves the same way.
+   ═══════════════════════════════════════════════ */
+
+.subject-picker-wrap { position: relative; display: inline-block; }
+
+.subject-picker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.65rem;
+  background: var(--inset-bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.subject-picker-trigger:hover { border-color: var(--accent-40); }
+.subject-picker-trigger span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subject-picker-chevron { font-size: 0.62rem; opacity: 0.6; flex-shrink: 0; transition: transform 0.15s ease; }
+.subject-picker-chevron.open { transform: rotate(180deg); }
+
+/* Portaled to document.body + position:fixed, anchored only to the
+   trigger's bottom edge — it never flips to open upward, so it can't
+   climb up and cover a modal header or tab row above it. Height is
+   clamped in JS to whatever room is actually left below the trigger,
+   so a long list scrolls internally instead of overflowing the
+   viewport. Scrollbar is hidden (still scrollable) to match the rest
+   of the app's floating menus. */
+.subject-picker-menu {
+  position: fixed;
+  z-index: 1000001;
+  max-width: calc(100vw - 16px);
+  overflow-y: auto;
+  background: var(--surface-1);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--accent-25);
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+  scrollbar-width: none;
+}
+.subject-picker-menu::-webkit-scrollbar { display: none; }
+
+.subject-picker-option {
+  width: 100%;
+  text-align: left;
+  padding: 0.42rem 0.65rem;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.12s ease, color 0.12s ease;
+  flex-shrink: 0;
+}
+.subject-picker-option:hover { background: var(--accent-08); color: var(--text); }
+.subject-picker-option.active { background: var(--accent-12); color: var(--accent-text); font-weight: 700; }

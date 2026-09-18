@@ -184,8 +184,8 @@
   outline: none; cursor: pointer; transition: all 0.2s; font-family: inherit;
   appearance: none; -webkit-appearance: none;
 }
-.crc-config-field select:focus { border-color: var(--glow); }
-.crc-config-field select option { background: var(--surface-1); color: var(--text); }
+.crc-config-field .subject-picker-wrap,
+.crc-config-field .subject-picker-trigger { width: 100%; }
 
 .crc-title-input, .crc-desc-input {
   width: 100%; padding: 0.45rem 0.65rem;
