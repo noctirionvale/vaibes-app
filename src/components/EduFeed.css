@@ -1240,6 +1240,8 @@ body.light-mode .results-score-inner { background: var(--bg); }
 body.light-mode .ef-card-preview-done-badge { background: color-mix(in srgb, var(--success) 8%, transparent); }
 body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 
+body.light-mode .edufeed-type-select { color-scheme: light; }
+
 /* ══════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════ */
@@ -1446,8 +1448,6 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 }
 .edufeed-type-select:focus { border-color: var(--glow); }
 .edufeed-type-select option { background: var(--card-bg); color: var(--text); }
-
-body.light-mode .edufeed-type-select { color-scheme: light; }
 
 .edufeed-filter-divider {
   width: 1px;

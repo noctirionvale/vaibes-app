@@ -1429,7 +1429,7 @@ const toggleRoomPanel = () => {
                 <select className="edufeed-subject-select" value={eduSubject}
                   onChange={e => setEduSubject(e.target.value)}>
                   {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics',
-                    'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Felip', 'SB19', 'Other']
+                    'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Other']
                     .map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
@@ -1616,7 +1616,7 @@ const toggleRoomPanel = () => {
                 <select className="edufeed-subject-select" value={eduSubject}
                   onChange={e => setEduSubject(e.target.value)}>
                   {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics',
-                    'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Felip', 'SB19', 'Other']
+                    'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Entertainment', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Filipino', 'Other']
                     .map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
