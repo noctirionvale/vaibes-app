@@ -379,6 +379,30 @@ iframe.edufeed-att-media { aspect-ratio: 16 / 9; max-height: 280px; height: auto
 .edufeed-snap-slide .edufeed-quiz-body::-webkit-scrollbar,
 .edufeed-snap-slide .edufeed-flashcard-wrap::-webkit-scrollbar { display: none; }
 
+.ef-new-posts-banner {
+  position: absolute; top: 0.6rem; left: 50%; transform: translateX(-50%);
+  z-index: 5; display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.5rem 1rem; border-radius: 20px; border: none;
+  background: var(--grad-cta); background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+  color: var(--on-accent); font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; box-shadow: 0 4px 14px var(--accent-40);
+  font-family: inherit; white-space: nowrap;
+}
+.ef-new-posts-banner:hover { transform: translateX(-50%) translateY(-1px); }
+
+.ef-new-posts-banner {
+  position: absolute; top: 0.6rem; left: 50%; transform: translateX(-50%);
+  z-index: 5; display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.5rem 1rem; border-radius: 20px; border: none;
+  background: var(--grad-cta); background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+  color: var(--on-accent); font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; box-shadow: 0 4px 14px var(--accent-40);
+  font-family: inherit; white-space: nowrap;
+}
+.ef-new-posts-banner:hover { transform: translateX(-50%) translateY(-1px); }
+
 .edufeed-progress-track {
   position: absolute; right: 0.35rem; top: 12%; bottom: 12%;
   width: 3px; border-radius: 3px; background: var(--line);
@@ -1412,6 +1436,16 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   filter: drop-shadow(0 0 4px var(--on-accent));
 }
 
+.edufeed-type-select {
+  width: 100%; padding: 0.55rem 0.85rem; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--field-bg);
+  color: var(--text); font-size: 0.8rem; font-weight: 600;
+  font-family: inherit; outline: none; cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.edufeed-type-select:focus { border-color: var(--glow); }
+.edufeed-type-select option { background: var(--card-bg); color: var(--text); }
+
 .edufeed-filter-divider {
   width: 1px;
   align-self: stretch;
@@ -1804,7 +1838,7 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   scrollbar-width: none;
 }
 .mq-panel::-webkit-scrollbar { display: none; }
-.mq-panel--subject { padding: 0.9rem 1rem 1rem; }
+.mq-panel--subject { padding: 0.9rem 1rem 1rem; justify-content: safe center; }
 
 /* ── Question-tab nav (Studio Quiz — sequential unlock) ── */
 .mq-qnav-scroll {
@@ -1837,6 +1871,22 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 .mq-qnav-pill.is-correct { border-color: var(--success); background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--success); }
 .mq-qnav-pill.is-wrong { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
 .mq-qnav-pill.is-locked { opacity: 0.4; cursor: not-allowed; }
+
+.mq-timer-row { display: flex; align-items: center; gap: 0.6rem; }
+.mq-timer-ring { flex-shrink: 0; }
+.mq-timer-ring-track { fill: none; stroke: var(--line); stroke-width: 3; opacity: 0.6; }
+.mq-timer-ring-fill {
+  fill: none; stroke: var(--glow); stroke-width: 3; stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+.mq-timer-ring.urgent .mq-timer-ring-fill { stroke: var(--danger); }
+.mq-timer-ring-text { fill: var(--text); font-size: 11px; font-weight: 800; font-family: inherit; }
+
+.mq-subject-video {
+  width: 100%; aspect-ratio: 16 / 9; border-radius: 12px;
+  border: 1px solid var(--line); background: #000;
+  object-fit: contain; flex-shrink: 0;
+}
 
 /* ── Subject Quiz Q&A ── */
 .mq-question { font-size: 0.95rem; font-weight: 700; color: var(--text); line-height: 1.5; }
@@ -1976,6 +2026,49 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 }
 .mq-flip-answer-text { font-size: 1.15rem; font-weight: 700; color: var(--text); }
 
+/* ── Anagram — tap scrambled letter tiles into slots ── */
+.mq-anagram-slots { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.mq-anagram-slot {
+  width: 38px; height: 42px; border-radius: 8px;
+  border: 2px solid var(--line);
+  background: color-mix(in srgb, var(--field-bg) 70%, transparent);
+  color: var(--text); font-size: 1.05rem; font-weight: 800;
+  text-transform: uppercase; display: flex; align-items: center;
+  justify-content: center; cursor: pointer; font-family: inherit;
+  transition: all 0.15s ease; flex-shrink: 0; padding: 0;
+}
+.mq-anagram-slot:disabled { opacity: 1; }
+.mq-anagram-slot.is-empty { border-style: dashed; background: transparent; cursor: default; }
+.mq-anagram-slot.is-filled { border-color: var(--accent-40); background: var(--accent-12); color: var(--glow); }
+.mq-anagram-slot.is-filled:hover {
+  border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger);
+}
+.mq-anagram-slot.is-space { width: 16px; height: 42px; border: none; background: none; cursor: default; }
+
+.mq-anagram-pool {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.6rem;
+  background: color-mix(in srgb, var(--field-bg) 60%, transparent);
+  border: 1px dashed var(--line); border-radius: 10px; min-height: 54px;
+}
+.mq-anagram-tile {
+  width: 38px; height: 38px; border-radius: 8px;
+  border: 1.5px solid var(--accent-25);
+  background: var(--grad-cta); color: var(--on-accent);
+  font-size: 1rem; font-weight: 800; text-transform: uppercase;
+  cursor: pointer; font-family: inherit; transition: all 0.15s ease;
+  flex-shrink: 0; padding: 0;
+}
+.mq-anagram-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--accent-25); }
+
+.mq-anagram-actions { display: flex; gap: 0.5rem; }
+.mq-anagram-action-btn {
+  flex: 1; padding: 0.5rem 0.75rem; border-radius: 10px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--field-bg) 90%, transparent);
+  color: var(--text); font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all 0.15s ease;
+}
+.mq-anagram-action-btn:hover { background: var(--accent-08); border-color: var(--accent-40); color: var(--glow); }
 @media (prefers-reduced-motion: reduce) {
   .mq-flip-inner { transition: none; }
 }
@@ -1986,6 +2079,8 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   .mq-flip-inner { min-height: 200px; }
   .mq-extra-media-item { width: 110px; height: 74px; }
   .mq-panel--subject { padding: 0.7rem 0.75rem 0.85rem; }
+  .mq-anagram-slot { width: 32px; height: 36px; font-size: 0.92rem; }
+  .mq-anagram-tile { width: 32px; height: 32px; font-size: 0.88rem; }
 }
 
 .quiz-summary-header { padding: 0.85rem 1rem; margin-bottom: 0.6rem; /* was 1rem / 0.75rem */ }

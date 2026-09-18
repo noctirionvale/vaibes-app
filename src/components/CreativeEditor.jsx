@@ -254,6 +254,7 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
   const [fileUploading, setFileUploading] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveToast, setSaveToast] = useState(null); // { label, editing } — confirms a save actually committed
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [showYoutubeInput, setShowYoutubeInput] = useState(false);
 
@@ -275,6 +276,10 @@ const CreativeEditor = ({ onShareToDM, onClose, onContentCreated, userTier = 'fr
   const [quizMedia, setQuizMedia] = useState([]);
   const [quizYoutubeUrl, setQuizYoutubeUrl] = useState('');
   const [showQuizYoutubeInput, setShowQuizYoutubeInput] = useState(false);
+
+  // ── Anagram state ──
+  const [anagramWord, setAnagramWord] = useState('');
+  const [anagramHint, setAnagramHint] = useState('');
 
   // ── Studio Quiz state ──
   const [quizQuestions, setQuizQuestions] = useState([{
@@ -425,18 +430,20 @@ const [pendingSaveDestination, setPendingSaveDestination] = useState(null);
      ? quizQuestions.some(q => q.question.trim())
      : eduType === 'subject_quiz'
       ? !!(subjectQuizQuestion || subjectQuizAnswer || quizMedia.length)
-       : !!(flashFront || flashBack);
+       : eduType === 'anagram'
+        ? !!(anagramWord || anagramHint || quizMedia.length)
+         : !!(flashFront || flashBack);
    if (formTitle || content || attachments.length || (eduOpen && hasEduContent)) {
     localStorage.setItem(draftStorageKey, JSON.stringify({
        title: formTitle, content, attachments,
        wallOpen, eduOpen, eduType, eduSubject, alsoPostToWall,
        flashFront, flashBack, subjectQuizQuestion, subjectQuizAnswer,
-       quizMedia, quizQuestions,
+       quizMedia, quizQuestions, anagramWord, anagramHint,
        savedAt: new Date().toISOString(),
      }));
       setHasDraft(true);
     }
-  }, [user, draftStorageKey, editingId, formTitle, editor, attachments, wallOpen, eduOpen, eduType, eduSubject, alsoPostToWall, flashFront, flashBack, subjectQuizQuestion, subjectQuizAnswer, quizMedia, quizQuestions]);
+  }, [user, draftStorageKey, editingId, formTitle, editor, attachments, wallOpen, eduOpen, eduType, eduSubject, alsoPostToWall, flashFront, flashBack, subjectQuizQuestion, subjectQuizAnswer, quizMedia, quizQuestions, anagramWord, anagramHint]);
 
   const clearDraft = useCallback(() => {
     if (draftStorageKey) { localStorage.removeItem(draftStorageKey); setHasDraft(false); }
@@ -465,6 +472,8 @@ const [pendingSaveDestination, setPendingSaveDestination] = useState(null);
           setSubjectQuizAnswer(draft.subjectQuizAnswer || '');
           setQuizMedia(draft.quizMedia || []);
           if (draft.quizQuestions?.length) setQuizQuestions(draft.quizQuestions);
+          setAnagramWord(draft.anagramWord || '');
+          setAnagramHint(draft.anagramHint || '');
           setHasDraft(true);
         }
       } catch {}
@@ -502,7 +511,7 @@ useEffect(() => {
 useEffect(() => {
   if (!editItem || !editor) return;
 
-  const isEduPost = ['quiz', 'subject_quiz', 'flashcard'].includes(editItem.type);
+  const isEduPost = ['quiz', 'subject_quiz', 'flashcard', 'anagram'].includes(editItem.type);
   if (!isEduPost && !isPro) {
     onOpenBillingRef.current?.();
     onEditDoneRef.current?.();
@@ -536,6 +545,10 @@ useEffect(() => {
     } else if (editItem.type === 'flashcard') {
       setFlashFront(quiz.question || '');
       setFlashBack(quiz.answer || '');
+    } else if (editItem.type === 'anagram') {
+      setAnagramWord(quiz.word || '');
+      setAnagramHint(quiz.hint || '');
+      setQuizMedia(quiz.media || []);
     }
     setEduOpen(true);
     setWallOpen(false);
@@ -573,6 +586,8 @@ useEffect(() => {
     setQuizMedia([]);
     setQuizYoutubeUrl('');
     setShowQuizYoutubeInput(false);
+    setAnagramWord('');
+    setAnagramHint('');
     if (onEditDone) onEditDone();
     setTitlePromptOpen(false);
     setPendingSaveDestination(null);
@@ -620,7 +635,7 @@ useEffect(() => {
     const content = editor.getHTML();
     let allAttachments = [...attachments];
 
-    if (eduType === 'subject_quiz' && quizMedia.length > 0) {
+    if ((eduType === 'subject_quiz' || eduType === 'anagram') && quizMedia.length > 0) {
       allAttachments = [...allAttachments, ...quizMedia];
     }
 
@@ -670,6 +685,15 @@ useEffect(() => {
         postType = 'flashcard';
       }
 
+      if (eduType === 'anagram') {
+        quiz_data = {
+          mode: 'anagram',
+          word: anagramWord.trim(),
+          hint: anagramHint.trim() || null,
+        };
+        postType = 'anagram';
+      }
+
       const payload = {
         type: postType, title: titleToUse, content: plainContent || null,
         attachments: allAttachments, media_type: mediaType, subject: eduSubject, quiz_data,
@@ -706,9 +730,13 @@ useEffect(() => {
 
     setSaving(false);
     if (errors.length) { alert('❌ ' + errors.join(' / ')); return; }
+    const wasEditing = !!editingId;
+    const destLabel = destination === 'wall' ? 'Wall' : (alsoPostToWall && isPro) ? 'EduFeed + Wall' : 'EduFeed';
     clearDraft();
     resetForm();
     if (onContentCreated) onContentCreated();
+    setSaveToast({ label: destLabel, editing: wasEditing });
+    setTimeout(() => setSaveToast(null), 2600);
   };
 
   // ── File handlers ──
@@ -913,6 +941,12 @@ const toggleRoomPanel = () => {
 
   return (
     <div className="creative-editor">
+
+      {saveToast && (
+        <div className="ce-save-toast">
+          ✅ {saveToast.editing ? 'Changes saved' : 'Posted'} to {saveToast.label}
+        </div>
+      )}
 
       {/* ── STATUS BADGES & STATS ── */}
       <div className="ce-status-row">
@@ -1286,6 +1320,7 @@ const toggleRoomPanel = () => {
               { key: 'quiz', label: '🧠 Studio Quiz' },
               { key: 'subject_quiz', label: '📚 Subject Quiz' },
               { key: 'flashcard', label: '🃏 Flashcard' },
+              { key: 'anagram', label: '🔤 Anagram' },
             ].map(t => (
               <button key={t.key} type="button"
                 className={`edufeed-type-btn ${eduType === t.key ? 'active' : ''}`}
@@ -1573,13 +1608,83 @@ const toggleRoomPanel = () => {
             </div>
           )}
 
+          {/* ── ANAGRAM ── */}
+          {eduType === 'anagram' && (
+            <div className="subject-quiz-container">
+              <div className="subject-quiz-header">
+                <h4>🔤 Anagram</h4>
+                <select className="edufeed-subject-select" value={eduSubject}
+                  onChange={e => setEduSubject(e.target.value)}>
+                  {['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics',
+                    'History', 'Astronomy', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities', 'Television', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Felip', 'SB19', 'Other']
+                    .map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              <div className="quiz-media-section">
+                <div className="media-upload-row">
+                  <label className="media-upload-btn">
+                    📸 Add Image (optional)
+                    <input type="file" onChange={handleQuizMediaUpload}
+                      style={{ display: 'none' }} accept="image/*" />
+                  </label>
+                  {fileUploading && <span className="uploading-text">Uploading…</span>}
+                </div>
+
+                {quizMedia.length > 0 && (
+                  <div className="quiz-media-preview">
+                    {quizMedia.map((media, idx) => (
+                      <div key={idx} className="media-item">
+                        {media.type?.startsWith('image/') && (
+                          <img src={media.url} alt={media.name} className="media-preview-img" />
+                        )}
+                        <button className="remove-media-btn" onClick={() => removeQuizMedia(idx)}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="subject-qa-container">
+                <div className="qa-field">
+                  <label className="qa-label">🔤 Word or Phrase</label>
+                  <input
+                    className="edufeed-quiz-q-input"
+                    placeholder="e.g. PHOTOSYNTHESIS"
+                    value={anagramWord}
+                    onChange={e => setAnagramWord(e.target.value)}
+                  />
+                </div>
+                <div className="qa-field">
+                  <label className="qa-label">💡 Hint (optional)</label>
+                  <textarea
+                    className="qa-input"
+                    placeholder="A clue to help solve it…"
+                    value={anagramHint}
+                    onChange={e => setAnagramHint(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              </div>
+
+              {isPro && (
+                <label className="edufeed-crosspost">
+                  <input type="checkbox" checked={alsoPostToWall}
+                    onChange={e => setAlsoPostToWall(e.target.checked)} />
+                  <span>Also post to Wall</span>
+                </label>
+              )}
+            </div>
+          )}
+
           {/* Post button */}
           <button
             onClick={() => handleSave('edufeed')}
             className="ce-post-btn ce-post-edu"
             disabled={saving ||
               (eduType === 'quiz' && quizQuestions.length === 0) ||
-              (eduType === 'subject_quiz' && (!subjectQuizQuestion || !subjectQuizAnswer))}
+              (eduType === 'subject_quiz' && (!subjectQuizQuestion || !subjectQuizAnswer)) ||
+              (eduType === 'anagram' && !anagramWord.trim())}
           >
             {saving
               ? '⏳ Saving…'

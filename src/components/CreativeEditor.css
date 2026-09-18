@@ -479,6 +479,17 @@
   color: var(--success) !important;
 }
 
+.ce-save-toast {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.55rem 0.9rem; border-radius: 10px;
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  color: var(--success); font-size: 0.78rem; font-weight: 700;
+  animation: ceToastIn 0.2s ease, ceToastOut 0.2s ease 2.3s forwards;
+}
+@keyframes ceToastIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ceToastOut { to { opacity: 0; transform: translateY(-4px); } }
+
 /* ── Form Actions ── */
 .creative-form-actions {
   display: flex;

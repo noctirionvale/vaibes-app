@@ -370,6 +370,24 @@ const renderMqAttachment = (att, idx) => {
   return <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" className="edufeed-att-file">📎 {att.name}</a>
 }
 
+// Compact SVG countdown ring — sits beside the existing text timer chip,
+// doesn't replace it.
+const TimerRing = ({ timeLeft, total, urgent }) => {
+  const pct = Math.max(0, Math.min(1, timeLeft / total))
+  const r = 15.5
+  const c = 2 * Math.PI * r
+  const offset = c * (1 - pct)
+  return (
+    <svg className={`mq-timer-ring ${urgent ? 'urgent' : ''}`} viewBox="0 0 36 36" width="40" height="40">
+      <g transform="rotate(-90 18 18)">
+        <circle className="mq-timer-ring-track" cx="18" cy="18" r={r} />
+        <circle className="mq-timer-ring-fill" cx="18" cy="18" r={r} strokeDasharray={c} strokeDashoffset={offset} />
+      </g>
+      <text x="18" y="19" className="mq-timer-ring-text" textAnchor="middle" dominantBaseline="middle">{timeLeft}</text>
+    </svg>
+  )
+}
+
 const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => {
   const ended = community.status !== 'live'
   const statsLine = [
@@ -547,6 +565,34 @@ const withCardActions = (BodyComponent, { ownsAttachments = false, fetchCompleti
 }
 
 const QUESTION_TIME_LIMIT = 20 // seconds — client-side deterrent only, not tamper-proof
+const ANAGRAM_TIME_LIMIT = 30 // seconds — letter-tile arranging takes longer than typing
+
+// Fisher-Yates shuffle — used to scramble anagram letter tiles
+const shuffleArray = (arr) => {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+// Builds a fresh scrambled layout for one anagram word/phrase. Spaces get a
+// fixed 'SPACE' slot (pre-filled, not part of the shuffle); every other
+// character is a letter tile identified by its original index, so duplicate
+// letters never collide.
+const buildAnagramLayout = (word) => {
+  const chars = (word || '').split('')
+  const letterPositions = chars.map((c, i) => (c.trim() !== '' ? i : null)).filter(i => i !== null)
+  let pool = shuffleArray(letterPositions)
+  let tries = 0
+  while (tries < 5 && pool.length > 1 && pool.every((idx, k) => idx === letterPositions[k])) {
+    pool = shuffleArray(letterPositions)
+    tries++
+  }
+  const slots = chars.map(c => (c.trim() === '' ? 'SPACE' : null))
+  return { chars, pool, slots }
+}
 
 // ── Studio Quiz — plays inline, no modal. Questions are sequential-unlock:
 // the horizontal tab strip lets you jump back to review anything already
@@ -869,9 +915,24 @@ const QuizBody = ({ post, user, completion }) => {
     return () => clearInterval(id)
   }, [fcFlipped, fcTimedOut, fcTimeLeft])
 
+  // Anagram
+  const [anLayout, setAnLayout] = useState(() => buildAnagramLayout(post.quiz_data?.word || post.title || ''))
+  const [anAnswered, setAnAnswered] = useState(false)
+  const [anCorrect, setAnCorrect] = useState(null)
+  const [anTimeLeft, setAnTimeLeft] = useState(ANAGRAM_TIME_LIMIT)
+  const [anTimedOut, setAnTimedOut] = useState(false)
+
+  useEffect(() => {
+    if (anAnswered || anTimedOut) return
+    if (anTimeLeft <= 0) { setAnTimedOut(true); return }
+    const id = setInterval(() => setAnTimeLeft(t => (t > 0 ? t - 1 : 0)), 1000)
+    return () => clearInterval(id)
+  }, [anAnswered, anTimedOut, anTimeLeft])
+
   const quiz = post.quiz_data || {}
   const SUBJECT_QUIZ_POINTS = 5
   const FLASHCARD_POINTS = 5
+  const ANAGRAM_POINTS = 5
 
   const recordCompletion = (points, postType) => {
     if (!user?.id) return
@@ -891,6 +952,11 @@ const QuizBody = ({ post, user, completion }) => {
   // ── SUBJECT QUIZ — type an answer, tap Check, immediate auto-graded
   // green/red. Optional image renders as a background behind the panel. ──
   if (post.type === 'subject_quiz' || quiz.mode === 'subject_qa') {
+    // A video-only attachment (no image) becomes the primary visual instead
+    // of falling into the small extra-media thumbnail row.
+    const primaryVideo = !firstImage ? post.attachments?.find(a => a.type?.startsWith('video/')) : null
+    const subjectExtras = primaryVideo ? extraAttachments.filter(a => a !== primaryVideo) : extraAttachments
+
     const handleCheck = () => {
       if (!sqAnswer.trim()) return
       const correct = sqAnswer.trim().toLowerCase() === (quiz.answer || '').trim().toLowerCase()
@@ -917,15 +983,21 @@ const QuizBody = ({ post, user, completion }) => {
         <div className="mq-panel mq-panel--subject">
           <CompletionBanner completion={completion} />
           {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
-          {extraAttachments.length > 0 && (
-            <div className="mq-extra-media">{extraAttachments.map((att, i) => renderMqAttachment(att, i))}</div>
+          {primaryVideo && (
+            <video src={primaryVideo.url} controls className="mq-subject-video" />
+          )}
+          {subjectExtras.length > 0 && (
+            <div className="mq-extra-media">{subjectExtras.map((att, i) => renderMqAttachment(att, i))}</div>
           )}
           <div className="mq-question">{quiz.question || post.title || 'No question provided'}</div>
 
           {!sqAnswered ? (
             <>
-              <div className={`ef-timer-chip ${sqTimedOut || sqTimeLeft <= 5 ? 'urgent' : ''}`}>
-                {sqTimedOut ? "⏱️ Time's up — this one won't earn points, go ahead" : `⏱ ${sqTimeLeft}s to answer for points`}
+              <div className="mq-timer-row">
+                {!sqTimedOut && <TimerRing timeLeft={sqTimeLeft} total={QUESTION_TIME_LIMIT} urgent={sqTimeLeft <= 5} />}
+                <div className={`ef-timer-chip ${sqTimedOut || sqTimeLeft <= 5 ? 'urgent' : ''}`}>
+                  {sqTimedOut ? "⏱️ Time's up — this one won't earn points, go ahead" : `⏱ ${sqTimeLeft}s to answer for points`}
+                </div>
               </div>
               <textarea
                 className="mq-answer-input"
@@ -958,7 +1030,7 @@ const QuizBody = ({ post, user, completion }) => {
                 </div>
               )}
               <div className="mq-sticky-cta">
-                <button className="mq-retry-btn" onClick={resetSq} style={{ width: '100%' }}>↺ Try Another Answer</button>
+                <button className="mq-retry-btn" onClick={resetSq} style={{ width: '100%' }}>↺ Try Again</button>
               </div>
             </>
           )}
@@ -1024,6 +1096,130 @@ const QuizBody = ({ post, user, completion }) => {
               <button className="mq-retry-btn" onClick={resetFc}>↺ Flip Back &amp; Retry</button>
             </div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── ANAGRAM — tap scrambled letter tiles into slots to spell the target
+  // word or phrase; spaces in multi-word phrases are pre-filled gaps, not
+  // tiles. Optional image renders as a background, same treatment as
+  // Subject Quiz. ──
+  if (post.type === 'anagram' || quiz.mode === 'anagram') {
+    const word = quiz.word || post.title || ''
+    const { chars, pool, slots } = anLayout
+    const isFull = slots.every(s => s !== null)
+
+    const placeTile = (tileIdx) => {
+      if (anAnswered) return
+      const emptyIdx = slots.findIndex(s => s === null)
+      if (emptyIdx === -1) return
+      const newSlots = [...slots]
+      newSlots[emptyIdx] = tileIdx
+      setAnLayout({ chars, slots: newSlots, pool: pool.filter(t => t !== tileIdx) })
+    }
+
+    const unplaceSlot = (i) => {
+      if (anAnswered) return
+      const tileIdx = slots[i]
+      if (tileIdx === null || tileIdx === 'SPACE') return
+      const newSlots = [...slots]
+      newSlots[i] = null
+      setAnLayout({ chars, slots: newSlots, pool: [...pool, tileIdx] })
+    }
+
+    const shufflePool = () => { if (!anAnswered) setAnLayout(prev => ({ ...prev, pool: shuffleArray(prev.pool) })) }
+    const clearAnagram = () => { if (!anAnswered) setAnLayout(buildAnagramLayout(word)) }
+
+    const handleAnCheck = () => {
+      if (!isFull || anAnswered) return
+      const guess = slots.map((s, i) => (s === 'SPACE' ? ' ' : chars[s])).join('')
+      const isCorrect = guess.trim().toLowerCase() === word.trim().toLowerCase()
+      setAnCorrect(isCorrect)
+      setAnAnswered(true)
+      recordCompletion(isCorrect && !anTimedOut ? ANAGRAM_POINTS : 0, 'anagram')
+    }
+
+    const resetAnagram = () => {
+      setAnLayout(buildAnagramLayout(word))
+      setAnAnswered(false); setAnCorrect(null)
+      setAnTimeLeft(ANAGRAM_TIME_LIMIT); setAnTimedOut(false)
+    }
+
+    return (
+      <div className={`mq-body ${firstImage ? '' : 'mq-body--no-image'}`}>
+        {firstImage ? (
+          <>
+            <div className="mq-bg" style={{ backgroundImage: `url(${firstImage.url})` }} aria-hidden="true" />
+            <img src={firstImage.url} alt="" className="mq-fg-img" />
+          </>
+        ) : (
+          <div className="mq-bg mq-bg-none" aria-hidden="true" />
+        )}
+        <div className="mq-scrim" aria-hidden="true" />
+        <div className="mq-panel mq-panel--subject">
+          <CompletionBanner completion={completion} />
+          {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
+          {extraAttachments.length > 0 && (
+            <div className="mq-extra-media">{extraAttachments.map((att, i) => renderMqAttachment(att, i))}</div>
+          )}
+          {quiz.hint && <div className="mq-question">💡 {quiz.hint}</div>}
+
+          {!anAnswered ? (
+            <>
+              <div className={`ef-timer-chip ${anTimedOut || anTimeLeft <= 5 ? 'urgent' : ''}`}>
+                {anTimedOut ? "⏱️ Time's up — this one won't earn points, go ahead" : `⏱ ${anTimeLeft}s to answer for points`}
+              </div>
+              <div className="mq-anagram-slots">
+                {slots.map((s, i) => s === 'SPACE' ? (
+                  <span key={i} className="mq-anagram-slot is-space" aria-hidden="true" />
+                ) : (
+                  <button key={i} type="button"
+                    className={`mq-anagram-slot ${s !== null ? 'is-filled' : 'is-empty'}`}
+                    onClick={() => unplaceSlot(i)} disabled={s === null}>
+                    {s !== null ? chars[s] : ''}
+                  </button>
+                ))}
+              </div>
+              <div className="mq-anagram-pool">
+                {pool.map(tileIdx => (
+                  <button key={tileIdx} type="button" className="mq-anagram-tile" onClick={() => placeTile(tileIdx)}>
+                    {chars[tileIdx]}
+                  </button>
+                ))}
+              </div>
+              <div className="mq-anagram-actions">
+                <button type="button" className="mq-anagram-action-btn" onClick={shufflePool}>🔀 Shuffle</button>
+                <button type="button" className="mq-anagram-action-btn" onClick={clearAnagram}>↺ Clear</button>
+              </div>
+              <div className="mq-sticky-cta">
+                <button className="mq-check-btn" onClick={handleAnCheck} disabled={!isFull} style={{ width: '100%' }}>
+                  ✓ Check Answer
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mq-your-answer">
+                <span className="mq-field-label">Your answer</span>
+                <div className="mq-your-answer-text">{slots.map((s, i) => (s === 'SPACE' ? ' ' : chars[s])).join('')}</div>
+              </div>
+              <div className={`mq-verdict ${anCorrect ? 'mq-correct' : 'mq-wrong'}`}>
+                {anCorrect
+                  ? (anTimedOut ? '⏱️ Correct — but time ran out, no points this round' : `✅ Correct! +${ANAGRAM_POINTS} points`)
+                  : '❌ Not quite'}
+              </div>
+              {!anCorrect && (
+                <div className="mq-correct-answer">
+                  <span className="mq-field-label">Correct answer</span>
+                  <div className="mq-correct-answer-text">{word}</div>
+                </div>
+              )}
+              <div className="mq-sticky-cta">
+                <button className="mq-retry-btn" onClick={resetAnagram} style={{ width: '100%' }}>↺ Try Again</button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     )
@@ -1182,12 +1378,14 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
   const [arenaRoomId, setArenaRoomId] = useState(null);
   const [authorBadgesMap, setAuthorBadgesMap] = useState({})       // ← add
   const [showDashboardModal, setShowDashboardModal] = useState(false) // ← add
+  const [newPostsAvailable, setNewPostsAvailable] = useState(0)
   const feedRef = useRef(null)
   const isPro = userTier === 'pro'
 
   const fetchPosts = useCallback(async () => {
     if (activeType === 'leaderboard') { setLoading(false); return }
     setLoading(true)
+    setNewPostsAvailable(0)
     let query = supabase
       .from('edufeed_posts')
       .select('*, profiles(id, display_name, username, avatar_url)')
@@ -1198,7 +1396,7 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
     
     if (activeType !== 'all') {
       if (activeType === 'quiz') {
-        query = query.or('type.eq.quiz,type.eq.subject_quiz,type.eq.flashcard')
+        query = query.or('type.eq.quiz,type.eq.subject_quiz,type.eq.flashcard,type.eq.anagram')
       } else if (activeType === 'community') {
         query = query.eq('type', 'community')
       } else {
@@ -1246,6 +1444,11 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
 
   const handlePostDeleted = (postId) => setPosts(prev => prev.filter(p => p.id !== postId))
   const toggleLock = (postId) => setLockedPostId(prev => prev === postId ? null : postId)
+
+  const handleRefreshNewPosts = () => {
+    fetchPosts()
+    feedRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const renderCard = (post) => {
   const liked = likedPosts.has(post.id)
@@ -1297,6 +1500,20 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
   useEffect(() => { fetchLikes() }, [fetchLikes])
   useEffect(() => { setLockedPostId(null) }, [activeType])
 
+  // Push-based "new post" indicator — never mutates `posts` directly, since
+  // splicing into a scroll-snap feed mid-view would shift what's under the
+  // user's finger. Requires edufeed_posts added to the Supabase Realtime
+  // publication (Database → Replication) or this silently never fires.
+  useEffect(() => {
+    const channel = supabase
+      .channel('edufeed-new-posts')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'edufeed_posts', filter: 'is_published=eq.true' },
+        () => setNewPostsAvailable(prev => prev + 1))
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
   const progressPct = posts.length > 1 ? (currentCardIndex / (posts.length - 1)) * 100 : 0
 
   return (
@@ -1329,13 +1546,15 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
       </div>
 
       <div className="edufeed-type-filter-bar">
-  <div className="edufeed-filter-left">
-    {POST_TYPES.map(t => (
-      <button key={t.key} className={`edufeed-type-filter-pill ${activeType === t.key ? 'active' : ''}`} onClick={() => setActiveType(t.key)}>
-        {t.label}
-      </button>
+        <select
+          className="edufeed-type-select"
+          value={activeType}
+          onChange={e => setActiveType(e.target.value)}
+        >
+          {POST_TYPES.map(t => (
+            <option key={t.key} value={t.key}>{t.label}</option>
           ))}
-        </div>
+        </select>
       </div>
 
       <div className="edufeed-feed">
@@ -1351,8 +1570,13 @@ const Edufeed = ({ userTier, onEditPost, onOpenRacePlay }) => {
             <h4>No posts yet</h4>
             <p>Create a quiz or start a community!</p>
           </div>
-        ) : (
+) : (
           <>
+            {newPostsAvailable > 0 && (
+              <button type="button" className="ef-new-posts-banner" onClick={handleRefreshNewPosts}>
+                ✨ {newPostsAvailable} new {newPostsAvailable === 1 ? 'post' : 'posts'} — Tap to refresh
+              </button>
+            )}
             {posts.length > 1 && (
               <div className="edufeed-progress-track">
                 <div className="edufeed-progress-fill" style={{ height: `${progressPct}%` }} />
