@@ -956,6 +956,7 @@ const QuizBody = ({ post, user, completion }) => {
     // of falling into the small extra-media thumbnail row.
     const primaryVideo = !firstImage ? post.attachments?.find(a => a.type?.startsWith('video/')) : null
     const subjectExtras = primaryVideo ? extraAttachments.filter(a => a !== primaryVideo) : extraAttachments
+    const hasVisual = !!(firstImage || primaryVideo)
 
     const handleCheck = () => {
       if (!sqAnswer.trim()) return
@@ -970,11 +971,16 @@ const QuizBody = ({ post, user, completion }) => {
     }
 
     return (
-      <div className={`mq-body ${firstImage ? '' : 'mq-body--no-image'}`}>
+      <div className={`mq-body ${hasVisual ? '' : 'mq-body--no-image'}`}>
         {firstImage ? (
           <>
             <div className="mq-bg" style={{ backgroundImage: `url(${firstImage.url})` }} aria-hidden="true" />
             <img src={firstImage.url} alt="" className="mq-fg-img" />
+          </>
+        ) : primaryVideo ? (
+          <>
+            <video src={primaryVideo.url} className="mq-bg-video" muted loop autoPlay playsInline aria-hidden="true" />
+            <video src={primaryVideo.url} className="mq-fg-video" muted loop autoPlay playsInline aria-hidden="true" />
           </>
         ) : (
           <div className="mq-bg mq-bg-none" aria-hidden="true" />
@@ -983,9 +989,6 @@ const QuizBody = ({ post, user, completion }) => {
         <div className="mq-panel mq-panel--subject">
           <CompletionBanner completion={completion} />
           {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
-          {primaryVideo && (
-            <video src={primaryVideo.url} controls className="mq-subject-video" />
-          )}
           {subjectExtras.length > 0 && (
             <div className="mq-extra-media">{subjectExtras.map((att, i) => renderMqAttachment(att, i))}</div>
           )}

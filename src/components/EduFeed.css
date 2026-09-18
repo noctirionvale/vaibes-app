@@ -1442,9 +1442,12 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
   color: var(--text); font-size: 0.8rem; font-weight: 600;
   font-family: inherit; outline: none; cursor: pointer;
   transition: border-color 0.15s ease;
+  color-scheme: dark;
 }
 .edufeed-type-select:focus { border-color: var(--glow); }
 .edufeed-type-select option { background: var(--card-bg); color: var(--text); }
+
+body.light-mode .edufeed-type-select { color-scheme: light; }
 
 .edufeed-filter-divider {
   width: 1px;
@@ -1882,10 +1885,20 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 .mq-timer-ring.urgent .mq-timer-ring-fill { stroke: var(--danger); }
 .mq-timer-ring-text { fill: var(--text); font-size: 11px; font-weight: 800; font-family: inherit; }
 
-.mq-subject-video {
-  width: 100%; aspect-ratio: 16 / 9; border-radius: 12px;
-  border: 1px solid var(--line); background: #000;
-  object-fit: contain; flex-shrink: 0;
+.mq-bg-video {
+  position: absolute; inset: -20px;
+  width: calc(100% + 40px); height: calc(100% + 40px);
+  object-fit: cover;
+  filter: blur(24px) brightness(0.55) saturate(1.3);
+  transform: scale(1.15);
+  z-index: 0;
+}
+.mq-fg-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  z-index: 1;
+  background: transparent;
 }
 
 /* ── Subject Quiz Q&A ── */
