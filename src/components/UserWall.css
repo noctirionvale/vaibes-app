@@ -384,27 +384,37 @@
   color: var(--on-accent);
 }
 
-.grid-card:not(.card-expanded) .card-media-wrap.has-media::after {
-  content: '↕ expand';
+.grid-card:not(.card-expanded) .card-media-wrap.is-image-media::after {
+  content: '⛶';
   position: absolute;
   bottom: 8px;
   right: 10px;
-  font-size: 0.6rem;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--text) 75%, transparent);
-  background: rgba(0, 0, 0, 0.45);
-  padding: 0.18rem 0.5rem;
-  border-radius: 20px;
+  color: color-mix(in srgb, var(--text) 85%, transparent);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
   backdrop-filter: blur(4px);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.2s;
 }
 
-.grid-card:not(.card-expanded):hover .card-media-wrap.has-media::after {
+.grid-card:not(.card-expanded):hover .card-media-wrap.is-image-media::after {
   opacity: 1;
+}
+
+/* Touch devices have no hover, so the affordance needs to just be
+   visible up front instead of waiting for a hover that'll never come. */
+@media (hover: none) {
+  .grid-card:not(.card-expanded) .card-media-wrap.is-image-media::after {
+    opacity: 1;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -559,10 +569,10 @@
   padding: 0.2rem 0.45rem;
 }
 
-.action-btn.edit:hover   { background: var(--success-12); color: var(--success); }
-.action-btn.share:hover  { background: var(--accent-12); color: var(--glow); }
-.action-btn.pin:hover    { background: var(--warning-15);  color: var(--warning); }
-.action-btn.delete:hover { background: var(--danger-12); color: var(--danger); }
+.action-btn.edit:hover,   .action-btn.edit:active   { background: var(--success-12); color: var(--success); }
+.action-btn.share:hover,  .action-btn.share:active  { background: var(--accent-12); color: var(--glow); }
+.action-btn.pin:hover,    .action-btn.pin:active    { background: var(--warning-15);  color: var(--warning); }
+.action-btn.delete:hover, .action-btn.delete:active { background: var(--danger-12); color: var(--danger); }
 
 /* ═══════════════════════════════════════════════════════════════
    EMPTY STATE
@@ -1216,16 +1226,8 @@
   }
 
   .grid-card .card-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-  }
-
-  .grid-card .card-actions {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);   /* NEW — real, fixed gutters via grid gap,
-      instead of flex items whose visible spacing depended on how much of
-      their equal-width box the label text happened to fill */
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.4rem;
   }
 
@@ -1233,13 +1235,18 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.25rem;
     width: 100%;
     min-width: 0;
     font-size: 0.66rem;
-    padding: 0.45rem 0.4rem;   /* slightly roomier now that each button gets ~half the card width instead of a third */
+    padding: 0.45rem 0.4rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--field-bg);
+    color: var(--muted);
   }
 
   .list-card {

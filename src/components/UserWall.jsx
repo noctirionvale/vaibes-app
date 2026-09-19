@@ -378,7 +378,7 @@ const UserWall = ({ refreshTrigger, onEditItem }) => {
         key={item.id}
         className={`wall-card ${viewMode === 'grid' ? 'grid-card' : 'list-card'} ${item.is_pinned ? 'pinned' : ''} ${isExpanded ? 'card-expanded' : ''} ${isSpectator ? 'spectator' : ''}`}
       >
-        <div className={`card-media-wrap ${hasMedia ? 'has-media' : ''}`}>
+        <div className={`card-media-wrap ${hasMedia ? 'has-media' : ''} ${type === 'image' ? 'is-image-media' : ''}`}>
           {type === 'youtube' && ytId && (
             <div className="media-youtube">
               {isInline ? (

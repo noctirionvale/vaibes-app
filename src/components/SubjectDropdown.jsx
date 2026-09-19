@@ -24,14 +24,22 @@ const SubjectDropdown = ({ value, options, onChange }) => {
       if (menuRef.current?.contains(e.target)) return;
       setOpen(false);
     };
-    const onClose = () => setOpen(false);
+    const onScroll = (e) => {
+      // Scrolling the option list itself (to reach items further down)
+      // is not an "outside" scroll and shouldn't close the menu — only
+      // a scroll elsewhere (the page, a modal body, etc.) means the
+      // trigger may have moved, so only that should close it.
+      if (menuRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const onResize = () => setOpen(false);
     document.addEventListener('mousedown', onDocClick);
-    window.addEventListener('scroll', onClose, true);
-    window.addEventListener('resize', onClose);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
     return () => {
       document.removeEventListener('mousedown', onDocClick);
-      window.removeEventListener('scroll', onClose, true);
-      window.removeEventListener('resize', onClose);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
     };
   }, [open]);
 
