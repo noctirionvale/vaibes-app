@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import useIsMobile from '../hooks/useIsMobile'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import CommunityRoomPlay from './CommunityRoomPlay';
@@ -652,6 +653,8 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
   const reviewScrollRef = useRef(null)
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_LIMIT)
   const [showReview, setShowReview] = useState(false)
+  const [showFinishGate, setShowFinishGate] = useState(false)
+  const isMobile = useIsMobile()
 
   const totalQuestions = questions.length
   const currentQuestion = questions[currentQuestionIndex]
@@ -684,7 +687,8 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
       points: 0,
       timedOut: true,
     }])
-  }, [timeLeft, answered, showSummary, currentQuestion, currentCorrect, currentQuestionIndex])
+    if (isMobile && currentQuestionIndex === totalQuestions - 1) setShowFinishGate(true)
+  }, [timeLeft, answered, showSummary, currentQuestion, currentCorrect, currentQuestionIndex, isMobile, totalQuestions])
 
   const handleAnswer = (optionIndex) => {
     if (answered) return
@@ -700,11 +704,12 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
       isCorrect,
       points: earnedPoints,
     }])
-    if (isCorrect) {
+        if (isCorrect) {
       setPointsEarned(prev => prev + earnedPoints)
       setShowPointsAnimation(true)
       setTimeout(() => setShowPointsAnimation(false), 2000)
     }
+    if (isMobile && currentQuestionIndex === totalQuestions - 1) setShowFinishGate(true)
   }
 
   // Single nav primitive for both the horizontal question tabs and the
@@ -716,6 +721,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
     if (answers[i]) { setSelected(answers[i].selected); setAnswered(true) }
     else { setSelected(null); setAnswered(false) }
     setShowSummary(false)
+    setShowFinishGate(false)
   }
 
   const handleNextQuestion = () => {
@@ -812,7 +818,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
           <div className="mq-retake-sticky">
             <button
               className="edufeed-quiz-unlock-btn"
-              onClick={() => {
+                            onClick={() => {
                 setShowSummary(false)
                 setCurrentQuestionIndex(0)
                 setSelected(null)
@@ -822,6 +828,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
                 setTimeLeft(QUESTION_TIME_LIMIT)
                 recordedRef.current = false
                 setShowReview(false)
+                setShowFinishGate(false)
               }}
               style={{ width: '100%' }}
             >
@@ -833,7 +840,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
     )
   }
 
-  return (
+    return (
     <div className={`mq-body ${currentQuestion.image_url ? '' : 'mq-body--no-image'}`}>
       {currentQuestion.image_url ? (
         <>
@@ -847,77 +854,96 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
       <div className="mq-panel edufeed-quiz-body">
         <CompletionBanner completion={completion} />
 
-        {totalQuestions > 1 && (
-          <div className="mq-qnav-scroll">
-            {questions.map((_, i) => {
-              const ans = answers[i]
-              const locked = i > answers.length
-              let cls = 'mq-qnav-pill'
-              if (i === currentQuestionIndex) cls += ' is-current'
-              if (ans) cls += ans.isCorrect ? ' is-correct' : ' is-wrong'
-              if (locked) cls += ' is-locked'
-              return (
-                <button key={i} type="button" className={cls} disabled={locked} onClick={() => goToQuestion(i)}>
-                  {i + 1}
-                </button>
-              )
-            })}
-          </div>
-        )}
-
-        {subject && <span className="edufeed-subject-tag">{subject}</span>}
-        {showPointsAnimation && (
-          <div className="points-gain-animation">+{currentPoints} pts</div>
-        )}
-        <div className="quiz-progress-bar">
-          <div className="quiz-progress-fill"
-            style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }} />
-          <div className="quiz-progress-text">
-            Question {currentQuestionIndex + 1} of {totalQuestions}
-          </div>
-        </div>
-        {!answered && (
-          <div className={`ef-timer-chip ${timeLeft <= 5 ? 'urgent' : ''}`}>⏱ {timeLeft}s left</div>
-        )}
-        <div className="edufeed-quiz-question">{currentQuestion.question}</div>
-        <div className="edufeed-quiz-options">
-          {currentOptions.map((opt, i) => {
-            let cls = 'edufeed-quiz-option'
-            if (answered) {
-              if (i === currentCorrect) cls += ' reveal-correct'
-              if (i === selected && i !== currentCorrect) cls += ' selected-wrong'
-              if (i === selected && i === currentCorrect) cls += ' selected-correct'
-            }
-            return (
-              <button key={i} className={cls}
-                onClick={() => handleAnswer(i)}
-                disabled={answered}>
-                <span className="edufeed-option-letter">{letters[i]}</span>
-                {opt}
+        {showFinishGate ? (
+          <div className="mq-finish-gate">
+            <div className="mq-finish-gate-icon">{answers[answers.length - 1]?.timedOut ? '⏰' : '🎉'}</div>
+            <div className="mq-finish-gate-label">
+              {answers[answers.length - 1]?.timedOut ? "Time's up!" : 'Quiz complete!'}
+            </div>
+            <div className="mq-finish-gate-actions">
+              <button type="button" className="mq-check-btn" onClick={() => setShowSummary(true)}>
+                👁️ See Results
               </button>
-            )
-          })}
-        </div>
-        {answered && (
+              <button type="button" className="mq-retry-btn" onClick={() => { setShowSummary(true); setShowReview(true) }}>
+                📋 Review Quiz
+              </button>
+            </div>
+          </div>
+        ) : (
           <>
-            <div className={`edufeed-quiz-result ${selected === currentCorrect ? 'correct' : 'wrong'}`}>
-              {selected === currentCorrect
-                ? '✅ Correct!'
-                : selected === null
-                  ? `⌛ Time's up — Answer: ${currentOptions[currentCorrect]}`
-                  : `❌ Answer: ${currentOptions[currentCorrect]}`}
+            {totalQuestions > 1 && (
+              <div className="mq-qnav-scroll">
+                {questions.map((_, i) => {
+                  const ans = answers[i]
+                  const locked = i > answers.length
+                  let cls = 'mq-qnav-pill'
+                  if (i === currentQuestionIndex) cls += ' is-current'
+                  if (ans) cls += ans.isCorrect ? ' is-correct' : ' is-wrong'
+                  if (locked) cls += ' is-locked'
+                  return (
+                    <button key={i} type="button" className={cls} disabled={locked} onClick={() => goToQuestion(i)}>
+                      {i + 1}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {subject && <span className="edufeed-subject-tag">{subject}</span>}
+            {showPointsAnimation && (
+              <div className="points-gain-animation">+{currentPoints} pts</div>
+            )}
+            <div className="quiz-progress-bar">
+              <div className="quiz-progress-fill"
+                style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }} />
+              <div className="quiz-progress-text">
+                Question {currentQuestionIndex + 1} of {totalQuestions}
+              </div>
             </div>
-            <div className="mq-sticky-cta">
-              {currentQuestionIndex < totalQuestions - 1 ? (
-                <button className="edufeed-quiz-unlock-btn next-btn" onClick={handleNextQuestion}>
-                  Next Question →
-                </button>
-              ) : (
-                <button className="edufeed-quiz-unlock-btn see-results-btn" onClick={handleNextQuestion}>
-                  🎉 See Results
-                </button>
-              )}
+            {!answered && (
+              <div className={`ef-timer-chip ${timeLeft <= 5 ? 'urgent' : ''}`}>⏱ {timeLeft}s left</div>
+            )}
+            <div className="edufeed-quiz-question">{currentQuestion.question}</div>
+            <div className="edufeed-quiz-options">
+              {currentOptions.map((opt, i) => {
+                let cls = 'edufeed-quiz-option'
+                if (answered) {
+                  if (i === currentCorrect) cls += ' reveal-correct'
+                  if (i === selected && i !== currentCorrect) cls += ' selected-wrong'
+                  if (i === selected && i === currentCorrect) cls += ' selected-correct'
+                }
+                return (
+                  <button key={i} className={cls}
+                    onClick={() => handleAnswer(i)}
+                    disabled={answered}>
+                    <span className="edufeed-option-letter">{letters[i]}</span>
+                    {opt}
+                  </button>
+                )
+              })}
             </div>
+            {answered && (
+              <>
+                <div className={`edufeed-quiz-result ${selected === currentCorrect ? 'correct' : 'wrong'}`}>
+                  {selected === currentCorrect
+                    ? '✅ Correct!'
+                    : selected === null
+                      ? `⌛ Time's up — Answer: ${currentOptions[currentCorrect]}`
+                      : `❌ Answer: ${currentOptions[currentCorrect]}`}
+                </div>
+                <div className="mq-sticky-cta">
+                  {currentQuestionIndex < totalQuestions - 1 ? (
+                    <button className="edufeed-quiz-unlock-btn next-btn" onClick={handleNextQuestion}>
+                      Next Question →
+                    </button>
+                  ) : (
+                    <button className="edufeed-quiz-unlock-btn see-results-btn" onClick={handleNextQuestion}>
+                      🎉 See Results
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
