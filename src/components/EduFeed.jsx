@@ -8,6 +8,7 @@ import QuizArenaModal from './QuizArenaModal';
 import PlayerSpotlight from './PlayerSpotlight';
 import LiveChallengeBanner from './LiveChallengeBanner';
 import PointsDashboard from './PointsDashboard';
+import Vaibey from './TypingCat' // ← adjust path/filename if Vaibey lives elsewhere
 import { attachBadges } from '../lib/badgeQueries';
 import './EduFeed.css'
 
@@ -432,6 +433,21 @@ const TimerRing = ({ timeLeft, total, urgent }) => {
   )
 }
 
+// ── Vaibey mascot — celebrates correct answers, cheers on wrong ones. ──
+const VaibeyCorner = ({ celebrateKey, encourageKey }) => (
+  <div className="mq-vaibey-corner">
+    <Vaibey
+      mode="quizMe"
+      isDark
+      size={2.4}
+      showBadge={false}
+      hideControls
+      celebrateKey={celebrateKey}
+      encourageKey={encourageKey}
+    />
+  </div>
+)
+
 const CommunityPreview = ({ community, isRace, completion, onPrimaryClick }) => {
   const ended = community.status !== 'live'
   const statsLine = [
@@ -655,6 +671,8 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
   const [showReview, setShowReview] = useState(false)
   const [showFinishGate, setShowFinishGate] = useState(false)
   const isMobile = useIsMobile()
+  const [celebrateKey, setCelebrateKey] = useState(0)
+  const [encourageKey, setEncourageKey] = useState(0)
 
   const totalQuestions = questions.length
   const currentQuestion = questions[currentQuestionIndex]
@@ -662,6 +680,10 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
   const currentCorrect = currentQuestion?.correct_index ?? 0
   const currentPoints = currentQuestion?.points ?? defaultPoints
   const letters = ['A', 'B', 'C', 'D']
+
+  useEffect(() => {
+    if (showSummary) setCelebrateKey(k => k + 1)
+  }, [showSummary])
 
   useEffect(() => {
     setTimeLeft(QUESTION_TIME_LIMIT)
@@ -687,6 +709,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
       points: 0,
       timedOut: true,
     }])
+    setEncourageKey(k => k + 1)
     if (isMobile && currentQuestionIndex === totalQuestions - 1) setShowFinishGate(true)
   }, [timeLeft, answered, showSummary, currentQuestion, currentCorrect, currentQuestionIndex, isMobile, totalQuestions])
 
@@ -704,6 +727,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
       isCorrect,
       points: earnedPoints,
     }])
+    isCorrect ? setCelebrateKey(k => k + 1) : setEncourageKey(k => k + 1)
         if (isCorrect) {
       setPointsEarned(prev => prev + earnedPoints)
       setShowPointsAnimation(true)
@@ -756,8 +780,9 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
 
   if (showSummary) {
     return (
-      <div className="mq-body mq-body--no-image">
+            <div className="mq-body mq-body--no-image">
         <div className="mq-bg mq-bg-none" aria-hidden="true" />
+        <VaibeyCorner celebrateKey={celebrateKey} encourageKey={encourageKey} />
         <div className="mq-panel edufeed-quiz-body">
           <CompletionBanner completion={completion} />
           <div className="quiz-summary-header">
@@ -851,6 +876,7 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
         <div className="mq-bg mq-bg-none" aria-hidden="true" />
       )}
       <div className="mq-scrim" aria-hidden="true" />
+      <VaibeyCorner celebrateKey={celebrateKey} encourageKey={encourageKey} />
       <div className="mq-panel edufeed-quiz-body">
         <CompletionBanner completion={completion} />
 
@@ -956,6 +982,8 @@ const StudioQuizPlayer = ({ questions, subject, defaultPoints = 5, userId = null
 // Studio (per-question) and Subject Quiz; Flashcard keeps the image as its
 // literal card face and flips it on check. ──
 const QuizBody = ({ post, user, completion }) => {
+  const [celebrateKey, setCelebrateKey] = useState(0)
+  const [encourageKey, setEncourageKey] = useState(0)
   // Subject Quiz
   const [sqAnswer, setSqAnswer] = useState('')
   const [sqAnswered, setSqAnswered] = useState(false)
@@ -1032,6 +1060,7 @@ const QuizBody = ({ post, user, completion }) => {
       const correct = sqAnswer.trim().toLowerCase() === (quiz.answer || '').trim().toLowerCase()
       setSqCorrect(correct)
       setSqAnswered(true)
+      correct ? setCelebrateKey(k => k + 1) : setEncourageKey(k => k + 1)
       recordCompletion(correct && !sqTimedOut ? SUBJECT_QUIZ_POINTS : 0, 'subject_quiz')
     }
     const resetSq = () => {
@@ -1055,6 +1084,7 @@ const QuizBody = ({ post, user, completion }) => {
           <div className="mq-bg mq-bg-none" aria-hidden="true" />
         )}
         <div className="mq-scrim" aria-hidden="true" />
+        <VaibeyCorner celebrateKey={celebrateKey} encourageKey={encourageKey} />
         <div className="mq-panel mq-panel--subject">
           <CompletionBanner completion={completion} />
           {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
@@ -1119,6 +1149,7 @@ const QuizBody = ({ post, user, completion }) => {
       if (fcFlipped || !fcGuess.trim()) return
       const correct = fcGuess.trim().toLowerCase() === (quiz.answer || '').trim().toLowerCase()
       setFcCorrect(correct)
+      correct ? setCelebrateKey(k => k + 1) : setEncourageKey(k => k + 1)
       recordCompletion(correct && !fcTimedOut ? FLASHCARD_POINTS : 0, 'flashcard')
       setFcFlipped(true)
     }
@@ -1129,6 +1160,7 @@ const QuizBody = ({ post, user, completion }) => {
 
     return (
       <div className="mq-flip-wrap">
+        <VaibeyCorner celebrateKey={celebrateKey} encourageKey={encourageKey} />
         <CompletionBanner completion={completion} />
         {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}
         <div className={`mq-flip-card ${fcFlipped ? 'is-flipped' : ''}`}>
@@ -1209,6 +1241,7 @@ const QuizBody = ({ post, user, completion }) => {
       const isCorrect = guess.trim().toLowerCase() === word.trim().toLowerCase()
       setAnCorrect(isCorrect)
       setAnAnswered(true)
+      isCorrect ? setCelebrateKey(k => k + 1) : setEncourageKey(k => k + 1)
       recordCompletion(isCorrect && !anTimedOut ? ANAGRAM_POINTS : 0, 'anagram')
     }
 
@@ -1229,6 +1262,7 @@ const QuizBody = ({ post, user, completion }) => {
           <div className="mq-bg mq-bg-none" aria-hidden="true" />
         )}
         <div className="mq-scrim" aria-hidden="true" />
+        <VaibeyCorner celebrateKey={celebrateKey} encourageKey={encourageKey} />
         <div className="mq-panel mq-panel--subject">
           <CompletionBanner completion={completion} />
           {post.subject && <span className="edufeed-subject-tag">{post.subject}</span>}

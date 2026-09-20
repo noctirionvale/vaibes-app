@@ -2136,3 +2136,15 @@ body.light-mode .ef-card-preview-badge { background: var(--accent-08); }
 }
 .mq-finish-gate-actions .mq-check-btn,
 .mq-finish-gate-actions .mq-retry-btn { width: 100%; }
+
+/* ── Vaibey mascot corner — celebrates/cheers on answers. Absolutely
+   positioned so it adds zero height to the card. ── */
+.mq-vaibey-corner {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 6;
+  transform: scale(0.92);
+  transform-origin: top right;
+}
+.mq-flip-wrap { position: relative; }

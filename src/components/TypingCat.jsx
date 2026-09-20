@@ -235,6 +235,9 @@ export default function TypingCat({
   autoPlay = false,
   showQuip = false,   // show speech bubble with rotating quips
   peekBounce = false, // enable the vertical peek/jump animation
+  celebrateKey = 0,    // NEW — bump this number to trigger a correct-answer celebration
+  encourageKey = 0,    // NEW — bump this number to trigger a wrong-answer cheer-up
+  hideControls = false, // NEW — hides the hide/show toggle, for compact decorative uses
 }) {
   const [leftDown,    setLeftDown]    = useState(false);
   const [rightDown,   setRightDown]   = useState(false);
@@ -481,7 +484,32 @@ export default function TypingCat({
   }, [autoPlay, mode]);
 
     // ── AI response reaction ─────────────────────────────────────────────────
+    // ── Correct-answer celebration (bump celebrateKey to trigger) ───────────
+  const celebrateSeen = useRef(celebrateKey);
   useEffect(() => {
+    if (celebrateKey === celebrateSeen.current) return;
+    celebrateSeen.current = celebrateKey;
+    setIsHappy(true);
+    setReaction('🎉');
+    setReactionKey(k => k + 1);
+    clearTimeout(happyRef.current);
+    happyRef.current = setTimeout(() => { setIsHappy(false); setReaction(null); }, 2200);
+  }, [celebrateKey]);
+
+  // ── Wrong-answer encouragement (bump encourageKey to trigger) ───────────
+  const encourageSeen = useRef(encourageKey);
+  useEffect(() => {
+    if (encourageKey === encourageSeen.current) return;
+    encourageSeen.current = encourageKey;
+    setReaction('💪');
+    setReactionKey(k => k + 1);
+    setBob(-4);
+    setTimeout(() => setBob(0), 200);
+    clearTimeout(happyRef.current);
+    happyRef.current = setTimeout(() => setReaction(null), 1800);
+  }, [encourageKey]);
+  
+    useEffect(() => {
     if (onResponse && !prevResponse.current) {
       const emoji = MODE_CONFIG[mode]?.reaction || '✨';
       setIsHappy(true); setReaction(emoji); setReactionKey(k => k + 1);
@@ -633,10 +661,10 @@ export default function TypingCat({
       `}</style>
 
       {/* When off: just show a tiny collapsed pill */}
-      {!vaibeyOn && !autoPlay && offPill}
+      {!vaibeyOn && !autoPlay && !hideControls && offPill}
 
       {/* When on (or always on for autoPlay/landing page) */}
-      {(vaibeyOn || autoPlay) && (
+      {(vaibeyOn || autoPlay || hideControls) && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, userSelect: 'none' }}>
 
           {/* ── Quip speech bubble ── */}
@@ -725,7 +753,7 @@ export default function TypingCat({
             )}
 
             {/* Hide toggle — only shown in non-autoPlay contexts (AIComparison) */}
-            {!autoPlay && (
+            {!autoPlay && !hideControls && (
               <button
                 onClick={toggleVaibey}
                 title="Hide Vaibey"
