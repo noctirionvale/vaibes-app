@@ -27,6 +27,7 @@ import { MusicPlayerProvider } from './context/MusicPlayerContext';
 import { useOnboardingTour } from './hooks/useOnboardingTour';
 import OnboardingFlow from './components/OnboardingFlow';
 import { AlarmProvider } from './context/AlarmContext';
+import AdminChannelReview from './components/AdminChannelReview';
 import './styles/App.css';
 
 const INTENT_TO_TAB = {
@@ -425,6 +426,7 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/app" element={<AppShellContent />} />
                 <Route path="/share/:id" element={<SharedCreative />} />
+                <Route path="/admin/channels" element={<AdminChannelReview />} />
                 <Route path="/share/quiz/:id" element={<SharedQuiz />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

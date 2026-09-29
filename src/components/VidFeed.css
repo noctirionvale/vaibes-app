@@ -435,3 +435,60 @@
   .vidfeed-slide-title { font-size: 0.8rem; }
   .vidfeed-slide-meta { font-size: 0.64rem; }
 }
+
+.vf-resolved-card {
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--accent-25);
+  border-radius: 12px;
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.vf-resolved-close {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 0.75rem; padding: 4px;
+}
+.vf-resolved-close:hover { color: var(--danger); }
+
+.vf-resolved-header { display: flex; align-items: center; gap: 0.6rem; padding-right: 1.2rem; }
+.vf-resolved-thumb { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.vf-resolved-title { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+.vf-resolved-subs { font-size: 0.68rem; color: var(--muted); margin-top: 1px; }
+
+.vf-resolved-status-badge {
+  font-size: 0.72rem; font-weight: 600; padding: 0.35rem 0.6rem;
+  border-radius: 8px; width: fit-content;
+}
+.vf-resolved-status-badge.approved, .vf-resolved-status-badge.tier1 {
+  background: color-mix(in srgb, var(--success) 12%, transparent); color: var(--success);
+}
+.vf-resolved-status-badge.pending {
+  background: color-mix(in srgb, var(--warning) 12%, transparent); color: var(--warning);
+}
+
+.vf-resolved-subject-tag { font-size: 0.72rem; color: var(--glow); }
+.vf-resolved-rejected { font-size: 0.78rem; color: var(--danger); margin: 0; }
+.vf-resolved-new-label { font-size: 0.75rem; color: var(--muted); margin: 0; }
+
+.vf-submit-label {
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted); margin-top: 0.2rem;
+}
+.vf-submit-select, .vf-submit-textarea {
+  padding: 0.5rem 0.65rem; background: var(--field-bg); border: 1px solid var(--line);
+  border-radius: 8px; color: var(--text); font-size: 0.8rem; font-family: inherit; outline: none;
+}
+.vf-submit-select:focus, .vf-submit-textarea:focus { border-color: var(--accent-40); }
+.vf-submit-textarea { resize: vertical; }
+
+.vf-resolved-cta { width: 100%; padding: 0.55rem; margin-top: 0.2rem; }
+
+.vf-chip-pending-badge {
+  font-size: 0.62rem; font-weight: 600; color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  padding: 0.1rem 0.4rem; border-radius: 10px; flex-shrink: 0;
+}

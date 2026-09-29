@@ -156,12 +156,13 @@ async function handleSubmitChannel(req, res) {
   if (authError || !user) return res.status(401).json({ error: 'Invalid or expired session.' });
 
   const { channel, subject, justification } = req.body || {};
-  if (!channel?.id || !subject) return res.status(400).json({ error: 'channel and subject are required.' });
+  if (!channel?.id) return res.status(400).json({ error: 'channel is required.' });
 
   const { data: existing } = await supabaseAdmin
     .from('vidfeed_channels').select('id, status').eq('id', channel.id).maybeSingle();
 
   if (!existing) {
+    if (!subject) return res.status(400).json({ error: 'subject is required for a new channel submission.' });
     const { error: insertErr } = await supabaseAdmin.from('vidfeed_channels').insert({
       id: channel.id,
       title: channel.title,

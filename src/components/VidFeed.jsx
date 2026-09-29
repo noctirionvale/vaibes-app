@@ -56,6 +56,10 @@ const VidFeed = ({ onCountChange, compact = false }) => {
   const [resolving, setResolving] = useState(false);
   const [resolveError, setResolveError] = useState('');
   const [candidates, setCandidates] = useState([]);
+  const [resolvedChannel, setResolvedChannel] = useState(null);
+  const [submitSubject, setSubmitSubject] = useState('General');
+  const [submitJustification, setSubmitJustification] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const [savedIds, setSavedIds] = useState(new Set());
   const [savedList, setSavedList] = useState([]);
@@ -105,17 +109,22 @@ const VidFeed = ({ onCountChange, compact = false }) => {
   };
 
   /* ── Channels ── */
-  const loadChannels = useCallback(async () => {
+    const loadChannels = useCallback(async () => {
     if (!user) { setChannels([]); setChannelsLoading(false); return; }
     setChannelsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('user_video_channels')
-        .select('id, channel_id, channel_title, channel_thumbnail')
+        .from('user_channel_follows')
+        .select('channel_id, vidfeed_channels(id, title, thumbnail, status)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      setChannels(data || []);
+      setChannels((data || []).map(row => ({
+        channel_id: row.channel_id,
+        channel_title: row.vidfeed_channels?.title,
+        channel_thumbnail: row.vidfeed_channels?.thumbnail,
+        status: row.vidfeed_channels?.status,
+      })));
     } catch (err) {
       console.error('❌ Load channels error:', err);
     } finally {
@@ -123,20 +132,23 @@ const VidFeed = ({ onCountChange, compact = false }) => {
     }
   }, [user]);
 
-  useEffect(() => { loadChannels(); }, [loadChannels]);
-
-  /* ── Saved videos ── */
   const loadSaved = useCallback(async () => {
     if (!user) { setSavedIds(new Set()); setSavedList([]); return; }
-    const { data } = await supabase
-      .from('user_saved_videos')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    setSavedList(data || []);
-    setSavedIds(new Set((data || []).map(v => v.video_id)));
+    try {
+      const { data, error } = await supabase
+        .from('user_saved_videos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setSavedList(data || []);
+      setSavedIds(new Set((data || []).map(v => v.video_id)));
+    } catch (err) {
+      console.error('❌ Load saved videos error:', err);
+    }
   }, [user]);
 
+  useEffect(() => { loadChannels(); }, [loadChannels]);
   useEffect(() => { loadSaved(); }, [loadSaved]);
 
   // Memoized so the player effect doesn't restart on unrelated renders
@@ -180,32 +192,14 @@ const VidFeed = ({ onCountChange, compact = false }) => {
   };
 
   /* ── Channels add/remove ── */
-  const saveChannel = async (channel) => {
-    try {
-      const { error } = await supabase.from('user_video_channels').upsert({
-        user_id: user.id,
-        channel_id: channel.id,
-        channel_title: channel.title,
-        channel_thumbnail: channel.thumbnail,
-      }, { onConflict: 'user_id,channel_id', ignoreDuplicates: true });
-      if (error) throw error;
-      await loadChannels();
-      setCandidates([]);
-      setChannelInput('');
-    } catch (err) {
-      console.error('❌ Save channel error:', err);
-      setResolveError('Could not save that channel — try again.');
-    }
-  };
-
-  const handleAddChannel = async () => {
+    const handleAddChannel = async () => {
     const query = channelInput.trim();
     if (!query || !user || resolving) return;
     setResolving(true);
     setResolveError('');
     setCandidates([]);
+    setResolvedChannel(null);
 
-    // Hard 15s cap so "Add" can never hang forever on a cold/slow API
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
 
@@ -222,7 +216,7 @@ const VidFeed = ({ onCountChange, compact = false }) => {
       if (!data.channels || data.channels.length === 0) {
         setResolveError(data.message || 'No matching channel found.');
       } else if (data.channels.length === 1) {
-        await saveChannel(data.channels[0]);
+        setResolvedChannel(data.channels[0]);
       } else {
         setCandidates(data.channels);
       }
@@ -239,11 +233,68 @@ const VidFeed = ({ onCountChange, compact = false }) => {
     }
   };
 
-  const handleRemoveChannel = async (channelId) => {
+  // Candidate from a name search has no stats — fetch full details + registry
+  // status for the one the user actually picked.
+  const handlePickCandidate = async (candidate) => {
+    setResolving(true);
+    setResolveError('');
+    try {
+      const res = await fetch('/api/youtube', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'channel-info', channelId: candidate.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load channel details');
+      setResolvedChannel(data.channel);
+      setCandidates([]);
+    } catch (err) {
+      setResolveError(err.message || 'Something went wrong — try again.');
+    } finally {
+      setResolving(false);
+    }
+  };
+
+  const cancelResolved = () => {
+    setResolvedChannel(null);
+    setSubmitSubject('General');
+    setSubmitJustification('');
+  };
+
+  const handleConfirmAdd = async () => {
+    if (!resolvedChannel || !user) return;
+    setSubmitting(true);
+    setResolveError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/youtube', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({
+          action: 'submit-channel',
+          channel: resolvedChannel,
+          ...(resolvedChannel.inRegistry ? {} : { subject: submitSubject, justification: submitJustification }),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to add channel');
+      await loadChannels();
+      setResolvedChannel(null);
+      setChannelInput('');
+      setSubmitSubject('General');
+      setSubmitJustification('');
+    } catch (err) {
+      setResolveError(err.message || 'Something went wrong — try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+    const handleRemoveChannel = async (channelId) => {
     if (!user) return;
     setChannels(prev => prev.filter(c => c.channel_id !== channelId));
     try {
-      await supabase.from('user_video_channels').delete().eq('user_id', user.id).eq('channel_id', channelId);
+      await supabase.from('user_channel_follows').delete().eq('user_id', user.id).eq('channel_id', channelId);
     } catch (err) {
       console.error('❌ Remove channel error:', err);
       loadChannels();
@@ -490,6 +541,10 @@ const VidFeed = ({ onCountChange, compact = false }) => {
     </div>
   );
 
+  const SUBJECT_OPTIONS = ['General', 'Math', 'Science', 'Biology', 'Chemistry', 'Physics', 'Astronomy',
+  'History', 'English', 'Filipino', 'Programming', 'Technology', 'Arts', 'Personalities', 'Celebrities',
+  'Television', 'Entertainment', 'Meme', 'Animals', 'Movies', 'Sports', 'Anime', 'Music', 'Other'];
+
   /* ── Manage panel ── */
   const renderManagePanel = () => (
     <div className="vf-manage-panel">
@@ -514,13 +569,79 @@ const VidFeed = ({ onCountChange, compact = false }) => {
         <div className="vf-candidates-list">
           <p className="vf-candidates-label">Which one did you mean?</p>
           {candidates.map(c => (
-            <button key={c.id} className="vf-candidate-item" onClick={() => saveChannel(c)}>
+          <button key={c.id} className="vf-candidate-item" onClick={() => handlePickCandidate(c)}>
               {c.thumbnail
                 ? <img src={c.thumbnail} alt="" className="vf-candidate-thumb" />
                 : <span className="vf-candidate-thumb-fallback">▶</span>}
               <span className="vf-candidate-title">{c.title}</span>
             </button>
           ))}
+        </div>
+      )}
+
+            {resolvedChannel && (
+        <div className="vf-resolved-card">
+          <button className="vf-resolved-close" onClick={cancelResolved}>✕</button>
+          <div className="vf-resolved-header">
+            {resolvedChannel.thumbnail
+              ? <img src={resolvedChannel.thumbnail} alt="" className="vf-resolved-thumb" />
+              : <span className="vf-candidate-thumb-fallback">▶</span>}
+            <div>
+              <div className="vf-resolved-title">{resolvedChannel.title}</div>
+              {resolvedChannel.subscriberCount != null && (
+                <div className="vf-resolved-subs">
+                  {Intl.NumberFormat('en', { notation: 'compact' }).format(resolvedChannel.subscriberCount)} subscribers
+                </div>
+              )}
+            </div>
+          </div>
+
+          {resolvedChannel.inRegistry ? (
+            resolvedChannel.status === 'rejected' ? (
+              <p className="vf-resolved-rejected">This channel was reviewed and isn't approved for VidFeed.</p>
+            ) : (
+              <>
+                <div className={`vf-resolved-status-badge ${resolvedChannel.status}`}>
+                  {resolvedChannel.status === 'pending'
+                    ? '⏳ Awaiting review'
+                    : `✅ Already on vAIbes · ${resolvedChannel.followerCount} follower${resolvedChannel.followerCount === 1 ? '' : 's'}`}
+                </div>
+                {resolvedChannel.subject && (
+                  <div className="vf-resolved-subject-tag">Tagged: {resolvedChannel.subject}</div>
+                )}
+                <button className="vf-add-btn vf-resolved-cta" onClick={handleConfirmAdd} disabled={submitting}>
+                  {submitting ? '…' : resolvedChannel.status === 'pending' ? 'Follow — you\'ll see videos once approved' : 'Add to My Feed'}
+                </button>
+              </>
+            )
+          ) : (
+            <>
+              <p className="vf-resolved-new-label">New channel — submit for review</p>
+              <label className="vf-submit-label">Subject</label>
+              <select
+                className="vf-submit-select"
+                value={submitSubject}
+                onChange={e => setSubmitSubject(e.target.value)}
+              >
+                {SUBJECT_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <label className="vf-submit-label">Why is this educational?</label>
+              <textarea
+                className="vf-submit-textarea"
+                placeholder="A sentence or two…"
+                value={submitJustification}
+                onChange={e => setSubmitJustification(e.target.value)}
+                rows={2}
+              />
+              <button
+                className="vf-add-btn vf-resolved-cta"
+                onClick={handleConfirmAdd}
+                disabled={submitting || !submitJustification.trim()}
+              >
+                {submitting ? '…' : 'Submit for Review'}
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -536,6 +657,7 @@ const VidFeed = ({ onCountChange, compact = false }) => {
                 ? <img src={c.channel_thumbnail} alt="" className="vf-channel-chip-thumb" />
                 : <span className="vf-channel-chip-thumb-fallback">▶</span>}
               <span className="vf-channel-chip-title">{c.channel_title || c.channel_id}</span>
+              {c.status === 'pending' && <span className="vf-chip-pending-badge">⏳ pending</span>}
               <button className="vf-channel-chip-remove" onClick={() => handleRemoveChannel(c.channel_id)} title="Remove">✕</button>
             </div>
           ))
